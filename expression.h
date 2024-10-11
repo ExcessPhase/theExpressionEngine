@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <variant>
+#include <map>
 
 namespace theExpessionEngine
 {
@@ -18,7 +19,7 @@ struct expression:std::enable_shared_from_this<const expression>
 	const std::shared_ptr<const type> m_sType;
 	expression(
 		const std::shared_ptr<const type> &_rType,
-		children&&_rChildren
+		children&&_rChildren = {}
 	);
 		/// this compares everything contained in expression
 		/// and calls isSmaller() if there is no difference
@@ -31,5 +32,7 @@ struct expression:std::enable_shared_from_this<const expression>
 		/// only called by evaluate()
 	virtual value evaluateThis(environment&) const = 0;
 	const value&evaluate(environment&) const;
+	mutable std::map<environment*, value> m_sValues;
+	virtual void onDestroy(void) const;
 };
 }

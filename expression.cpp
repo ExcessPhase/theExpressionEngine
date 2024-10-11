@@ -1,6 +1,7 @@
 #include "expression.h"
 #include <typeinfo>
 #include <algorithm>
+#include <set>
 #include "environment.h"
 
 
@@ -54,6 +55,13 @@ bool expression::isSmaller(const expression&) const
 {	return false;
 }
 const expression::value&expression::evaluate(environment&_r) const
-{	return {};
+{	const auto sInsert = m_sValues.emplace(&_r, value());
+	if (sInsert.second)
+		sInsert.first->second = evaluateThis(_r);
+	return sInsert.first->second;
+}
+void expression::onDestroy(void) const
+{	for (const auto &r : m_sValues)
+		std::any_cast<std::set<const expression*>&>(r.first->m_s.at(environment::eExpressionValueRegistration)).erase(this);
 }
 }

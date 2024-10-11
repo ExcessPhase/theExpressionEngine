@@ -21,6 +21,15 @@
     <ClCompile Include="expression.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="environment.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="factory.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="type.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="type.h">
@@ -33,6 +42,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="environment.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="onDestroy.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="unique.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
