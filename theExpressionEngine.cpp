@@ -1,5 +1,7 @@
 #include <iostream>
-
+#include "factory.h"
+#include "expression.h"
+#include "type.h"
 
 int main()
 {
