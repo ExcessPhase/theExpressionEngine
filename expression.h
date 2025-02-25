@@ -5,6 +5,11 @@
 #include <variant>
 #include <map>
 #include "dynamic_cast.h"
+#include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/IRBuilder.h>
+//#include <llvm/IR/Module.h>
+//#include <llvm/IR/Constants.h>
+
 
 namespace theExpessionEngine
 {
@@ -36,5 +41,13 @@ struct expression:std::enable_shared_from_this<const expression>, dynamic_cast_i
 	const value&evaluate(environment&) const;
 	mutable std::map<environment*, value> m_sValues;
 	virtual void onDestroy(void) const;
+	llvm::Value *generateCodeW(llvm::LLVMContext& context, llvm::IRBuilder<>& builder) const
+	{	if (!m_pValue)
+			m_pValue = generateCode(context, builder);
+		return m_pValue;
+	}
+	private:
+	virtual llvm::Value* generateCode(llvm::LLVMContext& context, llvm::IRBuilder<>& builder) const = 0;
+	mutable llvm::Value *m_pValue = nullptr;
 };
 }
