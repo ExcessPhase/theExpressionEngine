@@ -5,10 +5,8 @@
 #include "unique.h"
 #include "onDestroy.h"
 #include <stdexcept>
-
+#include "dynamic_cast.h"
 namespace theExpessionEngine
-{
-namespace
 {
 struct realConstant:expression
 {	const double m_d;
@@ -28,6 +26,8 @@ struct realConstant:expression
 	{	return m_d;
 	}
 };
+namespace
+{
 struct plus:expression
 {	plus(const ptr&_p0, const ptr&_p1)
 		:expression(
@@ -47,7 +47,7 @@ struct plus:expression
 };
 struct factoryImpl:factory
 {	virtual exprPtr realConstant(const double _d) const override
-	{	return unique<onDestroy<theExpessionEngine::realConstant> >::create(_d);
+	{	return unique<onDestroy<dynamic_cast_implementation<theExpessionEngine::realConstant> > >::create(_d);
 	}
 	virtual exprPtr plus(const exprPtr&, const exprPtr&) const override
 	{	return nullptr;

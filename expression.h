@@ -4,15 +4,17 @@
 #include <string>
 #include <variant>
 #include <map>
+#include "dynamic_cast.h"
 
 namespace theExpessionEngine
 {
 struct type;
 struct environment;
+struct realConstant;
 /// the base class of all expression types
 /// immutable
 /// no two with the same content are guaranteed to exist
-struct expression:std::enable_shared_from_this<const expression>
+struct expression:std::enable_shared_from_this<const expression>, dynamic_cast_interface<realConstant>
 {	typedef std::shared_ptr<const expression> ptr;
 	typedef std::vector<ptr> children;
 	const children m_sChildren;
