@@ -54,8 +54,8 @@ bool expression::operator<(const expression&_r) const
 bool expression::isSmaller(const expression&) const
 {	return false;
 }
-const expression::value&expression::evaluate(environment&_r) const
-{	const auto sInsert = m_sValues.emplace(&_r, value());
+const double&expression::evaluate(environment&_r) const
+{	const auto sInsert = m_sValues.emplace(&_r, double());
 	if (sInsert.second)
 		sInsert.first->second = evaluateThis(_r);
 	return sInsert.first->second;

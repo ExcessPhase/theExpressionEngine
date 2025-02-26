@@ -1,10 +1,11 @@
 #pragma once
 #include <memory>
 #include <vector>
-#include <string>
-#include <variant>
+//#include <string>
+//#include <variant>
 #include <map>
 #include "dynamic_cast.h"
+#include "environment.h"
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/IRBuilder.h>
 //#include <llvm/IR/Module.h>
@@ -34,20 +35,20 @@ struct expression:std::enable_shared_from_this<const expression>, dynamic_cast_i
 		/// this is to be implemented for all derived classes containing data
 		/// the type of the LHS and RHS is guaranteed to be identical
 	virtual bool isSmaller(const expression&) const;
-	typedef std::variant<double, int, std::string> value;
+//	typedef std::variant<double, int, std::string> value;
 		/// should be private
 		/// only called by evaluate()
-	virtual value evaluateThis(environment&) const = 0;
-	const value&evaluate(environment&) const;
-	mutable std::map<environment*, value> m_sValues;
+	virtual double evaluateThis(environment&) const = 0;
+	const double&evaluate(environment&) const;
+	mutable std::map<environment*, double> m_sValues;
 	virtual void onDestroy(void) const;
-	llvm::Value *generateCodeW(llvm::LLVMContext& context, llvm::IRBuilder<>& builder) const
+	llvm::Value *generateCodeW(llvm::LLVMContext& context, llvm::IRBuilder<>& builder, llvm::Module *const M) const
 	{	if (!m_pValue)
-			m_pValue = generateCode(context, builder);
+			m_pValue = generateCode(context, builder, M);
 		return m_pValue;
 	}
 	private:
-	virtual llvm::Value* generateCode(llvm::LLVMContext& context, llvm::IRBuilder<>& builder) const = 0;
+	virtual llvm::Value* generateCode(llvm::LLVMContext& context, llvm::IRBuilder<>& builder, llvm::Module *const M) const = 0;
 	mutable llvm::Value *m_pValue = nullptr;
 };
 }

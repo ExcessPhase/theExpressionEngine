@@ -67,8 +67,8 @@
                 "typeinfo": "cpp",
                 "variant": "cpp",
                 "format": "cpp"
-        }
+        },
 	"editor.tabSize": 8,
-	"editor.insertSpaces": false,
-	"editor.renderIndentGuides": false
+        "editor.insertSpaces": false,
+        "editor.guides.indentation": false
 }

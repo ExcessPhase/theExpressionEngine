@@ -1,17 +1,19 @@
+#if 1
 #include <iostream>
 #include "factory.h"
 #include "expression.h"
 #include "type.h"
 #include "environment.h"
 
-#include "llvm/IR/IRBuilder.h"
-#include "llvm/IR/LLVMContext.h"
-#include "llvm/IR/Module.h"
-#include "llvm/IR/Verifier.h"
-#include "llvm/ExecutionEngine/ExecutionEngine.h"
-#include "llvm/ExecutionEngine/MCJIT.h"
-#include "llvm/ExecutionEngine/GenericValue.h"
-#include "llvm/Support/TargetSelect.h"
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/Module.h>
+#include <llvm/IR/Verifier.h>
+#include <llvm/ExecutionEngine/ExecutionEngine.h>
+#include <llvm/ExecutionEngine/MCJIT.h>
+#include <llvm/Support/raw_ostream.h>
+#include <llvm/ExecutionEngine/GenericValue.h>
+#include <llvm/Support/TargetSelect.h>
 
 
 int main()
@@ -24,45 +26,42 @@ int main()
 	InitializeNativeTargetAsmParser();
 
         LLVMContext Context;
-        Module* M = new Module("top", Context);
+        auto M = std::make_unique<Module>("top", Context);
         IRBuilder<> Builder(Context);
+    
+        FunctionType* FT = FunctionType::get(Type::getDoubleTy(Context), false);
+        Function* GetValueFunc = Function::Create(FT, Function::ExternalLinkage, "getValue", M.get());
+        BasicBlock* BB = BasicBlock::Create(Context, "EntryBlock", GetValueFunc);
+        Builder.SetInsertPoint(BB);
     
         environment sEnv;
         const auto pFactory = factory::getFactory(sEnv);
 
-        const auto pE = pFactory->plus(
-		pFactory->realConstant(1.1),
-		pFactory->realConstant(2.1)
+        const auto pE = pFactory->sqrt(
+		pFactory->plus(
+			pFactory->realConstant(1.1),
+			pFactory->realConstant(2.1)
+		)
 	);
 
         // Create a constant double value
-        Value* const ConstantVal = pE->generateCodeW(Context, Builder);//ConstantFP::get(Context, APFloat(3.14));
-    
-        // Create the function type: double()
-        FunctionType* FT = FunctionType::get(Type::getDoubleTy(Context), false);
-    
-        // Create the function: double getValue()
-        Function* GetValueFunc = Function::Create(FT, Function::ExternalLinkage, "getValue", M);
-    
-        // Create a basic block and add it to the function
-        BasicBlock* BB = BasicBlock::Create(Context, "EntryBlock", GetValueFunc);
-        Builder.SetInsertPoint(BB);
+        Value* const ConstantVal = pE->generateCodeW(Context, Builder, M.get());//ConstantFP::get(Context, APFloat(3.14));
     
         // Return the constant value
         Builder.CreateRet(ConstantVal);
     
-        // Verify the function
-        verifyFunction(*GetValueFunc);
-    
-        // Print the LLVM IR
-        M->print(errs(), nullptr);
+	if (verifyModule(*M, &errs()))
+	{	std::cerr << "Error: module verification failed" << std::endl;
+		M->print(errs(), nullptr);
+		return 1;
+	}
     
         // Create the execution engine
         std::string ErrStr;
-        ExecutionEngine* EE = EngineBuilder(std::unique_ptr<Module>(M)).setErrorStr(&ErrStr).setEngineKind(EngineKind::JIT).create();
-        if (!EE) {
-            errs() << "Failed to create ExecutionEngine: " << ErrStr << "\n";
-            return 1;
+        ExecutionEngine* EE = EngineBuilder(std::move(M)).setErrorStr(&ErrStr).setEngineKind(EngineKind::JIT).create();
+        if (!EE)
+        {       errs() << "Failed to create ExecutionEngine: " << ErrStr << "\n";
+                return 1;
         }
     
         // Add the module and compile the function
@@ -80,14 +79,72 @@ int main()
     
         return 0;
 }
+#else
+#include <iostream>
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/Module.h>
+#include <llvm/IR/Verifier.h>
+#include <llvm/ExecutionEngine/ExecutionEngine.h>
+#include <llvm/ExecutionEngine/MCJIT.h>
+#include <llvm/Support/raw_ostream.h>
+#include <llvm/ExecutionEngine/GenericValue.h>
+#include <llvm/Support/TargetSelect.h>
 
-// Run program: Ctrl + F5 or Debug > Start Without Debugging menu
-// Debug program: F5 or Debug > Start Debugging menu
+int main()
+{
+	llvm::InitializeNativeTarget();
+	llvm::InitializeNativeTargetAsmPrinter();
+	llvm::InitializeNativeTargetAsmParser();
 
-// Tips for Getting Started: 
-//   1. Use the Solution Explorer window to add/manage files
-//   2. Use the Team Explorer window to connect to source control
-//   3. Use the Output window to see build output and other messages
-//   4. Use the Error List window to view errors
-//   5. Go to Project > Add New Item to create new code files, or Project > Add Existing Item to add existing code files to the project
-//   6. In the future, to open this project again, go to File > Open > Project and select the .sln file
+	llvm::LLVMContext context;
+	auto module = std::make_unique<llvm::Module>("sqrt_calc", context);
+	llvm::IRBuilder<> builder(context);
+
+	// Create a function to hold the computation
+	llvm::FunctionType* funcType = llvm::FunctionType::get(builder.getDoubleTy(), false);
+	llvm::Function* func = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, "compute", module.get());
+	llvm::BasicBlock* entry = llvm::BasicBlock::Create(context, "entry", func);
+	builder.SetInsertPoint(entry);
+
+	// Calculate 1.1 + 2.1
+	llvm::Value* sum = builder.CreateFAdd(
+		llvm::ConstantFP::get(context, llvm::APFloat(1.1)), 
+		llvm::ConstantFP::get(context, llvm::APFloat(2.1))
+	);
+
+	// Calculate the square root of the sum
+	llvm::Function* sqrtFunc = llvm::Intrinsic::getDeclaration(module.get(), llvm::Intrinsic::sqrt, builder.getDoubleTy());
+	llvm::Value* sqrtResult = builder.CreateCall(sqrtFunc, sum);
+
+	// Return the result
+	builder.CreateRet(sqrtResult);
+
+	// Verify the module
+	if (llvm::verifyModule(*module, &llvm::errs()))
+	{	std::cerr << "Error: module verification failed" << std::endl;
+		module->print(llvm::errs(), nullptr);
+		return 1;
+	}
+
+	// Initialize JIT
+	std::string errStr;
+	llvm::ExecutionEngine* execEngine = llvm::EngineBuilder(std::move(module)).setErrorStr(&errStr).create();
+	if (!execEngine)
+	{	std::cerr << "Error: failed to create ExecutionEngine: " << errStr << std::endl;
+		return 1;
+	}
+
+	// Finalize object
+	execEngine->finalizeObject();
+
+	// Run the function
+	llvm::GenericValue result = execEngine->runFunction(func, {});
+
+	// Print the result
+	std::cout << "Result: " << result.DoubleVal << std::endl;
+
+	delete execEngine;
+	return 0;
+}
+#endif

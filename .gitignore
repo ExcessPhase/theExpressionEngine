@@ -9,7 +9,8 @@
 *.user
 *.userosscache
 *.sln.docstates
-
+*.o
+*.d
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
@@ -363,8 +364,3 @@ MigrationBackup/
 FodyWeavers.xsd
 /make.out
 theExpressionEngine.exe
-theExpressionEngine.o
-type.o
-environment.o
-expression.o
-factory.o
