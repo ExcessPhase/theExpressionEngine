@@ -1,28 +1,20 @@
 #include "expression.h"
 #include <typeinfo>
 #include <algorithm>
-#include <set>
-#include "environment.h"
+//#include <set>
+//#include "environment.h"
 
 
 namespace theExpessionEngine
 {
 expression::expression(
-	const std::shared_ptr<const type> &_rType,
 	children&&_rChildren
 )
-	:m_sChildren(std::move(_rChildren)),
-	m_sType(_rType)
+	:m_sChildren(std::move(_rChildren))
 {
 }
 bool expression::operator<(const expression&_r) const
-{	if (m_sType < _r.m_sType)
-		return true;
-	else
-	if (m_sType > _r.m_sType)
-		return false;
-	else
-	if (m_sChildren.size() < _r.m_sChildren.size())
+{	if (m_sChildren.size() < _r.m_sChildren.size())
 		return true;
 	else
 	if (m_sChildren.size() > _r.m_sChildren.size())
@@ -54,14 +46,7 @@ bool expression::operator<(const expression&_r) const
 bool expression::isSmaller(const expression&) const
 {	return false;
 }
-const double&expression::evaluate(environment&_r) const
-{	const auto sInsert = m_sValues.emplace(&_r, double());
-	if (sInsert.second)
-		sInsert.first->second = evaluateThis(_r);
-	return sInsert.first->second;
-}
 void expression::onDestroy(void) const
-{	for (const auto &r : m_sValues)
-		std::any_cast<std::set<const expression*>&>(r.first->m_s.at(environment::eExpressionValueRegistration)).erase(this);
+{
 }
 }

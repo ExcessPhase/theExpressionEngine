@@ -2,8 +2,6 @@
 #include <iostream>
 #include "factory.h"
 #include "expression.h"
-#include "type.h"
-#include "environment.h"
 
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/LLVMContext.h>
@@ -16,8 +14,12 @@
 #include <llvm/Support/TargetSelect.h>
 
 
-int main()
+int main(int argc, char**argv)
 {
+	if (argc != 2)
+	{	std::cerr << argv[0] << ": Usage : " << argv[0] << " expression" << std::endl;
+		return 1;
+	}
         using namespace llvm;
         using namespace theExpessionEngine;
 	// Initialize the native target
@@ -34,15 +36,9 @@ int main()
         BasicBlock* BB = BasicBlock::Create(Context, "EntryBlock", GetValueFunc);
         Builder.SetInsertPoint(BB);
     
-        environment sEnv;
-        const auto pFactory = factory::getFactory(sEnv);
+        const auto pFactory = factory::getFactory();
 
-        const auto pE = pFactory->sqrt(
-		pFactory->plus(
-			pFactory->realConstant(1.1),
-			pFactory->realConstant(2.1)
-		)
-	);
+        const auto pE = pFactory->parse(argv[1]);
 
         // Create a constant double value
         Value* const ConstantVal = pE->generateCodeW(Context, Builder, M.get());//ConstantFP::get(Context, APFloat(3.14));

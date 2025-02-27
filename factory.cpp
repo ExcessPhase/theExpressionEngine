@@ -1,24 +1,21 @@
 #include "factory.h"
-#include "environment.h"
 #include "expression.h"
-#include "type.h"
 #include "unique.h"
 #include "onDestroy.h"
-#include "dynamic_cast.h"
-#include "llvm/IR/IRBuilder.h"
-#include "llvm/IR/LLVMContext.h"
-#include "llvm/IR/Module.h"
-#include "llvm/IR/Type.h"
-#include "llvm/IR/Verifier.h"
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/Module.h>
+#include <llvm/IR/Type.h>
+#include <llvm/IR/Verifier.h>
 #include <stdexcept>
+#include <regex>
 
 namespace theExpessionEngine
 {
 struct realConstant:expression
 {	const double m_d;
 	realConstant(const double _d)
-		:expression(unique<type>::create(type::eReal)),
-		m_d(_d)
+		:m_d(_d)
 	{
 	}
 	virtual bool isSmaller(const expression&_r) const override
@@ -28,7 +25,7 @@ struct realConstant:expression
 		else
 			return false;
 	}
-	virtual double evaluateThis(environment&) const override
+	virtual double evaluate(const double *const) const override
 	{	return m_d;
 	}
 	virtual llvm::Value* generateCode(llvm::LLVMContext& context, llvm::IRBuilder<>& builder, llvm::Module *const M) const override
@@ -37,16 +34,15 @@ struct realConstant:expression
 };
 namespace
 {
-struct plusImpl:expression
-{	plusImpl(const ptr&_p0, const ptr&_p1)
+struct addition:expression
+{	addition(const ptr&_p0, const ptr&_p1)
 		:expression(
-			_p0->m_sType,
 			children({_p0, _p1})
 		)
 	{
 	}
-	virtual double evaluateThis(environment&_r) const override
-	{	return m_sChildren.at(0)->evaluate(_r) + m_sChildren.at(1)->evaluate(_r);
+	virtual double evaluate(const double *const _p) const override
+	{	return m_sChildren.at(0)->evaluate(_p) + m_sChildren.at(1)->evaluate(_p);
 	}
 	virtual llvm::Value* generateCode(llvm::LLVMContext& context, llvm::IRBuilder<>& builder, llvm::Module *const M) const override
 	{	return builder.CreateFAdd(
@@ -56,24 +52,20 @@ struct plusImpl:expression
 		);
 	}
 };
-struct _sqrt:expression
-{	_sqrt(const ptr&_p)
+struct sqrt:expression
+{	sqrt(const ptr&_p)
 		:expression(
-			_p->m_sType,
 			children({_p})
 		)
 	{
 	}
-	virtual double evaluateThis(environment&_r) const override
-	{	return std::sqrt(m_sChildren.at(0)->evaluate(_r));
+	virtual double evaluate(const double *const _p) const override
+	{	return std::sqrt(m_sChildren.at(0)->evaluate(_p));
 	}
-	mutable llvm::FunctionCallee SqrtFunc;
-	mutable llvm::FunctionType *SqrtTy = nullptr;
 	virtual llvm::Value* generateCode(llvm::LLVMContext& context, llvm::IRBuilder<>& builder, llvm::Module *const M) const override
 	{	    // Create the function prototype for std::sqrt
 		using namespace llvm;
 		llvm::Function* const sqrtFunc = llvm::Intrinsic::getDeclaration(M, llvm::Intrinsic::sqrt, builder.getDoubleTy());
-		//llvm::Value* sqrtResult = builder.CreateCall(sqrtFunc, sum);	    
 	    	return builder.CreateCall(
 			sqrtFunc,
 			m_sChildren.at(0)->generateCodeW(context, builder, M),
@@ -122,29 +114,57 @@ int main() {
 #endif
 struct factoryImpl:factory
 {	virtual exprPtr realConstant(const double _d) const override
-	{	return unique<onDestroy<dynamic_cast_implementation<theExpessionEngine::realConstant> > >::create(_d);
+	{	return unique<onDestroy<theExpessionEngine::realConstant> >::create(_d);
 	}
 	virtual exprPtr sqrt(const exprPtr&_p) const override
-	{	return unique<onDestroy<_sqrt> >::create(_p);
+	{	return unique<onDestroy<theExpessionEngine::sqrt> >::create(_p);
 	}
-	virtual exprPtr plus(const exprPtr&_p0, const exprPtr&_p1) const override
-	{	return unique<onDestroy<plusImpl> >::create(_p0, _p1);
+	virtual exprPtr addition(const exprPtr&_p0, const exprPtr&_p1) const override
+	{	return unique<onDestroy<theExpessionEngine::addition> >::create(_p0, _p1);
 	}
-	virtual exprPtr minus(const exprPtr&, const exprPtr&) const override
+	virtual exprPtr subtraction(const exprPtr&, const exprPtr&) const override
 	{	return nullptr;
 	}
-	virtual exprPtr multiply(const exprPtr&, const exprPtr&) const override
+	virtual exprPtr multiplication(const exprPtr&, const exprPtr&) const override
 	{	return nullptr;
 	}
-	virtual exprPtr divide(const exprPtr&, const exprPtr&) const override
+	virtual exprPtr division(const exprPtr&, const exprPtr&) const override
 	{	return nullptr;
+	}
+	exprPtr parseSqrt(std::string::const_iterator &_p, const std::string::const_iterator &_pEnd) const
+	{	static const std::regex sRegex(R"(sqrt[ \t]*\([ \t]*(.*)\)[ \t]*)");
+		std::smatch sMatch;
+
+		if (std::regex_match(_p, _pEnd, sMatch, sRegex))
+		{	_p = sMatch[0].second;
+			return sqrt(parseSingle(_p, _pEnd));
+		}
+		else
+			return nullptr;
+	}
+	exprPtr parseSingle(std::string::const_iterator &_p, const std::string::const_iterator &_pEnd) const
+	{	return parseSqrt(_p, _pEnd);
+	}
+	exprPtr parseMultDiv(std::string::const_iterator &_p, const std::string::const_iterator &_pEnd) const
+	{	return parseSingle(_p, _pEnd);
+	}
+	exprPtr parseAddSub(std::string::const_iterator &_p, const std::string::const_iterator &_pEnd) const
+	{	return parseMultDiv(_p, _pEnd);
+	}
+	virtual exprPtr parse(const std::string&_r) const override
+	{	auto p = _r.begin();
+		if (const auto pRet = parseAddSub(p, _r.end()))
+			if (p != _r.end())
+				throw std::runtime_error("Parse error!");
+			else
+				return pRet;
+		else
+			throw std::runtime_error("Parse error!");
 	}
 };
 }
-factory::ptr factory::getFactory(environment&_r)
-{	auto &rAny = _r.m_s[environment::eFactory];
-	if (!rAny.has_value())
-		rAny = std::make_shared<const factoryImpl>();
-	return std::any_cast<const std::shared_ptr<const factoryImpl>&>(rAny);
+factory::ptr factory::getFactory(void)
+{	static const factory::ptr s(std::make_shared<const factoryImpl>());
+	return s;
 }
 }
