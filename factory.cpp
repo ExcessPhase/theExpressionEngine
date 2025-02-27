@@ -127,45 +127,6 @@ struct sqrt:expression
 		);
 	}
 };
-#if 0
-#include "llvm/IR/IRBuilder.h"
-#include "llvm/IR/LLVMContext.h"
-#include "llvm/IR/Module.h"
-#include "llvm/IR/Type.h"
-#include "llvm/IR/Verifier.h"
-
-using namespace llvm;
-
-int main() {
-    LLVMContext Context;
-    Module *M = new Module("cmath_function_example", Context);
-    IRBuilder<> Builder(Context);
-
-    // Create the function prototype for std::sqrt
-    FunctionType *SqrtTy = FunctionType::get(Type::getDoubleTy(Context), {Type::getDoubleTy(Context)}, false);
-    FunctionCallee SqrtFunc = M->getOrInsertFunction("sqrt", SqrtTy);
-
-    // Create the function that returns a double and calls std::sqrt
-    FunctionType *FuncTy = FunctionType::get(Type::getDoubleTy(Context), false);
-    Function *Func = Function::Create(FuncTy, Function::ExternalLinkage, "generateSqrt", M);
-    BasicBlock *EntryBB = BasicBlock::Create(Context, "entry", Func);
-    Builder.SetInsertPoint(EntryBB);
-
-    // Call std::sqrt with a constant argument and return the result
-    Value *Arg = ConstantFP::get(Context, APFloat(16.0));
-    Value *SqrtCall = Builder.CreateCall(SqrtFunc, {Arg});
-    Builder.CreateRet(SqrtCall);
-
-    // Verify the module
-    verifyModule(*M, &errs());
-
-    // Print the module
-    M->print(outs(), nullptr);
-
-    delete M;
-    return 0;
-}
-#endif
 struct factoryImpl:factory
 {	virtual exprPtr realConstant(const double _d) const override
 	{	return unique<onDestroy<theExpessionEngine::realConstant> >::create(_d);
@@ -191,7 +152,7 @@ struct factoryImpl:factory
 		const auto pIt = _p;
 		if (*_p == '(')
 		{	++_p;	
-			if (const auto p = parseSingle(_p, _pEnd))
+			if (const auto p = parseAddSub(_p, _pEnd))
 				if (*_p == ')')
 				{	++_p;
 					return p;
@@ -214,11 +175,11 @@ struct factoryImpl:factory
 	{	if (_p == _pEnd)
 			return nullptr;
 		const auto pIt = _p;
-		static const std::regex sRegex(R"(\bsqrt\b[ \t]*)");
+		static const std::regex sRegex(R"(^sqrt[ \t]*\()");
 		std::smatch sMatch;
 
-		if (std::regex_match(_p, _pEnd, sMatch, sRegex))
-		{	_p = sMatch[0].second;
+		if (std::regex_search(_p, _pEnd, sMatch, sRegex))
+		{	_p = sMatch[0].second - 1;
 			if (const auto p = parseParenthesis(_p, _pEnd))
 				return sqrt(p);
 			else
