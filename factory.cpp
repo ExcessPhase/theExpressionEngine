@@ -34,6 +34,42 @@ struct realConstant:expression
 };
 namespace
 {
+struct multiplication:expression
+{	multiplication(const ptr&_p0, const ptr&_p1)
+		:expression(
+			children({_p0, _p1})
+		)
+	{
+	}
+	virtual double evaluate(const double *const _p) const override
+	{	return m_sChildren.at(0)->evaluate(_p) * m_sChildren.at(1)->evaluate(_p);
+	}
+	virtual llvm::Value* generateCode(llvm::LLVMContext& context, llvm::IRBuilder<>& builder, llvm::Module *const M) const override
+	{	return builder.CreateFMul(
+			m_sChildren.at(0)->generateCodeW(context, builder, M),
+			m_sChildren.at(1)->generateCodeW(context, builder, M),
+			"plus"
+		);
+	}
+};
+struct division:expression
+{	division(const ptr&_p0, const ptr&_p1)
+		:expression(
+			children({_p0, _p1})
+		)
+	{
+	}
+	virtual double evaluate(const double *const _p) const override
+	{	return m_sChildren.at(0)->evaluate(_p) / m_sChildren.at(1)->evaluate(_p);
+	}
+	virtual llvm::Value* generateCode(llvm::LLVMContext& context, llvm::IRBuilder<>& builder, llvm::Module *const M) const override
+	{	return builder.CreateFDiv(
+			m_sChildren.at(0)->generateCodeW(context, builder, M),
+			m_sChildren.at(1)->generateCodeW(context, builder, M),
+			"plus"
+		);
+	}
+};
 struct addition:expression
 {	addition(const ptr&_p0, const ptr&_p1)
 		:expression(
@@ -46,6 +82,24 @@ struct addition:expression
 	}
 	virtual llvm::Value* generateCode(llvm::LLVMContext& context, llvm::IRBuilder<>& builder, llvm::Module *const M) const override
 	{	return builder.CreateFAdd(
+			m_sChildren.at(0)->generateCodeW(context, builder, M),
+			m_sChildren.at(1)->generateCodeW(context, builder, M),
+			"plus"
+		);
+	}
+};
+struct subtraction:expression
+{	subtraction(const ptr&_p0, const ptr&_p1)
+		:expression(
+			children({_p0, _p1})
+		)
+	{
+	}
+	virtual double evaluate(const double *const _p) const override
+	{	return m_sChildren.at(0)->evaluate(_p) - m_sChildren.at(1)->evaluate(_p);
+	}
+	virtual llvm::Value* generateCode(llvm::LLVMContext& context, llvm::IRBuilder<>& builder, llvm::Module *const M) const override
+	{	return builder.CreateFSub(
 			m_sChildren.at(0)->generateCodeW(context, builder, M),
 			m_sChildren.at(1)->generateCodeW(context, builder, M),
 			"plus"
@@ -122,34 +176,150 @@ struct factoryImpl:factory
 	virtual exprPtr addition(const exprPtr&_p0, const exprPtr&_p1) const override
 	{	return unique<onDestroy<theExpessionEngine::addition> >::create(_p0, _p1);
 	}
-	virtual exprPtr subtraction(const exprPtr&, const exprPtr&) const override
-	{	return nullptr;
+	virtual exprPtr subtraction(const exprPtr&_p0, const exprPtr&_p1) const override
+	{	return unique<onDestroy<theExpessionEngine::subtraction> >::create(_p0, _p1);
 	}
-	virtual exprPtr multiplication(const exprPtr&, const exprPtr&) const override
-	{	return nullptr;
+	virtual exprPtr multiplication(const exprPtr&_p0, const exprPtr&_p1) const override
+	{	return unique<onDestroy<theExpessionEngine::multiplication> >::create(_p0, _p1);
 	}
-	virtual exprPtr division(const exprPtr&, const exprPtr&) const override
-	{	return nullptr;
+	virtual exprPtr division(const exprPtr&_p0, const exprPtr&_p1) const override
+	{	return unique<onDestroy<theExpessionEngine::division> >::create(_p0, _p1);
+	}
+	exprPtr parseParenthesis(std::string::const_iterator &_p, const std::string::const_iterator &_pEnd) const
+	{	if (_p == _pEnd)
+			return nullptr;
+		const auto pIt = _p;
+		if (*_p == '(')
+		{	++_p;	
+			if (const auto p = parseSingle(_p, _pEnd))
+				if (*_p == ')')
+				{	++_p;
+					return p;
+				}
+				else
+				{	_p = pIt;
+					return nullptr;
+				}
+			else
+			{	_p = pIt;
+				return nullptr;
+			}
+		}
+		else
+		{	_p = pIt;
+			return nullptr;
+		}
 	}
 	exprPtr parseSqrt(std::string::const_iterator &_p, const std::string::const_iterator &_pEnd) const
-	{	static const std::regex sRegex(R"(sqrt[ \t]*\([ \t]*(.*)\)[ \t]*)");
+	{	if (_p == _pEnd)
+			return nullptr;
+		const auto pIt = _p;
+		static const std::regex sRegex(R"(\bsqrt\b[ \t]*)");
 		std::smatch sMatch;
 
 		if (std::regex_match(_p, _pEnd, sMatch, sRegex))
 		{	_p = sMatch[0].second;
-			return sqrt(parseSingle(_p, _pEnd));
+			if (const auto p = parseParenthesis(_p, _pEnd))
+				return sqrt(p);
+			else
+			{	_p = pIt;
+				return nullptr;
+			}
 		}
 		else
 			return nullptr;
 	}
+	exprPtr parseReal(std::string::const_iterator &_p, const std::string::const_iterator &_pEnd) const
+	{	if (_p == _pEnd)
+			return nullptr;
+		const std::string s(_p, _pEnd);
+		std::size_t i = 0;
+		try
+		{	const auto d = std::stod(s, &i);
+			_p += i;
+			return realConstant(d);
+		} catch (...)
+		{	return nullptr;
+		}
+	}
 	exprPtr parseSingle(std::string::const_iterator &_p, const std::string::const_iterator &_pEnd) const
-	{	return parseSqrt(_p, _pEnd);
+	{	if (_p == _pEnd)
+			return nullptr;
+		if (const auto p = parseSqrt(_p, _pEnd))
+			return p;
+		else
+			if (const auto p = parseReal(_p, _pEnd))
+				return p;
+			else
+				return parseParenthesis(_p, _pEnd);
+	}
+	typedef exprPtr (factoryImpl::*parseMethod)(std::string::const_iterator &, const std::string::const_iterator &) const;
+	exprPtr eatSpaceAndTry(
+		std::string::const_iterator &_p,
+		const std::string::const_iterator &_pEnd,
+		const parseMethod _pParse
+	) const
+	{	static const std::regex sRegex(R"([ \t]*)");
+		const auto pIt = _p;
+		std::smatch sMatch;
+
+		if (std::regex_match(_p, _pEnd, sMatch, sRegex))
+		{	_p = sMatch[0].second;
+			if (const auto p = (this->*_pParse)(_p, _pEnd))
+				return p;
+			_p = pIt;
+			return nullptr;
+		}
+		else
+			return (this->*_pParse)(_p, _pEnd);
 	}
 	exprPtr parseMultDiv(std::string::const_iterator &_p, const std::string::const_iterator &_pEnd) const
-	{	return parseSingle(_p, _pEnd);
+	{	if (_p == _pEnd)
+			return nullptr;
+		const auto pIt = _p;
+		if (const auto pL = parseSingle(_p, _pEnd))
+			switch (*_p)
+			{	default:
+					return pL;
+				case '*':
+					++_p;
+					if (const auto p = eatSpaceAndTry(_p, _pEnd, &factoryImpl::parseSingle))
+						return multiplication(pL, p);
+					_p = pIt;
+					return nullptr;
+				case '/':
+					++_p;
+					if (const auto p = eatSpaceAndTry(_p, _pEnd, &factoryImpl::parseSingle))
+						return division(pL, p);
+					_p = pIt;
+					return nullptr;
+			}
+		else
+			return nullptr;
 	}
 	exprPtr parseAddSub(std::string::const_iterator &_p, const std::string::const_iterator &_pEnd) const
-	{	return parseMultDiv(_p, _pEnd);
+	{	if (_p == _pEnd)
+			return nullptr;
+		const auto pIt = _p;
+		if (const auto pL = parseMultDiv(_p, _pEnd))
+			switch (*_p)
+			{	default:
+					return pL;
+				case '+':
+					++_p;
+					if (const auto p = eatSpaceAndTry(_p, _pEnd, &factoryImpl::parseMultDiv))
+						return addition(pL, p);
+					_p = pIt;
+					return nullptr;
+				case '-':
+					++_p;
+					if (const auto p = eatSpaceAndTry(_p, _pEnd, &factoryImpl::parseMultDiv))
+						return subtraction(pL, p);
+					_p = pIt;
+					return nullptr;
+			}
+		else
+			return nullptr;
 	}
 	virtual exprPtr parse(const std::string&_r) const override
 	{	auto p = _r.begin();
