@@ -26,4 +26,4 @@ It reads one commandline argument,  which is enterpreted as a function and shoul
 You might want to use double quotes around this commandline argument.
 e.g.
 	`echo -e "0\n1"|./theExpressionEngine.exe "sin(x)"`
-which prints sin(0) and sin(1).
+which prints the values of sin(0) and sin(1).
