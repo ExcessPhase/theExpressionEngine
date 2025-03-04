@@ -9,7 +9,8 @@ struct factory//:std::enable_shared_from_this<const factory>
 	virtual exprPtr realConstant(const double) const = 0;
 	//virtual exprPtr sqrt(const exprPtr&) const = 0;
 #define __COMMA2__
-#define __MAKE_ENTRY2__(a)
+#define __MAKE_ENTRY2__(a)\
+	virtual exprPtr a(const exprPtr&_p) const = 0;
 #define __COMMA__
 #define __MAKE_ENTRY__(a)\
 	virtual exprPtr a(const exprPtr&_p) const = 0;

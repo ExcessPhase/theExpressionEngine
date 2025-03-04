@@ -9,6 +9,7 @@
 #include <llvm/IR/Verifier.h>
 #include <stdexcept>
 #include <regex>
+#include <iostream>
 
 namespace theExpessionEngine
 {
@@ -126,13 +127,43 @@ struct unary:expression
 		);
 	}
 };
+template<double(*PMATH)(double), const char AC[]>
+struct unaryF:expression
+{	unaryF(const ptr&_p)
+		:expression(
+			children({_p})
+		)
+	{
+	}
+	virtual double evaluate(const double *const _p) const override
+	{	return PMATH(m_sChildren.at(0)->evaluate(_p));
+	}
+	virtual llvm::Value* generateCode(llvm::LLVMContext& context, llvm::IRBuilder<>& builder, llvm::Module *const M) const override
+	{	    // Create the function prototype for std::sqrt
+		std::cerr << AC << std::endl;
+		using namespace llvm;
+		FunctionType* const TanFuncType = FunctionType::get(
+			llvm::Type::getDoubleTy(context), // Return type: double
+			{llvm::Type::getDoubleTy(context)}, // Argument type: double
+			false // Not variadic
+		);
+		const FunctionCallee TanFunc = M->getOrInsertFunction(AC, TanFuncType);
+		//Value* const Input = ConstantFP::get(llvm::Type::getDoubleTy(context), m_sChildren.at(0)->generateCodeW(context, builder, M));
+    // Call the tan function
+		return builder.CreateCall(TanFunc, {m_sChildren.at(0)->generateCodeW(context, builder, M)});
+	}
+};
 struct factoryImpl:factory
 {	virtual exprPtr realConstant(const double _d) const override
 	{	return unique<onDestroy<theExpessionEngine::realConstant> >::create(_d);
 	}
 #define __COMMA__
 #define __COMMA2__
-#define __MAKE_ENTRY2__(a)
+#define __MAKE_ENTRY2__(a)\
+	static constexpr const char s_ac_##a[] = #a;\
+	virtual exprPtr a(const exprPtr&_p) const override\
+	{	return unique<onDestroy<theExpessionEngine::unaryF<std::a, s_ac_##a> > >::create(_p);\
+	}
 #define __MAKE_ENTRY__(a)\
 	virtual exprPtr a(const exprPtr&_p) const override\
 	{	return unique<onDestroy<theExpessionEngine::unary<std::a, llvm::Intrinsic::a> > >::create(_p);\
@@ -179,8 +210,8 @@ struct factoryImpl:factory
 	{
 #define __COMMA__ ,
 #define __MAKE_ENTRY__(a) e_##a
-#define __COMMA2__
-#define __MAKE_ENTRY2__(a)
+#define __COMMA2__ ,
+#define __MAKE_ENTRY2__(a) __MAKE_ENTRY__(a)
 #include "unary.h"
 	};
 	typedef std::map<std::string, enumUnary> Name2Enum;
@@ -198,8 +229,8 @@ struct factoryImpl:factory
 			//{"sqrt", e_sqrt},
 #define __COMMA__ ,
 #define __MAKE_ENTRY__(a) {#a, e_##a}
-#define __COMMA2__
-#define __MAKE_ENTRY2__(a)
+#define __COMMA2__ ,
+#define __MAKE_ENTRY2__(a) __MAKE_ENTRY__(a)
 #include "unary.h"
 		};
 		//static const std::regex sRegex(R"(^(\bsqrt\b)[ \t]*\()");
@@ -221,7 +252,7 @@ struct factoryImpl:factory
 #define __MAKE_ENTRY__(a) case e_##a:\
 				return a(p);
 #define __COMMA2__
-#define __MAKE_ENTRY2__(a)
+#define __MAKE_ENTRY2__(a) __MAKE_ENTRY__(a)
 #include "unary.h"
 				}
 			else
