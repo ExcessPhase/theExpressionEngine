@@ -20,6 +20,7 @@ Pass an expression on the commandline. Understood are
 - acosh
 - atanh
 - x
+
 It reads lines from stdin and interprets them as x values.
 It reads one commandline argument,  which is enterpreted as a function and should use x.
 You might want to use double quotes around this commandline argument.
