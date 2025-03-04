@@ -140,17 +140,21 @@ struct unaryF:expression
 	}
 	virtual llvm::Value* generateCode(llvm::LLVMContext& context, llvm::IRBuilder<>& builder, llvm::Module *const M) const override
 	{	    // Create the function prototype for std::sqrt
-		std::cerr << AC << std::endl;
 		using namespace llvm;
-		FunctionType* const TanFuncType = FunctionType::get(
-			llvm::Type::getDoubleTy(context), // Return type: double
-			{llvm::Type::getDoubleTy(context)}, // Argument type: double
-			false // Not variadic
-		);
-		const FunctionCallee TanFunc = M->getOrInsertFunction(AC, TanFuncType);
 		//Value* const Input = ConstantFP::get(llvm::Type::getDoubleTy(context), m_sChildren.at(0)->generateCodeW(context, builder, M));
     // Call the tan function
-		return builder.CreateCall(TanFunc, {m_sChildren.at(0)->generateCodeW(context, builder, M)});
+		return builder.CreateCall(
+			M->getOrInsertFunction(
+				AC,
+				FunctionType::get(
+					llvm::Type::getDoubleTy(context), // Return type: double
+					{llvm::Type::getDoubleTy(context)}, // Argument type: double
+					false // Not variadic
+				)
+			),
+			{	m_sChildren.at(0)->generateCodeW(context, builder, M)
+			}
+		);
 	}
 };
 struct factoryImpl:factory
