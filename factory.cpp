@@ -106,24 +106,23 @@ struct subtraction:expression
 		);
 	}
 };
-struct sqrt:expression
-{	sqrt(const ptr&_p)
+template<double(*PMATH)(double), llvm::Intrinsic::ID EID>
+struct unary:expression
+{	unary(const ptr&_p)
 		:expression(
 			children({_p})
 		)
 	{
 	}
 	virtual double evaluate(const double *const _p) const override
-	{	return std::sqrt(m_sChildren.at(0)->evaluate(_p));
+	{	return PMATH(m_sChildren.at(0)->evaluate(_p));
 	}
 	virtual llvm::Value* generateCode(llvm::LLVMContext& context, llvm::IRBuilder<>& builder, llvm::Module *const M) const override
 	{	    // Create the function prototype for std::sqrt
 		using namespace llvm;
-		llvm::Function* const sqrtFunc = llvm::Intrinsic::getDeclaration(M, llvm::Intrinsic::sqrt, builder.getDoubleTy());
 	    	return builder.CreateCall(
-			sqrtFunc,
-			m_sChildren.at(0)->generateCodeW(context, builder, M),
-			"sqrt"
+			Intrinsic::getDeclaration(M, EID, builder.getDoubleTy()),
+			m_sChildren.at(0)->generateCodeW(context, builder, M)
 		);
 	}
 };
@@ -131,9 +130,14 @@ struct factoryImpl:factory
 {	virtual exprPtr realConstant(const double _d) const override
 	{	return unique<onDestroy<theExpessionEngine::realConstant> >::create(_d);
 	}
-	virtual exprPtr sqrt(const exprPtr&_p) const override
-	{	return unique<onDestroy<theExpessionEngine::sqrt> >::create(_p);
+#define __COMMA__
+#define __COMMA2__
+#define __MAKE_ENTRY2__(a)
+#define __MAKE_ENTRY__(a)\
+	virtual exprPtr a(const exprPtr&_p) const override\
+	{	return unique<onDestroy<theExpessionEngine::unary<std::a, llvm::Intrinsic::a> > >::create(_p);\
 	}
+#include "unary.h"
 	virtual exprPtr addition(const exprPtr&_p0, const exprPtr&_p1) const override
 	{	return unique<onDestroy<theExpessionEngine::addition> >::create(_p0, _p1);
 	}
@@ -171,17 +175,55 @@ struct factoryImpl:factory
 			return nullptr;
 		}
 	}
+	enum enumUnary
+	{
+#define __COMMA__ ,
+#define __MAKE_ENTRY__(a) e_##a
+#define __COMMA2__
+#define __MAKE_ENTRY2__(a)
+#include "unary.h"
+	};
+	typedef std::map<std::string, enumUnary> Name2Enum;
+	static std::string getRegex(const Name2Enum&_r)
+	{	std::string s;
+		for (const auto &r : _r)
+			if (s.empty())
+				s = r.first;
+			else
+				s += "|" + r.first;
+		return "^(\\b(" + s + ")\\b)[ \\t]*\\(";
+	}
 	exprPtr parseSqrt(std::string::const_iterator &_p, const std::string::const_iterator &_pEnd) const
-	{	if (_p == _pEnd)
+	{	static const Name2Enum s_sName2Create = {
+			//{"sqrt", e_sqrt},
+#define __COMMA__ ,
+#define __MAKE_ENTRY__(a) {#a, e_##a}
+#define __COMMA2__
+#define __MAKE_ENTRY2__(a)
+#include "unary.h"
+		};
+		//static const std::regex sRegex(R"(^(\bsqrt\b)[ \t]*\()");
+		static const std::regex sRegex(getRegex(s_sName2Create));
+		if (_p == _pEnd)
 			return nullptr;
 		const auto pIt = _p;
-		static const std::regex sRegex(R"(^sqrt[ \t]*\()");
 		std::smatch sMatch;
 
 		if (std::regex_search(_p, _pEnd, sMatch, sRegex))
 		{	_p = sMatch[0].second - 1;
 			if (const auto p = parseParenthesis(_p, _pEnd))
-				return sqrt(p);
+				switch (s_sName2Create.at(sMatch[1]))
+				{	default:
+						throw std::logic_error("Invalid enum!");
+					//case e_sqrt:
+						//return sqrt(p);
+#define __COMMA__
+#define __MAKE_ENTRY__(a) case e_##a:\
+				return a(p);
+#define __COMMA2__
+#define __MAKE_ENTRY2__(a)
+#include "unary.h"
+				}
 			else
 			{	_p = pIt;
 				return nullptr;
