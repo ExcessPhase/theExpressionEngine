@@ -157,9 +157,52 @@ struct unaryF:expression
 		);
 	}
 };
+struct parameter:expression
+{	const std::size_t m_i;
+	parameter(const std::size_t _i)
+		:
+		m_i(_i)	
+	{
+	}
+	virtual double evaluate(const double *const _p) const override
+	{	return _p[m_i];
+	}
+	virtual bool isSmaller(const expression&_r) const override
+	{	const auto &r = dynamic_cast<const parameter&>(_r);
+		if (m_i < r.m_i)
+			return true;
+		else
+			return false;
+	}
+	virtual llvm::Value* generateCode(llvm::LLVMContext& context, llvm::IRBuilder<>& builder, llvm::Module *const M, llvm::Value*const _pP) const override
+	{
+		using namespace llvm;
+		// Step 1: Retrieve the contained integer (index)
+		// Assume `index` is a member of the `parameter` object
+		llvm::Value* indexVal = llvm::ConstantInt::get(llvm::Type::getInt64Ty(context), m_i);
+
+		// Step 2: Perform bounds checking or validation if required (optional)
+
+		// Step 3: Use GetElementPtr (GEP) to calculate the address at the given index
+		llvm::Value* indexedPointer = builder.CreateGEP(
+			llvm::Type::getDoubleTy(context), // The type of elements (double)
+			_pP,                    // The pointer to be indexed
+			indexVal                          // The index (as a Value*)
+		);
+
+		// Step 4: Return the indexed pointer
+		return builder.CreateLoad(
+			Type::getDoubleTy(context), // The type to load
+			indexedPointer              // The pointer to load from
+		);
+	}
+};
 struct factoryImpl:factory
 {	virtual exprPtr realConstant(const double _d) const override
 	{	return unique<onDestroy<theExpessionEngine::realConstant> >::create(_d);
+	}
+	virtual exprPtr parameter(const std::size_t _i) const override
+	{	return unique<onDestroy<theExpessionEngine::parameter> >::create(_i);
 	}
 #define __COMMA__
 #define __COMMA2__
@@ -228,7 +271,7 @@ struct factoryImpl:factory
 				s += "|" + r.first;
 		return "^(\\b(" + s + ")\\b)[ \\t]*\\(";
 	}
-	exprPtr parseSqrt(std::string::const_iterator &_p, const std::string::const_iterator &_pEnd) const
+	exprPtr parseUnary(std::string::const_iterator &_p, const std::string::const_iterator &_pEnd) const
 	{	static const Name2Enum s_sName2Create = {
 			//{"sqrt", e_sqrt},
 #define __COMMA__ ,
@@ -267,6 +310,16 @@ struct factoryImpl:factory
 		else
 			return nullptr;
 	}
+	exprPtr parseX(std::string::const_iterator &_p, const std::string::const_iterator &_pEnd) const
+	{	if (_p == _pEnd)
+			return nullptr;
+		if (*_p == 'x')
+		{	++_p;
+			return parameter(0);
+		}
+		else
+			return nullptr;
+	}
 	exprPtr parseReal(std::string::const_iterator &_p, const std::string::const_iterator &_pEnd) const
 	{	if (_p == _pEnd)
 			return nullptr;
@@ -283,10 +336,13 @@ struct factoryImpl:factory
 	exprPtr parseSingle(std::string::const_iterator &_p, const std::string::const_iterator &_pEnd) const
 	{	if (_p == _pEnd)
 			return nullptr;
-		if (const auto p = parseSqrt(_p, _pEnd))
+		if (const auto p = parseUnary(_p, _pEnd))
 			return p;
 		else
 			if (const auto p = parseReal(_p, _pEnd))
+				return p;
+			else
+			if (const auto p = parseX(_p, _pEnd))
 				return p;
 			else
 				return parseParenthesis(_p, _pEnd);

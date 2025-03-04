@@ -15,6 +15,7 @@ struct factory//:std::enable_shared_from_this<const factory>
 #define __MAKE_ENTRY__(a)\
 	virtual exprPtr a(const exprPtr&_p) const = 0;
 #include "unary.h"
+	virtual exprPtr parameter(const std::size_t) const = 0;
 	virtual exprPtr addition(const exprPtr&, const exprPtr&) const = 0;
 	virtual exprPtr subtraction(const exprPtr&, const exprPtr&) const = 0;
 	virtual exprPtr multiplication(const exprPtr&, const exprPtr&) const = 0;
