@@ -35,14 +35,14 @@ struct expression:std::enable_shared_from_this<const expression>//, dynamic_cast
 		/// the type of the LHS and RHS is guaranteed to be identical
 	virtual bool isSmaller(const expression&) const;
 	virtual double evaluate(const double *const) const = 0;
-	llvm::Value *generateCodeW(llvm::LLVMContext& context, llvm::IRBuilder<>& builder, llvm::Module *const M) const
+	llvm::Value *generateCodeW(llvm::LLVMContext& context, llvm::IRBuilder<>& builder, llvm::Module *const M, llvm::Value*const _pP) const
 	{	if (!m_pValue)
-			m_pValue = generateCode(context, builder, M);
+			m_pValue = generateCode(context, builder, M, _pP);
 		return m_pValue;
 	}
 	virtual void onDestroy(void) const;
 	private:
-	virtual llvm::Value* generateCode(llvm::LLVMContext& context, llvm::IRBuilder<>& builder, llvm::Module *const M) const = 0;
+	virtual llvm::Value* generateCode(llvm::LLVMContext& context, llvm::IRBuilder<>& builder, llvm::Module *const M, llvm::Value*const _pP) const = 0;
 	mutable llvm::Value *m_pValue = nullptr;
 };
 }
