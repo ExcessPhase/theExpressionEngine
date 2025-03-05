@@ -38,3 +38,6 @@ which prints the values of sin(0) and sin(1).
 
 ## News
 All the LLVM code is now hidden behind the expression engine and multiple instances might exist and executed in parallel.
+## ToBeDone
+Avoid recalculation of the same object!
+Implement missing binary functions.
