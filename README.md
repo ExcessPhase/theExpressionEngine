@@ -41,3 +41,4 @@ All the LLVM code is now hidden behind the expression engine and multiple instan
 ## ToBeDone
 Avoid recalculation of the same object!
 Implement missing binary functions.
+Allow for multiple parameters but not only x.
