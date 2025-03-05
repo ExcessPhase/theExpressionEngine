@@ -19,6 +19,14 @@ Pass an expression on the commandline. Understood are
 - asinh
 - acosh
 - atanh
+- abs
+- log
+- log10
+- erf
+- erfc
+- tgamma
+- lgamma
+- cbrt
 - x
 
 It reads lines from stdin and interprets them as x values.
