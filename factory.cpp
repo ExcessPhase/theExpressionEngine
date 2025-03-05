@@ -29,7 +29,13 @@ struct realConstant:expression
 	virtual double evaluate(const double *const) const override
 	{	return m_d;
 	}
-	virtual llvm::Value* generateCode(llvm::LLVMContext& context, llvm::IRBuilder<>& builder, llvm::Module *const M, llvm::Value*const _pP) const override
+	virtual llvm::Value* generateCode(
+		const expression*const _pRoot,
+		llvm::LLVMContext& context,
+		llvm::IRBuilder<>& builder,
+		llvm::Module *const M,
+		llvm::Value*const _pP
+	) const override
 	{	return llvm::ConstantFP::get(context, llvm::APFloat(m_d));
 	}
 };
@@ -45,10 +51,16 @@ struct multiplication:expression
 	virtual double evaluate(const double *const _p) const override
 	{	return m_sChildren.at(0)->evaluate(_p) * m_sChildren.at(1)->evaluate(_p);
 	}
-	virtual llvm::Value* generateCode(llvm::LLVMContext& context, llvm::IRBuilder<>& builder, llvm::Module *const M, llvm::Value*const _pP) const override
+	virtual llvm::Value* generateCode(
+		const expression*const _pRoot,
+		llvm::LLVMContext& context,
+		llvm::IRBuilder<>& builder,
+		llvm::Module *const M,
+		llvm::Value*const _pP
+	) const override
 	{	return builder.CreateFMul(
-			m_sChildren.at(0)->generateCodeW(context, builder, M, _pP),
-			m_sChildren.at(1)->generateCodeW(context, builder, M, _pP),
+			m_sChildren.at(0)->generateCodeW(_pRoot, context, builder, M, _pP),
+			m_sChildren.at(1)->generateCodeW(_pRoot, context, builder, M, _pP),
 			"plus"
 		);
 	}
@@ -63,10 +75,16 @@ struct division:expression
 	virtual double evaluate(const double *const _p) const override
 	{	return m_sChildren.at(0)->evaluate(_p) / m_sChildren.at(1)->evaluate(_p);
 	}
-	virtual llvm::Value* generateCode(llvm::LLVMContext& context, llvm::IRBuilder<>& builder, llvm::Module *const M, llvm::Value*const _pP) const override
+	virtual llvm::Value* generateCode(
+		const expression*const _pRoot,
+		llvm::LLVMContext& context,
+		llvm::IRBuilder<>& builder,
+		llvm::Module *const M,
+		llvm::Value*const _pP
+	) const override
 	{	return builder.CreateFDiv(
-			m_sChildren.at(0)->generateCodeW(context, builder, M, _pP),
-			m_sChildren.at(1)->generateCodeW(context, builder, M, _pP),
+			m_sChildren.at(0)->generateCodeW(_pRoot, context, builder, M, _pP),
+			m_sChildren.at(1)->generateCodeW(_pRoot, context, builder, M, _pP),
 			"plus"
 		);
 	}
@@ -81,10 +99,16 @@ struct addition:expression
 	virtual double evaluate(const double *const _p) const override
 	{	return m_sChildren.at(0)->evaluate(_p) + m_sChildren.at(1)->evaluate(_p);
 	}
-	virtual llvm::Value* generateCode(llvm::LLVMContext& context, llvm::IRBuilder<>& builder, llvm::Module *const M, llvm::Value*const _pP) const override
+	virtual llvm::Value* generateCode(
+		const expression*const _pRoot,
+		llvm::LLVMContext& context,
+		llvm::IRBuilder<>& builder,
+		llvm::Module *const M,
+		llvm::Value*const _pP
+	) const override
 	{	return builder.CreateFAdd(
-			m_sChildren.at(0)->generateCodeW(context, builder, M, _pP),
-			m_sChildren.at(1)->generateCodeW(context, builder, M, _pP),
+			m_sChildren.at(0)->generateCodeW(_pRoot, context, builder, M, _pP),
+			m_sChildren.at(1)->generateCodeW(_pRoot, context, builder, M, _pP),
 			"plus"
 		);
 	}
@@ -99,10 +123,16 @@ struct subtraction:expression
 	virtual double evaluate(const double *const _p) const override
 	{	return m_sChildren.at(0)->evaluate(_p) - m_sChildren.at(1)->evaluate(_p);
 	}
-	virtual llvm::Value* generateCode(llvm::LLVMContext& context, llvm::IRBuilder<>& builder, llvm::Module *const M, llvm::Value*const _pP) const override
+	virtual llvm::Value* generateCode(
+		const expression*const _pRoot,
+		llvm::LLVMContext& context,
+		llvm::IRBuilder<>& builder,
+		llvm::Module *const M,
+		llvm::Value*const _pP
+	) const override
 	{	return builder.CreateFSub(
-			m_sChildren.at(0)->generateCodeW(context, builder, M, _pP),
-			m_sChildren.at(1)->generateCodeW(context, builder, M, _pP),
+			m_sChildren.at(0)->generateCodeW(_pRoot, context, builder, M, _pP),
+			m_sChildren.at(1)->generateCodeW(_pRoot, context, builder, M, _pP),
 			"plus"
 		);
 	}
@@ -118,12 +148,18 @@ struct unary:expression
 	virtual double evaluate(const double *const _p) const override
 	{	return PMATH(m_sChildren.at(0)->evaluate(_p));
 	}
-	virtual llvm::Value* generateCode(llvm::LLVMContext& context, llvm::IRBuilder<>& builder, llvm::Module *const M, llvm::Value*const _pP) const override
+	virtual llvm::Value* generateCode(
+		const expression*const _pRoot,
+		llvm::LLVMContext& context,
+		llvm::IRBuilder<>& builder,
+		llvm::Module *const M,
+		llvm::Value*const _pP
+	) const override
 	{	    // Create the function prototype for std::sqrt
 		using namespace llvm;
 	    	return builder.CreateCall(
 			Intrinsic::getDeclaration(M, EID, builder.getDoubleTy()),
-			m_sChildren.at(0)->generateCodeW(context, builder, M, _pP)
+			m_sChildren.at(0)->generateCodeW(_pRoot, context, builder, M, _pP)
 		);
 	}
 };
@@ -138,7 +174,13 @@ struct unaryF:expression
 	virtual double evaluate(const double *const _p) const override
 	{	return PMATH(m_sChildren.at(0)->evaluate(_p));
 	}
-	virtual llvm::Value* generateCode(llvm::LLVMContext& context, llvm::IRBuilder<>& builder, llvm::Module *const M, llvm::Value*const _pP) const override
+	virtual llvm::Value* generateCode(
+		const expression*const _pRoot,
+		llvm::LLVMContext& context,
+		llvm::IRBuilder<>& builder,
+		llvm::Module *const M,
+		llvm::Value*const _pP
+	) const override
 	{	    // Create the function prototype for std::sqrt
 		using namespace llvm;
 		//Value* const Input = ConstantFP::get(llvm::Type::getDoubleTy(context), m_sChildren.at(0)->generateCodeW(context, builder, M));
@@ -152,7 +194,7 @@ struct unaryF:expression
 					false // Not variadic
 				)
 			),
-			{	m_sChildren.at(0)->generateCodeW(context, builder, M, _pP)
+			{	m_sChildren.at(0)->generateCodeW(_pRoot, context, builder, M, _pP)
 			}
 		);
 	}
@@ -174,7 +216,13 @@ struct parameter:expression
 		else
 			return false;
 	}
-	virtual llvm::Value* generateCode(llvm::LLVMContext& context, llvm::IRBuilder<>& builder, llvm::Module *const M, llvm::Value*const _pP) const override
+	virtual llvm::Value* generateCode(
+		const expression*const _pRoot,
+		llvm::LLVMContext& context,
+		llvm::IRBuilder<>& builder,
+		llvm::Module *const M,
+		llvm::Value*const _pP
+	) const override
 	{
 		using namespace llvm;
 		// Step 1: Retrieve the contained integer (index)

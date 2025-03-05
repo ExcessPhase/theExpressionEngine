@@ -56,7 +56,7 @@ llvm::Function* function = llvm::Function::Create(
 	Function::arg_iterator args = GetValueFunc->arg_begin();
 	Value* doublePtrArg = &(*args);
 	// Create a constant double value
-	Value* const ConstantVal = pE->generateCodeW(Context, Builder, M.get(), doublePtrArg);//ConstantFP::get(Context, APFloat(3.14));
+	Value* const ConstantVal = pE->generateCodeW(nullptr, Context, Builder, M.get(), doublePtrArg);//ConstantFP::get(Context, APFloat(3.14));
 
 	// Return the constant value
 	Builder.CreateRet(ConstantVal);

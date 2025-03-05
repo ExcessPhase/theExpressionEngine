@@ -1,4 +1,7 @@
 #pragma once
+#include <functional>
+
+
 namespace theExpessionEngine
 {
 template<typename T>

@@ -47,6 +47,10 @@ bool expression::isSmaller(const expression&) const
 {	return false;
 }
 void expression::onDestroy(void) const
-{
+{	for (auto &r : m_sOnDestroyList)
+		r();
+}
+void expression::addOnDestroy(onDestroyFunctor _s) const
+{	m_sOnDestroyList.emplace_back(std::move(_s));
 }
 }
