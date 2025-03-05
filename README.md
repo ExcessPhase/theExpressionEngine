@@ -42,3 +42,4 @@ All the LLVM code is now hidden behind the expression engine and multiple instan
 Avoid recalculation of the same object!
 Implement missing binary functions.
 Allow for multiple parameters but not only x.
+Use boost::spirit for parsing.
