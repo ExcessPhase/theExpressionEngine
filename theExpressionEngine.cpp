@@ -100,60 +100,9 @@ llvm::Function* function = llvm::Function::Create(
 	{	sX[0] = std::stod(sLine.c_str());
 		//GenericValue GV = EE->runFunction(GetValueFunc, Args);
 		//std::cout << GV.DoubleVal << std::endl; // Output: 3.14
-		std::cout << jitFunction(sX.data()) << std::endl;
+		std::cout << jitFunction(sX.data()) << " " << pE->evaluate(sX.data()) << std::endl;
 	}
 	// Clean up
 	//delete EE;
 	return 0;
 }
-#if 0
-// Get the address of the JIT-compiled function
-void* funcAddress = EE->getFunctionAddress("getValue");
-if (!funcAddress) {
-    std::cerr << "Error: Failed to get function address for 'getValue'" << std::endl;
-    return 1;
-}
-
-// Cast the function address to a function pointer with the correct signature
-using JITFunctionType = double(*)(const double*);
-auto jitFunction = reinterpret_cast<JITFunctionType>(funcAddress);
-
-// Example input data: an array of doubles
-double values[] = {3.14, 2.71}; // Your actual data
-double* valuesPtr = values;     // Pointer to the array
-
-// Call the JIT-compiled function directly
-double result = jitFunction(valuesPtr);
-
-// Print the result
-std::cout << "Result: " << result << std::endl;
-#endif
-#if 0
-// Assuming the function's first argument is the double* argument
-llvm::Function::arg_iterator args = GetValueFunc->arg_begin();
-llvm::Value* doublePtrArg = &(*args);
-
-// Pass the double* argument to generateCodeW()
-llvm::Value* generatedCode = pE->generateCodeW(Context, Builder, M.get(), doublePtrArg);
-
-// Return the generated code
-Builder.CreateRet(generatedCode);
-
-#endif
-#if 0
-// Example input data: an array of doubles
-double values[] = {3.14, 2.71}; // Your actual data
-double* valuesPtr = values;     // Pointer to the array
-
-// Prepare arguments for the JIT-compiled function
-std::vector<GenericValue> Args;
-GenericValue ArgVal;
-ArgVal.PointerVal = valuesPtr;  // Wrap the double* into GenericValue
-Args.push_back(ArgVal);
-
-// Call the JIT-compiled function with the argument
-GenericValue GV = EE->runFunction(GetValueFunc, Args);
-
-// Print the result
-std::cout << "Result: " << GV.DoubleVal << std::endl;
-#endif
