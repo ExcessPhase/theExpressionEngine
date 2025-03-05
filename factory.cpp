@@ -41,6 +41,44 @@ struct realConstant:expression
 };
 namespace
 {
+struct pow:expression
+{	pow(const ptr&_p0, const ptr&_p1)
+		:expression(
+			children({_p0, _p1})
+		)
+	{
+	}
+	virtual double evaluate(const double *const _p) const override
+	{	return std::pow(m_sChildren.at(0)->evaluate(_p), m_sChildren.at(1)->evaluate(_p));
+	}
+	virtual llvm::Value* generateCode(
+		const expression*const _pRoot,
+		llvm::LLVMContext& context,
+		llvm::IRBuilder<>& builder,
+		llvm::Module *const M,
+		llvm::Value*const _pP
+	) const override
+	{	    // Create the function prototype for std::sqrt
+		using namespace llvm;
+		//Value* const Input = ConstantFP::get(llvm::Type::getDoubleTy(context), m_sChildren.at(0)->generateCodeW(context, builder, M));
+    // Call the tan function
+		return builder.CreateCall(
+			M->getOrInsertFunction(
+				"pow",
+				FunctionType::get(
+					Type::getDoubleTy(context), // Return type: double
+					{	Type::getDoubleTy(context),
+						Type::getDoubleTy(context)
+					}, // Argument type: double
+					false // Not variadic
+				)
+			),
+			{	m_sChildren.at(0)->generateCodeW(_pRoot, context, builder, M, _pP),
+				m_sChildren.at(1)->generateCodeW(_pRoot, context, builder, M, _pP)
+			}
+		);
+	}
+};
 struct multiplication:expression
 {	multiplication(const ptr&_p0, const ptr&_p1)
 		:expression(
@@ -264,6 +302,9 @@ struct factoryImpl:factory
 	{	return unique<onDestroy<theExpessionEngine::unary<std::a, llvm::Intrinsic::a> > >::create(_p);\
 	}
 #include "unary.h"
+	virtual exprPtr pow(const exprPtr&_p0, const exprPtr&_p1) const override
+	{	return unique<onDestroy<theExpessionEngine::pow> >::create(_p0, _p1);
+	}
 	virtual exprPtr addition(const exprPtr&_p0, const exprPtr&_p1) const override
 	{	return unique<onDestroy<theExpessionEngine::addition> >::create(_p0, _p1);
 	}
@@ -358,6 +399,40 @@ struct factoryImpl:factory
 		else
 			return nullptr;
 	}
+	exprPtr parsePow(std::string::const_iterator &_p, const std::string::const_iterator &_pEnd) const
+	{	static const std::regex sRegex(R"(^(\bpow\b)[ \t]*\()");
+		static const std::regex sRegexComma(R"([ \t]*,[ \t]*)");
+		static const std::regex sRegexClose(R"([ \t]*\)[ \t]*)");
+		if (_p == _pEnd)
+			return nullptr;
+		const auto pIt = _p;
+		std::smatch sMatch;
+
+		if (std::regex_search(_p, _pEnd, sMatch, sRegex))
+		{	_p = sMatch[0].second;
+			if (const auto p0 = parseSingle(_p, _pEnd))
+				if (std::regex_search(_p, _pEnd, sMatch, sRegexComma))
+				{	_p = sMatch[0].second;
+					if (const auto p1 = parseSingle(_p, _pEnd))
+						if (std::regex_search(_p, _pEnd, sMatch, sRegexClose))
+						{	_p = sMatch[0].second;
+							return pow(p0, p1);
+						}
+					_p = pIt;
+					return nullptr;
+				}
+				else
+				{	_p = pIt;
+					return nullptr;
+				}
+			else
+			{	_p = pIt;
+				return nullptr;
+			}
+		}
+		else
+			return nullptr;
+	}
 	exprPtr parseX(std::string::const_iterator &_p, const std::string::const_iterator &_pEnd) const
 	{	if (_p == _pEnd)
 			return nullptr;
@@ -387,6 +462,9 @@ struct factoryImpl:factory
 		if (const auto p = parseUnary(_p, _pEnd))
 			return p;
 		else
+			if (const auto p = parsePow(_p, _pEnd))
+				return p;
+			else
 			if (const auto p = parseReal(_p, _pEnd))
 				return p;
 			else
