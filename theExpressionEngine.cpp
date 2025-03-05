@@ -17,7 +17,7 @@ int main(int argc, char**argv)
 {
 	if (argc != 2)
 	{	std::cerr << argv[0] << ": Usage : " << argv[0] << " expression" << std::endl;
-	return 1;
+		return 1;
 	}
 	using namespace llvm;
 	using namespace theExpessionEngine;
@@ -25,7 +25,18 @@ int main(int argc, char**argv)
 	InitializeNativeTarget();
 	InitializeNativeTargetAsmPrinter();
 	InitializeNativeTargetAsmParser();
-
+#if 1
+	const auto pFactory = factory::getFactory();
+	const auto pE = pFactory->parse(argv[1]);
+	std::vector<double> sX(1);
+	std::string sLine;
+	while (std::getline(std::cin, sLine))
+	{	sX[0] = std::stod(sLine.c_str());
+		//GenericValue GV = EE->runFunction(GetValueFunc, Args);
+		//std::cout << GV.DoubleVal << std::endl; // Output: 3.14
+		std::cout << pE->evaluateLLVM(sX.data()) << " " << pE->evaluate(sX.data()) << std::endl;
+	}
+#else
 	LLVMContext Context;
 	auto M = std::make_unique<Module>("top", Context);
 	IRBuilder<> Builder(Context);
@@ -104,5 +115,6 @@ llvm::Function* function = llvm::Function::Create(
 	}
 	// Clean up
 	//delete EE;
+#endif
 	return 0;
 }

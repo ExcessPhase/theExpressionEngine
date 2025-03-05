@@ -29,6 +29,7 @@ struct expression:std::enable_shared_from_this<const expression>//, dynamic_cast
 	typedef std::vector<ptr> children;
 	enum enumAttachedData
 	{	eLLVMValuePtr,
+		eLLVMdata,
 		__NUMBER_OF_DATA__
 	};
 	typedef std::array<std::any, __NUMBER_OF_DATA__> ARRAY;
@@ -45,6 +46,7 @@ struct expression:std::enable_shared_from_this<const expression>//, dynamic_cast
 		/// the type of the LHS and RHS is guaranteed to be identical
 	virtual bool isSmaller(const expression&) const;
 	virtual double evaluate(const double *const) const = 0;
+	double evaluateLLVM(const double *const) const;
 	llvm::Value *generateCodeW(
 		const expression *const _pRoot,
 		llvm::LLVMContext& context,
