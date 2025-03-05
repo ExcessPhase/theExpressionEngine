@@ -35,3 +35,6 @@ You might want to use double quotes around this commandline argument.
 e.g.
 	`echo -e "0\n1"|./theExpressionEngine.exe "sin(x)"`
 which prints the values of sin(0) and sin(1).
+
+## News
+All the LLVM code is now hidden behind the expression engine and multiple instances might exist and executed in parallel.
