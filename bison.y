@@ -17,7 +17,7 @@ int yylex(YYSTYPE *, yyscan_t, theExpressionEngine::factory::ptr const &factory)
 %}
 
 
-%token NUMBER SIN COS
+%token NUMBER SIN COS TAN ASIN ACOS ATAN SINH COSH TANH ASINH ACOSH ATANH
 %left '+' '-'
 %left '*' '/'
 
@@ -37,6 +37,18 @@ term: factor {$$=$1;}
 	;
 factor: NUMBER {$$ = $1;}
 	| '(' expr ')' {$$ = $2;}
+	| SIN '(' expr ')' {$$ = factory->sin($3);}
+	| COS '(' expr ')' {$$ = factory->cos($3);}
+	| TAN '(' expr ')' {$$ = factory->tan($3);}
+	| ASIN '(' expr ')' {$$ = factory->asin($3);}
+	| ACOS '(' expr ')' {$$ = factory->acos($3);}
+	| ATAN '(' expr ')' {$$ = factory->atan($3);}
+	| SINH '(' expr ')' {$$ = factory->sinh($3);}
+	| COSH '(' expr ')' {$$ = factory->cosh($3);}
+	| TANH '(' expr ')' {$$ = factory->tanh($3);}
+	| ASINH '(' expr ')' {$$ = factory->asinh($3);}
+	| ACOSH '(' expr ')' {$$ = factory->acosh($3);}
+	| ATANH '(' expr ')' {$$ = factory->atanh($3);}
 	| '+' factor {$$ = $2;}
 	| '-' factor {$$ = factory->negation($2);}
 	;

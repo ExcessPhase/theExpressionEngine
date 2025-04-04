@@ -17,3 +17,15 @@
 "-"	{return '-';}
 "("	{return '(';}
 ")"	{return ')';}
+"sin"	{return SIN;}
+"cos"	{return COS;}
+"tan"	{return TAN;}
+"asin"	{return ASIN;}
+"acos"	{return ACOS;}
+"atan"	{return ATAN;}
+"sinh"	{return SINH;}
+"cosh"	{return COSH;}
+"tanh"	{return TANH;}
+"asinh"	{return ASINH;}
+"acosh"	{return ACOSH;}
+"atanh"	{return ATANH;}
