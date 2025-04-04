@@ -28,6 +28,7 @@ Pass an expression on the commandline. Understood are
 - lgamma
 - cbrt
 - x
+- pow
 
 It reads lines from stdin and interprets them as x values.
 It reads one commandline argument,  which is enterpreted as a function and should use x.
@@ -38,8 +39,11 @@ which prints the values of sin(0) and sin(1).
 
 ## News
 All the LLVM code is now hidden behind the expression engine and multiple instances might exist and executed in parallel.
+The parser/lexer isn't anymore implemented by hand but using flex&bison.
+The versionos being used are:
+- flex 2.6.4
+- bison (GNU Bison) 3.8.2
 ## ToBeDone
 Avoid recalculation of the same object!
 Implement missing binary functions.
 Allow for multiple parameters but not only x.
-Use boost::spirit for parsing.
