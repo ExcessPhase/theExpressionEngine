@@ -33,6 +33,8 @@ Pass an expression on the commandline. Understood are
 - min
 - atan2
 - parentheses to support to overwrite precedence
+- fmod
+- hypot
 
 It reads lines from stdin and interprets them as x values.
 It reads one commandline argument,  which is enterpreted as a function and should use x.

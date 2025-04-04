@@ -19,6 +19,7 @@ int yylex(YYSTYPE *, yyscan_t, theExpressionEngine::factory::ptr const &factory)
 
 %token NUMBER SIN COS TAN ASIN ACOS ATAN SINH COSH TANH ASINH ACOSH ATANH
 %token SQRT ABS EXP LOG LOG10 ERF ERFC TGAMMA LGAMMA CBRT POW X MAX MIN ATAN2
+%token HYPOT FMOD
 %left '+' '-'
 %left '*' '/'
 
@@ -65,6 +66,8 @@ factor: NUMBER {$$ = $1;}
 	| ATAN2 '(' expr ',' expr ')' {$$ = factory->atan2($3, $5);}
 	| MAX '(' expr ',' expr ')' {$$ = factory->max($3, $5);}
 	| MIN '(' expr ',' expr ')' {$$ = factory->min($3, $5);}
+	| HYPOT '(' expr ',' expr ')' {$$ = factory->hypot($3, $5);}
+	| FMOD '(' expr ',' expr ')' {$$ = factory->fmod($3, $5);}
 	| '+' factor {$$ = $2;}
 	| '-' factor {$$ = factory->negation($2);}
 	;

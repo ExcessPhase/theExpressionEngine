@@ -45,4 +45,6 @@
 "atan2"	{return ATAN2;}
 "max"	{return MAX;}
 "min"	{return MIN;}
+"hypot"	{return HYPOT;}
+"fmod"	{return FMOD;}
 "x"	{return X;}
