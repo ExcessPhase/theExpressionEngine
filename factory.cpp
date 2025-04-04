@@ -365,6 +365,7 @@ struct factoryImpl:factory
 	virtual exprPtr division(const exprPtr&_p0, const exprPtr&_p1) const override
 	{	return unique<onDestroy<theExpressionEngine::division> >::create(_p0, _p1);
 	}
+#if 0
 	exprPtr parseParenthesis(std::string::const_iterator &_p, const std::string::const_iterator &_pEnd) const
 	{	if (_p == _pEnd)
 			return nullptr;
@@ -589,6 +590,7 @@ struct factoryImpl:factory
 		else
 			return nullptr;
 	}
+#endif
 	virtual exprPtr negation(const exprPtr&_r) const override
 	{	return unique<onDestroy<theExpressionEngine::negation> >::create(_r);
 	}
