@@ -2,7 +2,7 @@
 #include <memory>
 #include <set>
 
-namespace theExpessionEngine
+namespace theExpressionEngine
 {
 template<typename T>
 struct unique:T

@@ -1,7 +1,7 @@
 #pragma once
 #include <memory>
 #include <string>
-namespace theExpessionEngine
+namespace theExpressionEngine
 {
 struct expression;
 struct factory//:std::enable_shared_from_this<const factory>

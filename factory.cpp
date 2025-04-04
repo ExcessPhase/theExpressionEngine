@@ -11,7 +11,7 @@
 #include <regex>
 #include <iostream>
 
-namespace theExpessionEngine
+namespace theExpressionEngine
 {
 struct realConstant:expression
 {	const double m_d;
@@ -285,37 +285,37 @@ struct parameter:expression
 };
 struct factoryImpl:factory
 {	virtual exprPtr realConstant(const double _d) const override
-	{	return unique<onDestroy<theExpessionEngine::realConstant> >::create(_d);
+	{	return unique<onDestroy<theExpressionEngine::realConstant> >::create(_d);
 	}
 	virtual exprPtr parameter(const std::size_t _i) const override
-	{	return unique<onDestroy<theExpessionEngine::parameter> >::create(_i);
+	{	return unique<onDestroy<theExpressionEngine::parameter> >::create(_i);
 	}
 #define __COMMA__
 #define __COMMA2__
 #define __MAKE_ENTRY2__(a)\
 	static constexpr const char s_ac_##a[] = #a;\
 	virtual exprPtr a(const exprPtr&_p) const override\
-	{	return unique<onDestroy<theExpessionEngine::unaryF<std::a, s_ac_##a> > >::create(_p);\
+	{	return unique<onDestroy<theExpressionEngine::unaryF<std::a, s_ac_##a> > >::create(_p);\
 	}
 #define __MAKE_ENTRY__(a)\
 	virtual exprPtr a(const exprPtr&_p) const override\
-	{	return unique<onDestroy<theExpessionEngine::unary<std::a, llvm::Intrinsic::a> > >::create(_p);\
+	{	return unique<onDestroy<theExpressionEngine::unary<std::a, llvm::Intrinsic::a> > >::create(_p);\
 	}
 #include "unary.h"
 	virtual exprPtr pow(const exprPtr&_p0, const exprPtr&_p1) const override
-	{	return unique<onDestroy<theExpessionEngine::pow> >::create(_p0, _p1);
+	{	return unique<onDestroy<theExpressionEngine::pow> >::create(_p0, _p1);
 	}
 	virtual exprPtr addition(const exprPtr&_p0, const exprPtr&_p1) const override
-	{	return unique<onDestroy<theExpessionEngine::addition> >::create(_p0, _p1);
+	{	return unique<onDestroy<theExpressionEngine::addition> >::create(_p0, _p1);
 	}
 	virtual exprPtr subtraction(const exprPtr&_p0, const exprPtr&_p1) const override
-	{	return unique<onDestroy<theExpessionEngine::subtraction> >::create(_p0, _p1);
+	{	return unique<onDestroy<theExpressionEngine::subtraction> >::create(_p0, _p1);
 	}
 	virtual exprPtr multiplication(const exprPtr&_p0, const exprPtr&_p1) const override
-	{	return unique<onDestroy<theExpessionEngine::multiplication> >::create(_p0, _p1);
+	{	return unique<onDestroy<theExpressionEngine::multiplication> >::create(_p0, _p1);
 	}
 	virtual exprPtr division(const exprPtr&_p0, const exprPtr&_p1) const override
-	{	return unique<onDestroy<theExpessionEngine::division> >::create(_p0, _p1);
+	{	return unique<onDestroy<theExpressionEngine::division> >::create(_p0, _p1);
 	}
 	exprPtr parseParenthesis(std::string::const_iterator &_p, const std::string::const_iterator &_pEnd) const
 	{	if (_p == _pEnd)

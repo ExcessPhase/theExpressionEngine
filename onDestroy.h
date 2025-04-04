@@ -2,7 +2,7 @@
 #include <functional>
 
 
-namespace theExpessionEngine
+namespace theExpressionEngine
 {
 template<typename T>
 struct onDestroy:T

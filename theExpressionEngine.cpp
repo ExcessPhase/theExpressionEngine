@@ -20,7 +20,7 @@ int main(int argc, char**argv)
 		return 1;
 	}
 	using namespace llvm;
-	using namespace theExpessionEngine;
+	using namespace theExpressionEngine;
 	// Initialize the native target
 	InitializeNativeTarget();
 	InitializeNativeTargetAsmPrinter();

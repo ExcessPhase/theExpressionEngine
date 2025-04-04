@@ -16,7 +16,7 @@
 //#include <llvm/IR/Constants.h>
 
 
-namespace theExpessionEngine
+namespace theExpressionEngine
 {
 //struct type;
 //struct environment;

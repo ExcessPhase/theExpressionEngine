@@ -17,7 +17,7 @@
 //#include "environment.h"
 
 
-namespace theExpessionEngine
+namespace theExpressionEngine
 {
 expression::expression(
 	children&&_rChildren
