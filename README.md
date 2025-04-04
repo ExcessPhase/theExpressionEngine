@@ -44,7 +44,7 @@ which prints the values of sin(0) and sin(1).
 ## News
 All the LLVM code is now hidden behind the expression engine and multiple instances might exist and executed in parallel.
 The parser/lexer isn't anymore implemented by hand but using flex&bison.
-The versionos being used are:
+The versions being used are:
 - flex 2.6.4
 - bison (GNU Bison) 3.8.2
 ## ToBeDone
