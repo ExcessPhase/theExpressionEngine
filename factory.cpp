@@ -238,27 +238,6 @@ struct unaryF:expression
 		);
 	}
 };
-/*
-virtual llvm::Value* generateCode(
-        const expression* const _pRoot,
-        llvm::LLVMContext& context,
-        llvm::IRBuilder<>& builder,
-        llvm::Module* const M,
-        llvm::Value* const _pP
-) const override {
-    using namespace llvm;
-
-    // Get LLVM type for double
-    llvm::Type* doubleType = llvm::Type::getDoubleTy(context);
-
-    // Create a constant value for 0.0
-    llvm::Value* zeroValue = llvm::ConstantFP::get(doubleType, 0.0);
-
-    // Generate the negation (0.0 - value)
-    llvm::Value* childValue = m_sChildren.at(0)->generateCodeW(_pRoot, context, builder, M, _pP);
-    return builder.CreateFSub(zeroValue, childValue);
-}
-*/
 struct negation:expression
 {	negation(const ptr&_p)
 		:expression(
@@ -368,10 +347,10 @@ struct factoryImpl:factory
 	virtual exprPtr negation(const exprPtr&_r) const override
 	{	return unique<onDestroy<theExpressionEngine::negation> >::create(_r);
 	}
-	virtual exprPtr parse(const std::string&_r) const override
+	virtual exprPtr parse(const char *const _r) const override
 	{	yyscan_t scanner;
 		yylex_init(&scanner);
-		auto pBuffer = yy_scan_string(_r.c_str(), scanner);
+		auto pBuffer = yy_scan_string(_r, scanner);
 		exprPtr p;
 		yyparse(scanner, &p, shared_from_this());
 		yy_delete_buffer(pBuffer, scanner);

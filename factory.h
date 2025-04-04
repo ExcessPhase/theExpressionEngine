@@ -22,7 +22,7 @@ struct factory:std::enable_shared_from_this<const factory>
 	virtual exprPtr multiplication(const exprPtr&, const exprPtr&) const = 0;
 	virtual exprPtr division(const exprPtr&, const exprPtr&) const = 0;
 	virtual exprPtr negation(const exprPtr&) const = 0;
-	virtual exprPtr parse(const std::string&) const = 0;
+	virtual exprPtr parse(const char *const) const = 0;
 	typedef std::shared_ptr<const factory> ptr;
 	static ptr getFactory(void);
 };
