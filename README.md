@@ -29,6 +29,9 @@ Pass an expression on the commandline. Understood are
 - cbrt
 - x
 - pow
+- max
+- min
+- atan2
 
 It reads lines from stdin and interprets them as x values.
 It reads one commandline argument,  which is enterpreted as a function and should use x.

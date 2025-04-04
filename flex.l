@@ -42,4 +42,7 @@
 "lgamma"	{return LGAMMA;}
 "cbrt"	{return CBRT;}
 "pow"	{return POW;}
+"atan2"	{return ATAN2;}
+"max"	{return MAX;}
+"min"	{return MIN;}
 "x"	{return X;}

@@ -59,10 +59,10 @@ struct pow:expression
 		llvm::Module *const M,
 		llvm::Value*const _pP
 	) const override
-	{	    // Create the function prototype for std::sqrt
+	{		// Create the function prototype for std::sqrt
 		using namespace llvm;
 		//Value* const Input = ConstantFP::get(llvm::Type::getDoubleTy(context), m_sChildren.at(0)->generateCodeW(context, builder, M));
-    // Call the tan function
+		// Call the tan function
 		return builder.CreateCall(
 			M->getOrInsertFunction(
 				"pow",
@@ -77,6 +77,105 @@ struct pow:expression
 			{	m_sChildren.at(0)->generateCodeW(_pRoot, context, builder, M, _pP),
 				m_sChildren.at(1)->generateCodeW(_pRoot, context, builder, M, _pP)
 			}
+		);
+	}
+};
+struct atan2:expression
+{	atan2(const ptr&_p0, const ptr&_p1)
+		:expression(
+			children({_p0, _p1})
+		)
+	{
+	}
+	virtual double evaluate(const double *const _p) const override
+	{	return std::atan2(m_sChildren.at(0)->evaluate(_p), m_sChildren.at(1)->evaluate(_p));
+	}
+	virtual llvm::Value* generateCode(
+		const expression*const _pRoot,
+		llvm::LLVMContext& context,
+		llvm::IRBuilder<>& builder,
+		llvm::Module *const M,
+		llvm::Value*const _pP
+	) const override
+	{	// Create the function prototype for std::sqrt
+		using namespace llvm;
+		//Value* const Input = ConstantFP::get(llvm::Type::getDoubleTy(context), m_sChildren.at(0)->generateCodeW(context, builder, M));
+		// Call the tan function
+		return builder.CreateCall(
+			M->getOrInsertFunction(
+				"atan2",
+				FunctionType::get(
+					Type::getDoubleTy(context), // Return type: double
+					{	Type::getDoubleTy(context),
+						Type::getDoubleTy(context)
+					}, // Argument type: double
+					false // Not variadic
+				)
+			),
+			{	m_sChildren.at(0)->generateCodeW(_pRoot, context, builder, M, _pP),
+				m_sChildren.at(1)->generateCodeW(_pRoot, context, builder, M, _pP)
+			}
+		);
+	}
+};
+struct max:expression
+{	max(const ptr&_p0, const ptr&_p1)
+		:expression(
+			children({_p0, _p1})
+		)
+	{
+	}
+	virtual double evaluate(const double *const _p) const override
+	{	return std::max(m_sChildren.at(0)->evaluate(_p), m_sChildren.at(1)->evaluate(_p));
+	}
+	virtual llvm::Value* generateCode(
+		const expression*const _pRoot,
+		llvm::LLVMContext& context,
+		llvm::IRBuilder<>& builder,
+		llvm::Module *const M,
+		llvm::Value*const _pP
+	) const override
+	{	// Create the function prototype for std::sqrt
+		using namespace llvm;
+			// Call the tan function
+		Type* const doubleType = Type::getDoubleTy(context);
+		return builder.CreateCall(
+			Intrinsic::getDeclaration(M, Intrinsic::maxnum, {doubleType}),
+			{	m_sChildren.at(0)->generateCodeW(_pRoot, context, builder, M, _pP),
+				m_sChildren.at(1)->generateCodeW(_pRoot, context, builder, M, _pP)
+			},
+			"maxnum"
+		);
+	}
+};
+struct min:expression
+{	min(const ptr&_p0, const ptr&_p1)
+		:expression(
+			children({_p0, _p1})
+		)
+	{
+	}
+	virtual double evaluate(const double *const _p) const override
+	{	return std::min(m_sChildren.at(0)->evaluate(_p), m_sChildren.at(1)->evaluate(_p));
+	}
+	virtual llvm::Value* generateCode(
+		const expression*const _pRoot,
+		llvm::LLVMContext& context,
+		llvm::IRBuilder<>& builder,
+		llvm::Module *const M,
+		llvm::Value*const _pP
+	) const override
+	{	// Create the function prototype for std::sqrt
+		using namespace llvm;
+		//Value* const Input = ConstantFP::get(llvm::Type::getDoubleTy(context), m_sChildren.at(0)->generateCodeW(context, builder, M));
+		// Call the tan function
+		Type* const doubleType = Type::getDoubleTy(context);
+		return builder.CreateCall(
+			Intrinsic::getDeclaration(M, Intrinsic::minnum, {doubleType}),
+			{	m_sChildren.at(0)->generateCodeW(_pRoot, context, builder, M, _pP),
+				m_sChildren.at(1)->generateCodeW(_pRoot, context, builder, M, _pP),
+			},
+			"minnum"
 		);
 	}
 };
@@ -194,9 +293,9 @@ struct unary:expression
 		llvm::Module *const M,
 		llvm::Value*const _pP
 	) const override
-	{	    // Create the function prototype for std::sqrt
+	{	// Create the function prototype for std::sqrt
 		using namespace llvm;
-	    	return builder.CreateCall(
+		return builder.CreateCall(
 			Intrinsic::getDeclaration(M, EID, builder.getDoubleTy()),
 			m_sChildren.at(0)->generateCodeW(_pRoot, context, builder, M, _pP)
 		);
@@ -220,10 +319,10 @@ struct unaryF:expression
 		llvm::Module *const M,
 		llvm::Value*const _pP
 	) const override
-	{	    // Create the function prototype for std::sqrt
+	{		// Create the function prototype for std::sqrt
 		using namespace llvm;
 		//Value* const Input = ConstantFP::get(llvm::Type::getDoubleTy(context), m_sChildren.at(0)->generateCodeW(context, builder, M));
-    // Call the tan function
+		// Call the tan function
 		return builder.CreateCall(
 			M->getOrInsertFunction(
 				AC,
@@ -255,7 +354,7 @@ struct negation:expression
 		llvm::Module *const M,
 		llvm::Value*const _pP
 	) const override
-	{	    // Create the function prototype for std::sqrt
+	{	// Create the function prototype for std::sqrt
 		using namespace llvm;
 		llvm::Type* doubleType = Type::getDoubleTy(M->getContext());
 		return builder.CreateFSub(
@@ -299,14 +398,14 @@ struct parameter:expression
 		// Step 3: Use GetElementPtr (GEP) to calculate the address at the given index
 		llvm::Value* indexedPointer = builder.CreateGEP(
 			llvm::Type::getDoubleTy(context), // The type of elements (double)
-			_pP,                    // The pointer to be indexed
-			indexVal                          // The index (as a Value*)
+			_pP,	// The pointer to be indexed
+			indexVal	// The index (as a Value*)
 		);
 
 		// Step 4: Return the indexed pointer
 		return builder.CreateLoad(
 			Type::getDoubleTy(context), // The type to load
-			indexedPointer              // The pointer to load from
+			indexedPointer	// The pointer to load from
 		);
 	}
 };
@@ -331,6 +430,15 @@ struct factoryImpl:factory
 #include "unary.h"
 	virtual exprPtr pow(const exprPtr&_p0, const exprPtr&_p1) const override
 	{	return unique<onDestroy<theExpressionEngine::pow> >::create(_p0, _p1);
+	}
+	virtual exprPtr atan2(const exprPtr&_p0, const exprPtr&_p1) const override
+	{	return unique<onDestroy<theExpressionEngine::atan2> >::create(_p0, _p1);
+	}
+	virtual exprPtr max(const exprPtr&_p0, const exprPtr&_p1) const override
+	{	return unique<onDestroy<theExpressionEngine::max> >::create(_p0, _p1);
+	}
+	virtual exprPtr min(const exprPtr&_p0, const exprPtr&_p1) const override
+	{	return unique<onDestroy<theExpressionEngine::min> >::create(_p0, _p1);
 	}
 	virtual exprPtr addition(const exprPtr&_p0, const exprPtr&_p1) const override
 	{	return unique<onDestroy<theExpressionEngine::addition> >::create(_p0, _p1);

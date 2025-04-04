@@ -17,6 +17,9 @@ struct factory:std::enable_shared_from_this<const factory>
 #include "unary.h"
 	virtual exprPtr parameter(const std::size_t) const = 0;
 	virtual exprPtr pow(const exprPtr&, const exprPtr&) const = 0;
+	virtual exprPtr atan2(const exprPtr&, const exprPtr&) const = 0;
+	virtual exprPtr max(const exprPtr&, const exprPtr&) const = 0;
+	virtual exprPtr min(const exprPtr&, const exprPtr&) const = 0;
 	virtual exprPtr addition(const exprPtr&, const exprPtr&) const = 0;
 	virtual exprPtr subtraction(const exprPtr&, const exprPtr&) const = 0;
 	virtual exprPtr multiplication(const exprPtr&, const exprPtr&) const = 0;
