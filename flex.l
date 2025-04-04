@@ -11,3 +11,9 @@
 %%
 
 [0-9]+(\.[0-9]*)?([eE][+-]?[0-9]*)?	{*yylval = factory->realConstant(atof(yytext));return NUMBER;}
+"/"	{return '/';}
+"*"	{return '*';}
+"+"	{return '+';}
+"-"	{return '-';}
+"("	{return '(';}
+")"	{return ')';}

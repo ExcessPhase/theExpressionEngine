@@ -17,17 +17,28 @@ int yylex(YYSTYPE *, yyscan_t, theExpressionEngine::factory::ptr const &factory)
 %}
 
 
-%token NUMBER
+%token NUMBER SIN COS
 %left '+' '-'
 %left '*' '/'
 
 %%
 
-expr: NUMBER {$$=$1; *root = $1;}
-	| expr '+' expr {$$ = $1;}
-	| expr '-' expr {$$ = $1;}
-	| expr '*' expr {$$ = $1;}
-	| expr '/' expr {$$ = $1;}
+input: expr {*root = $1;}
+	;
+
+expr: term { $$ = $1;}
+	| expr '+' term {$$ = factory->addition($1, $3);}
+	| expr '-' term {$$ = factory->subtraction($1, $3);}
+	;
+
+term: factor {$$=$1;}
+	| term '*' factor {$$ = factory->multiplication($1, $3);}
+	| term '/' factor {$$ = factory->division($1, $3);}
+	;
+factor: NUMBER {$$ = $1;}
+	| '(' expr ')' {$$ = $2;}
+	| '+' factor {$$ = $2;}
+	| '-' factor {$$ = factory->negation($2);}
 	;
 %%
 void yyerror(yyscan_t, theExpressionEngine::expression::ptr *const, theExpressionEngine::factory::ptr const &, const char*const _p)

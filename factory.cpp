@@ -238,6 +238,53 @@ struct unaryF:expression
 		);
 	}
 };
+/*
+virtual llvm::Value* generateCode(
+        const expression* const _pRoot,
+        llvm::LLVMContext& context,
+        llvm::IRBuilder<>& builder,
+        llvm::Module* const M,
+        llvm::Value* const _pP
+) const override {
+    using namespace llvm;
+
+    // Get LLVM type for double
+    llvm::Type* doubleType = llvm::Type::getDoubleTy(context);
+
+    // Create a constant value for 0.0
+    llvm::Value* zeroValue = llvm::ConstantFP::get(doubleType, 0.0);
+
+    // Generate the negation (0.0 - value)
+    llvm::Value* childValue = m_sChildren.at(0)->generateCodeW(_pRoot, context, builder, M, _pP);
+    return builder.CreateFSub(zeroValue, childValue);
+}
+*/
+struct negation:expression
+{	negation(const ptr&_p)
+		:expression(
+			children({_p})
+		)
+	{
+	}
+	virtual double evaluate(const double *const _p) const override
+	{	return -m_sChildren.at(0)->evaluate(_p);
+	}
+	virtual llvm::Value* generateCode(
+		const expression*const _pRoot,
+		llvm::LLVMContext& context,
+		llvm::IRBuilder<>& builder,
+		llvm::Module *const M,
+		llvm::Value*const _pP
+	) const override
+	{	    // Create the function prototype for std::sqrt
+		using namespace llvm;
+		llvm::Type* doubleType = Type::getDoubleTy(M->getContext());
+		return builder.CreateFSub(
+			ConstantFP::get(doubleType, 0.0),
+			m_sChildren.at(0)->generateCodeW(_pRoot, context, builder, M, _pP)
+		);
+	}
+};
 struct parameter:expression
 {	const std::size_t m_i;
 	parameter(const std::size_t _i)
@@ -541,6 +588,9 @@ struct factoryImpl:factory
 			}
 		else
 			return nullptr;
+	}
+	virtual exprPtr negation(const exprPtr&_r) const override
+	{	return unique<onDestroy<theExpressionEngine::negation> >::create(_r);
 	}
 	virtual exprPtr parse(const std::string&_r) const override
 	{	yyscan_t scanner;

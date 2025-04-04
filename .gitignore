@@ -364,3 +364,6 @@ MigrationBackup/
 FodyWeavers.xsd
 /make.out
 theExpressionEngine.exe
+bison.cpp
+bison.h
+flex.cpp
