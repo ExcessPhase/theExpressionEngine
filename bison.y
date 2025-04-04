@@ -18,6 +18,7 @@ int yylex(YYSTYPE *, yyscan_t, theExpressionEngine::factory::ptr const &factory)
 
 
 %token NUMBER SIN COS TAN ASIN ACOS ATAN SINH COSH TANH ASINH ACOSH ATANH
+%token SQRT ABS EXP LOG LOG10 ERF ERFC TGAMMA LGAMMA CBRT POW X
 %left '+' '-'
 %left '*' '/'
 
@@ -49,6 +50,18 @@ factor: NUMBER {$$ = $1;}
 	| ASINH '(' expr ')' {$$ = factory->asinh($3);}
 	| ACOSH '(' expr ')' {$$ = factory->acosh($3);}
 	| ATANH '(' expr ')' {$$ = factory->atanh($3);}
+	| SQRT '(' expr ')' {$$ = factory->sqrt($3);}
+	| ABS '(' expr ')' {$$ = factory->abs($3);}
+	| EXP '(' expr ')' {$$ = factory->exp($3);}
+	| LOG '(' expr ')' {$$ = factory->log($3);}
+	| LOG10 '(' expr ')' {$$ = factory->log10($3);}
+	| ERF '(' expr ')' {$$ = factory->erf($3);}
+	| ERFC '(' expr ')' {$$ = factory->erfc($3);}
+	| TGAMMA '(' expr ')' {$$ = factory->tgamma($3);}
+	| LGAMMA '(' expr ')' {$$ = factory->lgamma($3);}
+	| CBRT '(' expr ')' {$$ = factory->cbrt($3);}
+	| X {$$ = factory->parameter(0);}
+	| POW '(' expr ',' expr ')' {$$ = factory->pow($3, $5);}
 	| '+' factor {$$ = $2;}
 	| '-' factor {$$ = factory->negation($2);}
 	;
