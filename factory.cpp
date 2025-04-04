@@ -42,6 +42,45 @@ struct realConstant:expression
 };
 namespace
 {
+template<const char ac[], double(*PFCT)(double, double)>
+struct binary:expression
+{	binary(const ptr&_p0, const ptr&_p1)
+		:expression(
+			children({_p0, _p1})
+		)
+	{
+	}
+	virtual double evaluate(const double *const _p) const override
+	{	return PFCT(m_sChildren.at(0)->evaluate(_p), m_sChildren.at(1)->evaluate(_p));
+	}
+	virtual llvm::Value* generateCode(
+		const expression*const _pRoot,
+		llvm::LLVMContext& context,
+		llvm::IRBuilder<>& builder,
+		llvm::Module *const M,
+		llvm::Value*const _pP
+	) const override
+	{		// Create the function prototype for std::sqrt
+		using namespace llvm;
+		//Value* const Input = ConstantFP::get(llvm::Type::getDoubleTy(context), m_sChildren.at(0)->generateCodeW(context, builder, M));
+		// Call the tan function
+		return builder.CreateCall(
+			M->getOrInsertFunction(
+				ac,
+				FunctionType::get(
+					Type::getDoubleTy(context), // Return type: double
+					{	Type::getDoubleTy(context),
+						Type::getDoubleTy(context)
+					}, // Argument type: double
+					false // Not variadic
+				)
+			),
+			{	m_sChildren.at(0)->generateCodeW(_pRoot, context, builder, M, _pP),
+				m_sChildren.at(1)->generateCodeW(_pRoot, context, builder, M, _pP)
+			}
+		);
+	}
+};
 struct pow:expression
 {	pow(const ptr&_p0, const ptr&_p1)
 		:expression(
@@ -505,7 +544,8 @@ struct factoryImpl:factory
 	}
 #include "unary.h"
 	virtual exprPtr pow(const exprPtr&_p0, const exprPtr&_p1) const override
-	{	return unique<onDestroy<theExpressionEngine::pow> >::create(_p0, _p1);
+	{	static const char ac[] = "pow";
+		return unique<onDestroy<theExpressionEngine::binary<ac, &std::pow> > >::create(_p0, _p1);
 	}
 	virtual exprPtr fmod(const exprPtr&_p0, const exprPtr&_p1) const override
 	{	return unique<onDestroy<theExpressionEngine::fmod> >::create(_p0, _p1);
