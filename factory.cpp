@@ -81,158 +81,6 @@ struct binary:expression
 		);
 	}
 };
-struct pow:expression
-{	pow(const ptr&_p0, const ptr&_p1)
-		:expression(
-			children({_p0, _p1})
-		)
-	{
-	}
-	virtual double evaluate(const double *const _p) const override
-	{	return std::pow(m_sChildren.at(0)->evaluate(_p), m_sChildren.at(1)->evaluate(_p));
-	}
-	virtual llvm::Value* generateCode(
-		const expression*const _pRoot,
-		llvm::LLVMContext& context,
-		llvm::IRBuilder<>& builder,
-		llvm::Module *const M,
-		llvm::Value*const _pP
-	) const override
-	{		// Create the function prototype for std::sqrt
-		using namespace llvm;
-		//Value* const Input = ConstantFP::get(llvm::Type::getDoubleTy(context), m_sChildren.at(0)->generateCodeW(context, builder, M));
-		// Call the tan function
-		return builder.CreateCall(
-			M->getOrInsertFunction(
-				"pow",
-				FunctionType::get(
-					Type::getDoubleTy(context), // Return type: double
-					{	Type::getDoubleTy(context),
-						Type::getDoubleTy(context)
-					}, // Argument type: double
-					false // Not variadic
-				)
-			),
-			{	m_sChildren.at(0)->generateCodeW(_pRoot, context, builder, M, _pP),
-				m_sChildren.at(1)->generateCodeW(_pRoot, context, builder, M, _pP)
-			}
-		);
-	}
-};
-struct atan2:expression
-{	atan2(const ptr&_p0, const ptr&_p1)
-		:expression(
-			children({_p0, _p1})
-		)
-	{
-	}
-	virtual double evaluate(const double *const _p) const override
-	{	return std::atan2(m_sChildren.at(0)->evaluate(_p), m_sChildren.at(1)->evaluate(_p));
-	}
-	virtual llvm::Value* generateCode(
-		const expression*const _pRoot,
-		llvm::LLVMContext& context,
-		llvm::IRBuilder<>& builder,
-		llvm::Module *const M,
-		llvm::Value*const _pP
-	) const override
-	{	// Create the function prototype for std::sqrt
-		using namespace llvm;
-		//Value* const Input = ConstantFP::get(llvm::Type::getDoubleTy(context), m_sChildren.at(0)->generateCodeW(context, builder, M));
-		// Call the tan function
-		return builder.CreateCall(
-			M->getOrInsertFunction(
-				"atan2",
-				FunctionType::get(
-					Type::getDoubleTy(context), // Return type: double
-					{	Type::getDoubleTy(context),
-						Type::getDoubleTy(context)
-					}, // Argument type: double
-					false // Not variadic
-				)
-			),
-			{	m_sChildren.at(0)->generateCodeW(_pRoot, context, builder, M, _pP),
-				m_sChildren.at(1)->generateCodeW(_pRoot, context, builder, M, _pP)
-			}
-		);
-	}
-};
-struct hypot:expression
-{	hypot(const ptr&_p0, const ptr&_p1)
-		:expression(
-			children({_p0, _p1})
-		)
-	{
-	}
-	virtual double evaluate(const double *const _p) const override
-	{	return std::hypot(m_sChildren.at(0)->evaluate(_p), m_sChildren.at(1)->evaluate(_p));
-	}
-	virtual llvm::Value* generateCode(
-		const expression*const _pRoot,
-		llvm::LLVMContext& context,
-		llvm::IRBuilder<>& builder,
-		llvm::Module *const M,
-		llvm::Value*const _pP
-	) const override
-	{	// Create the function prototype for std::sqrt
-		using namespace llvm;
-		//Value* const Input = ConstantFP::get(llvm::Type::getDoubleTy(context), m_sChildren.at(0)->generateCodeW(context, builder, M));
-		// Call the tan function
-		return builder.CreateCall(
-			M->getOrInsertFunction(
-				"hypot",
-				FunctionType::get(
-					Type::getDoubleTy(context), // Return type: double
-					{	Type::getDoubleTy(context),
-						Type::getDoubleTy(context)
-					}, // Argument type: double
-					false // Not variadic
-				)
-			),
-			{	m_sChildren.at(0)->generateCodeW(_pRoot, context, builder, M, _pP),
-				m_sChildren.at(1)->generateCodeW(_pRoot, context, builder, M, _pP)
-			}
-		);
-	}
-};
-struct fmod:expression
-{	fmod(const ptr&_p0, const ptr&_p1)
-		:expression(
-			children({_p0, _p1})
-		)
-	{
-	}
-	virtual double evaluate(const double *const _p) const override
-	{	return std::fmod(m_sChildren.at(0)->evaluate(_p), m_sChildren.at(1)->evaluate(_p));
-	}
-	virtual llvm::Value* generateCode(
-		const expression*const _pRoot,
-		llvm::LLVMContext& context,
-		llvm::IRBuilder<>& builder,
-		llvm::Module *const M,
-		llvm::Value*const _pP
-	) const override
-	{	// Create the function prototype for std::sqrt
-		using namespace llvm;
-		//Value* const Input = ConstantFP::get(llvm::Type::getDoubleTy(context), m_sChildren.at(0)->generateCodeW(context, builder, M));
-		// Call the tan function
-		return builder.CreateCall(
-			M->getOrInsertFunction(
-				"fmod",
-				FunctionType::get(
-					Type::getDoubleTy(context), // Return type: double
-					{	Type::getDoubleTy(context),
-						Type::getDoubleTy(context)
-					}, // Argument type: double
-					false // Not variadic
-				)
-			),
-			{	m_sChildren.at(0)->generateCodeW(_pRoot, context, builder, M, _pP),
-				m_sChildren.at(1)->generateCodeW(_pRoot, context, builder, M, _pP)
-			}
-		);
-	}
-};
 struct max:expression
 {	max(const ptr&_p0, const ptr&_p1)
 		:expression(
@@ -548,13 +396,16 @@ struct factoryImpl:factory
 		return unique<onDestroy<theExpressionEngine::binary<ac, &std::pow> > >::create(_p0, _p1);
 	}
 	virtual exprPtr fmod(const exprPtr&_p0, const exprPtr&_p1) const override
-	{	return unique<onDestroy<theExpressionEngine::fmod> >::create(_p0, _p1);
+	{	static const char ac[] = "fmod";
+		return unique<onDestroy<theExpressionEngine::binary<ac, &std::fmod> > >::create(_p0, _p1);
 	}
 	virtual exprPtr hypot(const exprPtr&_p0, const exprPtr&_p1) const override
-	{	return unique<onDestroy<theExpressionEngine::hypot> >::create(_p0, _p1);
+	{	static const char ac[] = "hypot";
+		return unique<onDestroy<theExpressionEngine::binary<ac, &std::hypot> > >::create(_p0, _p1);
 	}
 	virtual exprPtr atan2(const exprPtr&_p0, const exprPtr&_p1) const override
-	{	return unique<onDestroy<theExpressionEngine::atan2> >::create(_p0, _p1);
+	{	static const char ac[] = "atan2";
+		return unique<onDestroy<theExpressionEngine::binary<ac, &std::atan2> > >::create(_p0, _p1);
 	}
 	virtual exprPtr max(const exprPtr&_p0, const exprPtr&_p1) const override
 	{	return unique<onDestroy<theExpressionEngine::max> >::create(_p0, _p1);
