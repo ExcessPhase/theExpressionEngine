@@ -2,6 +2,7 @@
 #include "expression.h"
 #include "unique.h"
 #include "onDestroy.h"
+#include "flex.cpp"
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
@@ -542,14 +543,14 @@ struct factoryImpl:factory
 			return nullptr;
 	}
 	virtual exprPtr parse(const std::string&_r) const override
-	{	auto p = _r.begin();
-		if (const auto pRet = parseAddSub(p, _r.end()))
-			if (p != _r.end())
-				throw std::runtime_error("Parse error!");
-			else
-				return pRet;
-		else
-			throw std::runtime_error("Parse error!");
+	{	yyscan_t scanner;
+		yylex_init(&scanner);
+		auto pBuffer = yy_scan_string(_r.c_str(), scanner);
+		exprPtr p;
+		yyparse(scanner, &p, shared_from_this());
+		yy_delete_buffer(pBuffer, scanner);
+		yylex_destroy(scanner);
+		return p;
 	}
 };
 }
