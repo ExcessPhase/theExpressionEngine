@@ -42,6 +42,9 @@ struct realConstant:expression
 	virtual ptr recreateFromChildren(children, const factory&) const override
 	{	return shared_from_this();
 	}
+	virtual std::size_t getWeight(void) const override
+	{	return 1;
+	}
 };
 expression::ptr expression::collapse(const factory&_rF) const
 {	if (!getPtr(dummy<realConstant>()) && !m_sChildren.empty() && std::all_of(
@@ -98,6 +101,9 @@ struct binary:expression
 	virtual ptr recreateFromChildren(children _s, const factory&_rF) const override
 	{	return (_rF.*CREATE)(_s.at(0), _s.at(1));
 	}
+	virtual std::size_t getWeight(void) const override
+	{	return 10;
+	}
 };
 struct max:expression
 {	max(const ptr&_p0, const ptr&_p1)
@@ -130,6 +136,9 @@ struct max:expression
 	}
 	virtual ptr recreateFromChildren(children _s, const factory&_rF) const override
 	{	return _rF.max(_s.at(0), _s.at(1));
+	}
+	virtual std::size_t getWeight(void) const override
+	{	return 2;
 	}
 };
 struct min:expression
@@ -165,6 +174,9 @@ struct min:expression
 	virtual ptr recreateFromChildren(children _s, const factory&_rF) const override
 	{	return _rF.min(_s.at(0), _s.at(1));
 	}
+	virtual std::size_t getWeight(void) const override
+	{	return 2;
+	}
 };
 struct multiplication:expression
 {	multiplication(const ptr&_p0, const ptr&_p1)
@@ -191,6 +203,9 @@ struct multiplication:expression
 	}
 	virtual ptr recreateFromChildren(children _s, const factory&_rF) const override
 	{	return _rF.multiplication(_s.at(0), _s.at(1));
+	}
+	virtual std::size_t getWeight(void) const override
+	{	return 4;
 	}
 };
 struct division:expression
@@ -219,6 +234,9 @@ struct division:expression
 	virtual ptr recreateFromChildren(children _s, const factory&_rF) const override
 	{	return _rF.division(_s.at(0), _s.at(1));
 	}
+	virtual std::size_t getWeight(void) const override
+	{	return 10;
+	}
 };
 struct addition:expression
 {	addition(const ptr&_p0, const ptr&_p1)
@@ -246,6 +264,9 @@ struct addition:expression
 	virtual ptr recreateFromChildren(children _s, const factory&_rF) const override
 	{	return _rF.addition(_s.at(0), _s.at(1));
 	}
+	virtual std::size_t getWeight(void) const override
+	{	return 2;
+	}
 };
 struct subtraction:expression
 {	subtraction(const ptr&_p0, const ptr&_p1)
@@ -272,6 +293,9 @@ struct subtraction:expression
 	}
 	virtual ptr recreateFromChildren(children _s, const factory&_rF) const override
 	{	return _rF.subtraction(_s.at(0), _s.at(1));
+	}
+	virtual std::size_t getWeight(void) const override
+	{	return 2;
 	}
 };
 template<double(*PMATH)(double), llvm::Intrinsic::ID EID, factory::exprPtr (factory::*CREATE)(const factory::exprPtr&) const>
@@ -301,6 +325,9 @@ struct unary:expression
 	}
 	virtual ptr recreateFromChildren(children _s, const factory&_rF) const override
 	{	return (_rF.*CREATE)(_s.at(0));
+	}
+	virtual std::size_t getWeight(void) const override
+	{	return 10;
 	}
 };
 template<double(*PMATH)(double), const char AC[], factory::exprPtr (factory::*CREATE)(const factory::exprPtr&) const>
@@ -341,6 +368,9 @@ struct unaryF:expression
 	virtual ptr recreateFromChildren(children _s, const factory&_rF) const override
 	{	return (_rF.*CREATE)(_s.at(0));
 	}
+	virtual std::size_t getWeight(void) const override
+	{	return 10;
+	}
 };
 struct negation:expression
 {	negation(const ptr&_p)
@@ -369,6 +399,9 @@ struct negation:expression
 	}
 	virtual ptr recreateFromChildren(children _s, const factory&_rF) const override
 	{	return _rF.negation(_s.at(0));
+	}
+	virtual std::size_t getWeight(void) const override
+	{	return 1;
 	}
 };
 struct parameter:expression
@@ -418,6 +451,9 @@ struct parameter:expression
 	}
 	virtual ptr recreateFromChildren(children, const factory&) const override
 	{	return shared_from_this();
+	}
+	virtual std::size_t getWeight(void) const override
+	{	return 1;
 	}
 };
 struct factoryImpl:factory

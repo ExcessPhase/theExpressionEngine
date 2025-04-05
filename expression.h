@@ -91,6 +91,8 @@ struct expression:std::enable_shared_from_this<const expression>, dynamic_cast_i
 	typedef std::function<void(void)> onDestroyFunctor;
 	mutable std::list<onDestroyFunctor> m_sOnDestroyList;
 	virtual void addOnDestroy(onDestroyFunctor _s) const;
+	virtual std::size_t getWeight(void) const = 0;
+	std::size_t getWeightW(void) const;
 	//mutable llvm::Value *m_pValue = nullptr;
 };
 expression::ptr collapse(const expression&, const factory&);

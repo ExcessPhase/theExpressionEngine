@@ -184,4 +184,17 @@ expression::ptr expression::replace(const ptr2ptr&_r, const factory&_rF) const
 	std::abort();
 	return nullptr;
 }
+std::size_t expression::getWeightW(void) const
+{	std::stack<ptr> s;
+	s.push(shared_from_this());
+	std::size_t i = 0;
+	while (!s.empty())
+	{	const auto p = s.top();
+		i += p->getWeight();
+		s.pop();
+		for (const auto &p : m_sChildren)
+			s.push(p);
+	}
+	return i;
+}
 }
