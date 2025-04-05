@@ -19,6 +19,9 @@
 
 namespace theExpressionEngine
 {
+expression::ptr collapse(const expression&_r, const factory&_rF)
+{	return _r.collapse(_rF);
+}
 expression::expression(
 	children&&_rChildren
 )

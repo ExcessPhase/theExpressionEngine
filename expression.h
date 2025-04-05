@@ -19,6 +19,7 @@
 namespace theExpressionEngine
 {
 struct realConstant;
+struct factory;
 //struct type;
 //struct environment;
 //struct realConstant;
@@ -74,6 +75,7 @@ struct expression:std::enable_shared_from_this<const expression>, dynamic_cast_i
 		return std::any_cast<llvm::Value*>(rAny);
 	}
 	virtual void onDestroy(void) const;
+	ptr collapse(const factory&_rF) const;
 	private:
 	mutable MAP m_sAttachedData;
 	virtual llvm::Value* generateCode(
@@ -88,4 +90,5 @@ struct expression:std::enable_shared_from_this<const expression>, dynamic_cast_i
 	virtual void addOnDestroy(onDestroyFunctor _s) const;
 	//mutable llvm::Value *m_pValue = nullptr;
 };
+expression::ptr collapse(const expression&, const factory&);
 }

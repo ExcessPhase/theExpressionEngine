@@ -4,6 +4,10 @@
 
 namespace theExpressionEngine
 {
+struct realConstant;
+struct factory;
+struct expression;
+std::shared_ptr<const expression> collapse(const expression&, const factory&);
 template<typename T>
 struct unique:T
 {	template<typename ...REST>
@@ -17,10 +21,10 @@ struct unique:T
 		}
 	};
 	template<typename ...REST>
-	static typename T::ptr create(REST&&..._r)
+	static typename T::ptr create(const factory&_rF, REST&&..._r)
 	{	static std::set<const unique<T>*, compare> s_sSet;
 		return (*s_sSet.insert(
-			std::make_shared<const unique>(std::forward<REST>(_r)...).get()
+			static_cast<const unique<T>*>(collapse(*std::make_shared<const unique>(std::forward<REST>(_r)...), _rF).get())
 		).first)->shared_from_this();
 	}
 };
