@@ -1,4 +1,9 @@
-# theExpressionEngine
+# theExpressionEngine -- an expression engine leveraging LLVM for just-in-time-compilation [theExpressionEngine](https://github.com/ExcessPhase/theExpressionEngine)
+
+**Author**: Peter Foelsche |
+**Date**: February..April 2025 |
+**Location**: Austin, TX, USA |
+**Email**: [peter_foelsche@outlook.com](mailto:peter_foelsche@outlook.com)
 
 A expression engine prototype leveraging LLVM as an Just-In-Time-Compiler.
 Pass an expression on the commandline. Understood are
