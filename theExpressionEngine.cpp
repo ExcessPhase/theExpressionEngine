@@ -26,11 +26,13 @@ int main(int argc, char**argv)
 	InitializeNativeTargetAsmPrinter();
 	InitializeNativeTargetAsmParser();
 	const auto pFactory = factory::getFactory();
-	const auto pE = pFactory->parse(argv[1]);
+	const auto pE = pFactory->parse(argv[1], {{"x", pFactory->parameter(0)}});
 	std::vector<double> sX(1);
 	std::string sLine;
 	while (std::getline(std::cin, sLine))
-	{	sX[0] = std::stod(sLine.c_str());
+	{	if (sLine.empty())
+			continue;
+		sX[0] = std::stod(sLine.c_str());
 		//GenericValue GV = EE->runFunction(GetValueFunc, Args);
 		//std::cout << GV.DoubleVal << std::endl; // Output: 3.14
 		std::cout << pE->evaluateLLVM(sX.data()) << " " << pE->evaluate(sX.data()) << std::endl;

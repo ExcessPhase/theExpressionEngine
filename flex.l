@@ -47,4 +47,4 @@
 "min"	{return MIN;}
 "hypot"	{return HYPOT;}
 "fmod"	{return FMOD;}
-"x"	{return X;}
+[a-zA-Z_][a-zA-Z_0-9]*	{*yylval = _rN2I.at(yytext); return X;}

@@ -440,12 +440,12 @@ struct factoryImpl:factory
 	virtual exprPtr negation(const exprPtr&_r) const override
 	{	return unique<onDestroy<theExpressionEngine::negation> >::create(*this, _r);
 	}
-	virtual exprPtr parse(const char *const _r) const override
+	virtual exprPtr parse(const char *const _r, const name2int&_rP) const override
 	{	yyscan_t scanner;
 		yylex_init(&scanner);
 		auto pBuffer = yy_scan_string(_r, scanner);
 		exprPtr p;
-		yyparse(scanner, &p, shared_from_this());
+		yyparse(scanner, &p, shared_from_this(), _rP);
 		yy_delete_buffer(pBuffer, scanner);
 		yylex_destroy(scanner);
 		return p;
