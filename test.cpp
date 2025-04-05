@@ -26,6 +26,7 @@ BOOST_AUTO_TEST_CASE(name)\
 	const auto pExpr = pFactory->parse(#sin "(" #val ")", {{"x", pFactory->parameter(0)}});\
 	BOOST_CHECK(pExpr->evaluate(nullptr) == std::sin(val));\
 	BOOST_CHECK(pExpr->evaluateLLVM(nullptr) == std::sin(val));\
+	BOOST_CHECK(pFactory->parse(#sin "(" "x" ")", {{"x", pFactory->parameter(0)}})->replace({{pFactory->parameter(0), pFactory->realConstant(val)}}, *pFactory) == pExpr);\
 }
 
 __TEST__(sin, 1.0, expression_000)
@@ -38,7 +39,7 @@ __TEST__(asin, 0.1, expression_006)
 __TEST__(acos, 0.1, expression_007)
 __TEST__(atan, 0.1, expression_008)
 __TEST__(asinh, 0.1, expression_009)
-__TEST__(acosh, 0.1, expression_010)
+__TEST__(acosh, 2.0, expression_010)
 __TEST__(atanh, 0.1, expression_011)
 __TEST__(exp, 1.0, expression_012)
 __TEST__(log, 2.0, expression_013)
