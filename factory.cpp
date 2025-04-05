@@ -374,7 +374,7 @@ struct parameter:expression
 };
 struct factoryImpl:factory
 {	virtual exprPtr realConstant(const double _d) const override
-	{	return unique<onDestroy<theExpressionEngine::realConstant> >::create(_d);
+	{	return unique<onDestroy<dynamic_cast_implementation<theExpressionEngine::realConstant> > >::create(_d);
 	}
 	virtual exprPtr parameter(const std::size_t _i) const override
 	{	return unique<onDestroy<theExpressionEngine::parameter> >::create(_i);

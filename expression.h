@@ -8,7 +8,7 @@
 //#include <string>
 //#include <variant>
 //#include <map>
-//#include "dynamic_cast.h"
+#include "dynamic_cast.h"
 //#include "environment.h"
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/IRBuilder.h>
@@ -18,13 +18,14 @@
 
 namespace theExpressionEngine
 {
+struct realConstant;
 //struct type;
 //struct environment;
 //struct realConstant;
 /// the base class of all expression types
 /// immutable
 /// no two with the same content are guaranteed to exist
-struct expression:std::enable_shared_from_this<const expression>//, dynamic_cast_interface<realConstant>
+struct expression:std::enable_shared_from_this<const expression>, dynamic_cast_interface<realConstant>
 {	typedef std::shared_ptr<const expression> ptr;
 	typedef std::vector<ptr> children;
 	enum enumAttachedData
