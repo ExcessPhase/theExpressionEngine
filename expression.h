@@ -76,6 +76,9 @@ struct expression:std::enable_shared_from_this<const expression>, dynamic_cast_i
 	}
 	virtual void onDestroy(void) const;
 	ptr collapse(const factory&_rF) const;
+	typedef std::map<ptr, ptr> ptr2ptr;
+	virtual ptr recreateFromChildren(children, const factory&) const = 0;
+	ptr replace(const ptr2ptr&, const factory&) const;
 	private:
 	mutable MAP m_sAttachedData;
 	virtual llvm::Value* generateCode(

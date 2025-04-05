@@ -1,5 +1,6 @@
 #include <iostream>
 #include <any>
+#include <stack>
 #include <typeinfo>
 #include <algorithm>
 #include "expression.h"
@@ -146,5 +147,41 @@ double expression::evaluateLLVM(const double *const _p) const
 		r = std::make_shared<const llvmData>(this);
 	}
 	return std::any_cast<const std::shared_ptr<const llvmData>&>(r)->jitFunction(_p);
+}
+expression::ptr expression::replace(const ptr2ptr&_r, const factory&_rF) const
+{	std::vector<std::tuple<ptr, size_t, children, bool> > sStack;
+	sStack.push_back({shared_from_this(), std::numeric_limits<std::size_t>::max(), children(), true});
+	while (!sStack.empty())
+	{	const auto [pThis, iParentPos, sChildren, b] = sStack.back();
+		sStack.pop_back();
+		if (b)
+		{	const auto pFind = _r.find(pThis);
+			if (pFind != _r.end())
+				sStack.push_back({pFind->second, iParentPos, pFind->second->m_sChildren, false});
+			else
+			{	sStack.push_back({pThis, iParentPos, children(), false});
+				const auto iPos = sStack.size() - 1;
+				for (const auto &p : pThis->m_sChildren)
+					sStack.push_back({p, iPos, children(), true});
+			}
+		}
+		else
+			if (iParentPos == std::numeric_limits<std::size_t>::max())
+				if (pThis->m_sChildren != sChildren)
+					return pThis->recreateFromChildren(sChildren, _rF);
+				else
+					return pThis;
+			else
+				if (pThis->m_sChildren != sChildren)
+					std::get<2>(sStack.at(iParentPos)).push_back(
+						pThis->recreateFromChildren(sChildren, _rF)
+					);
+				else
+					std::get<2>(sStack.at(iParentPos)).push_back(
+						pThis
+					);
+	}
+	std::abort();
+	return nullptr;
 }
 }

@@ -39,6 +39,9 @@ struct realConstant:expression
 	) const override
 	{	return llvm::ConstantFP::get(context, llvm::APFloat(m_d));
 	}
+	virtual ptr recreateFromChildren(children, const factory&) const override
+	{	return shared_from_this();
+	}
 };
 expression::ptr expression::collapse(const factory&_rF) const
 {	if (!getPtr(dummy<realConstant>()) && !m_sChildren.empty() && std::all_of(
@@ -54,7 +57,7 @@ expression::ptr expression::collapse(const factory&_rF) const
 }
 namespace
 {
-template<const char ac[], double(*PFCT)(double, double)>
+template<const char ac[], double(*PFCT)(double, double), factory::exprPtr (factory::*CREATE)(const factory::exprPtr&, const factory::exprPtr&) const>
 struct binary:expression
 {	binary(const ptr&_p0, const ptr&_p1)
 		:expression(
@@ -92,6 +95,9 @@ struct binary:expression
 			}
 		);
 	}
+	virtual ptr recreateFromChildren(children _s, const factory&_rF) const override
+	{	return (_rF.*CREATE)(_s.at(0), _s.at(1));
+	}
 };
 struct max:expression
 {	max(const ptr&_p0, const ptr&_p1)
@@ -121,6 +127,9 @@ struct max:expression
 			},
 			"maxnum"
 		);
+	}
+	virtual ptr recreateFromChildren(children _s, const factory&_rF) const override
+	{	return _rF.max(_s.at(0), _s.at(1));
 	}
 };
 struct min:expression
@@ -153,6 +162,9 @@ struct min:expression
 			"minnum"
 		);
 	}
+	virtual ptr recreateFromChildren(children _s, const factory&_rF) const override
+	{	return _rF.min(_s.at(0), _s.at(1));
+	}
 };
 struct multiplication:expression
 {	multiplication(const ptr&_p0, const ptr&_p1)
@@ -176,6 +188,9 @@ struct multiplication:expression
 			m_sChildren.at(1)->generateCodeW(_pRoot, context, builder, M, _pP),
 			"plus"
 		);
+	}
+	virtual ptr recreateFromChildren(children _s, const factory&_rF) const override
+	{	return _rF.multiplication(_s.at(0), _s.at(1));
 	}
 };
 struct division:expression
@@ -201,6 +216,9 @@ struct division:expression
 			"plus"
 		);
 	}
+	virtual ptr recreateFromChildren(children _s, const factory&_rF) const override
+	{	return _rF.division(_s.at(0), _s.at(1));
+	}
 };
 struct addition:expression
 {	addition(const ptr&_p0, const ptr&_p1)
@@ -224,6 +242,9 @@ struct addition:expression
 			m_sChildren.at(1)->generateCodeW(_pRoot, context, builder, M, _pP),
 			"plus"
 		);
+	}
+	virtual ptr recreateFromChildren(children _s, const factory&_rF) const override
+	{	return _rF.addition(_s.at(0), _s.at(1));
 	}
 };
 struct subtraction:expression
@@ -249,8 +270,11 @@ struct subtraction:expression
 			"plus"
 		);
 	}
+	virtual ptr recreateFromChildren(children _s, const factory&_rF) const override
+	{	return _rF.subtraction(_s.at(0), _s.at(1));
+	}
 };
-template<double(*PMATH)(double), llvm::Intrinsic::ID EID>
+template<double(*PMATH)(double), llvm::Intrinsic::ID EID, factory::exprPtr (factory::*CREATE)(const factory::exprPtr&) const>
 struct unary:expression
 {	unary(const ptr&_p)
 		:expression(
@@ -275,8 +299,11 @@ struct unary:expression
 			m_sChildren.at(0)->generateCodeW(_pRoot, context, builder, M, _pP)
 		);
 	}
+	virtual ptr recreateFromChildren(children _s, const factory&_rF) const override
+	{	return (_rF.*CREATE)(_s.at(0));
+	}
 };
-template<double(*PMATH)(double), const char AC[]>
+template<double(*PMATH)(double), const char AC[], factory::exprPtr (factory::*CREATE)(const factory::exprPtr&) const>
 struct unaryF:expression
 {	unaryF(const ptr&_p)
 		:expression(
@@ -311,6 +338,9 @@ struct unaryF:expression
 			}
 		);
 	}
+	virtual ptr recreateFromChildren(children _s, const factory&_rF) const override
+	{	return (_rF.*CREATE)(_s.at(0));
+	}
 };
 struct negation:expression
 {	negation(const ptr&_p)
@@ -336,6 +366,9 @@ struct negation:expression
 			ConstantFP::get(doubleType, 0.0),
 			m_sChildren.at(0)->generateCodeW(_pRoot, context, builder, M, _pP)
 		);
+	}
+	virtual ptr recreateFromChildren(children _s, const factory&_rF) const override
+	{	return _rF.negation(_s.at(0));
 	}
 };
 struct parameter:expression
@@ -383,6 +416,9 @@ struct parameter:expression
 			indexedPointer	// The pointer to load from
 		);
 	}
+	virtual ptr recreateFromChildren(children, const factory&) const override
+	{	return shared_from_this();
+	}
 };
 struct factoryImpl:factory
 {	virtual exprPtr realConstant(const double _d) const override
@@ -396,28 +432,28 @@ struct factoryImpl:factory
 #define __MAKE_ENTRY2__(a)\
 	static constexpr const char s_ac_##a[] = #a;\
 	virtual exprPtr a(const exprPtr&_p) const override\
-	{	return unique<onDestroy<theExpressionEngine::unaryF<std::a, s_ac_##a> > >::create(*this, _p);\
+	{	return unique<onDestroy<theExpressionEngine::unaryF<std::a, s_ac_##a, &factory::a> > >::create(*this, _p);\
 	}
 #define __MAKE_ENTRY__(a)\
 	virtual exprPtr a(const exprPtr&_p) const override\
-	{	return unique<onDestroy<theExpressionEngine::unary<std::a, llvm::Intrinsic::a> > >::create(*this, _p);\
+	{	return unique<onDestroy<theExpressionEngine::unary<std::a, llvm::Intrinsic::a, &factory::a> > >::create(*this, _p);\
 	}
 #include "unary.h"
 	virtual exprPtr pow(const exprPtr&_p0, const exprPtr&_p1) const override
 	{	static const char ac[] = "pow";
-		return unique<onDestroy<theExpressionEngine::binary<ac, &std::pow> > >::create(*this, _p0, _p1);
+		return unique<onDestroy<theExpressionEngine::binary<ac, &std::pow, &factory::pow> > >::create(*this, _p0, _p1);
 	}
 	virtual exprPtr fmod(const exprPtr&_p0, const exprPtr&_p1) const override
 	{	static const char ac[] = "fmod";
-		return unique<onDestroy<theExpressionEngine::binary<ac, &std::fmod> > >::create(*this, _p0, _p1);
+		return unique<onDestroy<theExpressionEngine::binary<ac, &std::fmod, &factory::fmod> > >::create(*this, _p0, _p1);
 	}
 	virtual exprPtr hypot(const exprPtr&_p0, const exprPtr&_p1) const override
 	{	static const char ac[] = "hypot";
-		return unique<onDestroy<theExpressionEngine::binary<ac, &std::hypot> > >::create(*this, _p0, _p1);
+		return unique<onDestroy<theExpressionEngine::binary<ac, &std::hypot, &factory::hypot> > >::create(*this, _p0, _p1);
 	}
 	virtual exprPtr atan2(const exprPtr&_p0, const exprPtr&_p1) const override
 	{	static const char ac[] = "atan2";
-		return unique<onDestroy<theExpressionEngine::binary<ac, &std::atan2> > >::create(*this, _p0, _p1);
+		return unique<onDestroy<theExpressionEngine::binary<ac, &std::atan2, &factory::atan2> > >::create(*this, _p0, _p1);
 	}
 	virtual exprPtr max(const exprPtr&_p0, const exprPtr&_p1) const override
 	{	return unique<onDestroy<theExpressionEngine::max> >::create(*this, _p0, _p1);
