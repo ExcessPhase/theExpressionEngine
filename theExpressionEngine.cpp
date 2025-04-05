@@ -27,7 +27,6 @@ int main(int argc, char**argv)
 	InitializeNativeTargetAsmParser();
 	const auto pFactory = factory::getFactory();
 	const auto pE = pFactory->parse(argv[1]);
-	std::cout << typeid(*pE).name() << std::endl;
 	std::vector<double> sX(1);
 	std::string sLine;
 	while (std::getline(std::cin, sLine))

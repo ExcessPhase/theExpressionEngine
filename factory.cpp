@@ -41,7 +41,7 @@ struct realConstant:expression
 	}
 };
 expression::ptr expression::collapse(const factory&_rF) const
-{	if (!getPtr(dummy<realConstant>()) && std::all_of(
+{	if (!getPtr(dummy<realConstant>()) && !m_sChildren.empty() && std::all_of(
 		m_sChildren.begin(),
 		m_sChildren.end(),
 		[](const ptr&_p)
