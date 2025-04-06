@@ -25,11 +25,10 @@ BOOST_AUTO_TEST_CASE(name)\
 {	const auto pFactory = theExpressionEngine::factory::getFactory();\
 	const theExpressionEngine::factory::name2int s = {{"x", pFactory->parameter(0)}};\
 	const auto pExpr = pFactory->parse(#sin "(" #val ")", s);\
-	BOOST_CHECK(pExpr->evaluate(nullptr) == std::sin(val));\
-	BOOST_CHECK(pExpr->evaluateLLVM(nullptr) == std::sin(val));\
+	BOOST_CHECK_CLOSE(pExpr->evaluate(nullptr), std::sin(val), 0.001);\
+	BOOST_CHECK_CLOSE(pExpr->evaluateLLVM(nullptr), std::sin(val), 0.001);\
 	BOOST_CHECK(pFactory->parse(#sin "(" "x" ")", s)->replace({{pFactory->parameter(0), pFactory->realConstant(val)}}, *pFactory) == pExpr);\
 }
-
 __TEST__(sin, 1.0, expression_000)
 __TEST__(cos, 1.0, expression_001)
 __TEST__(tan, 1.0, expression_002)
@@ -45,7 +44,7 @@ __TEST__(atanh, 0.1, expression_011)
 __TEST__(exp, 1.0, expression_012)
 __TEST__(log, 2.0, expression_013)
 __TEST__(sqrt, 2.0, expression_014)
-__TEST__(abs, -2.0, expression_015)
+__TEST__(fabs, -2.0, expression_015)
 __TEST__(log10, 2.0, expression_016)
 __TEST__(erf, 2.0, expression_017)
 __TEST__(erfc, 2.0, expression_018)

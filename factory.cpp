@@ -11,6 +11,7 @@
 #include <stdexcept>
 #include <regex>
 #include <iostream>
+#include <cmath>
 
 namespace theExpressionEngine
 {
@@ -547,7 +548,9 @@ struct factoryImpl:factory
 		yylex_init(&scanner);
 		auto pBuffer = yy_scan_string(_r, scanner);
 		exprPtr p;
-		yyparse(scanner, &p, shared_from_this(), _rP);
+		yy::parser my_parser(scanner, &p, shared_from_this(), _rP);
+		my_parser.parse();
+		//yyparse(scanner, &p, shared_from_this(), _rP);
 		yy_delete_buffer(pBuffer, scanner);
 		yylex_destroy(scanner);
 		return p;

@@ -1,11 +1,11 @@
-%define api.pure
+//%define api.pure
 %define api.value.type {theExpressionEngine::expression::ptr}
 %parse-param {yyscan_t scanner}
 %parse-param {theExpressionEngine::expression::ptr *const root}
-%parse-param {theExpressionEngine::factory::ptr const &factory}
+%parse-param {theExpressionEngine::factory::ptr const factory}
 %parse-param {theExpressionEngine::factory::name2int const &_rN2I}
 %lex-param {yyscan_t scanner}
-%lex-param {theExpressionEngine::factory::ptr const &factory}
+%lex-param {theExpressionEngine::factory::ptr const factory}
 %lex-param {theExpressionEngine::factory::name2int const &_rN2I}
 %{
 #include "factory.h"
@@ -13,14 +13,14 @@
 #include "flex.h"
 #include <stdexcept>
 typedef void* yyscan_t;
-void yyerror(yyscan_t scanner, theExpressionEngine::expression::ptr *const, theExpressionEngine::factory::ptr const &, theExpressionEngine::factory::name2int const &, const char*const);
-int yylex(YYSTYPE *, yyscan_t, theExpressionEngine::factory::ptr const &factory, theExpressionEngine::factory::name2int const &_rN2I);
-#define YYSTYPE theExpressionEngine::expression::ptr
+void yyerror(yyscan_t scanner, theExpressionEngine::expression::ptr *const, const theExpressionEngine::factory::ptr , theExpressionEngine::factory::name2int const &, const char*const);
+int yylex(yy::parser::value_type *, yyscan_t, const theExpressionEngine::factory::ptr factory, theExpressionEngine::factory::name2int const &_rN2I);
+//#define YYSTYPE theExpressionEngine::expression::ptr
 %}
 
 
 %token NUMBER SIN COS TAN ASIN ACOS ATAN SINH COSH TANH ASINH ACOSH ATANH
-%token SQRT ABS EXP LOG LOG10 ERF ERFC TGAMMA LGAMMA CBRT POW X MAX MIN ATAN2
+%token SQRT ABS EXP LOG LOG10 ERF ERFC TGAMMA LGAMMA CBRT POW X MAX MIN ATAN2 FABS
 %token HYPOT FMOD
 %left '+' '-'
 %left '*' '/'
@@ -54,7 +54,8 @@ factor: NUMBER {$$ = $1;}
 	| ACOSH '(' expr ')' {$$ = factory->acosh($3);}
 	| ATANH '(' expr ')' {$$ = factory->atanh($3);}
 	| SQRT '(' expr ')' {$$ = factory->sqrt($3);}
-	| ABS '(' expr ')' {$$ = factory->abs($3);}
+	| ABS '(' expr ')' {$$ = factory->fabs($3);}
+	| FABS '(' expr ')' {$$ = factory->fabs($3);}
 	| EXP '(' expr ')' {$$ = factory->exp($3);}
 	| LOG '(' expr ')' {$$ = factory->log($3);}
 	| LOG10 '(' expr ')' {$$ = factory->log10($3);}
@@ -74,6 +75,6 @@ factor: NUMBER {$$ = $1;}
 	| '-' factor {$$ = factory->negation($2);}
 	;
 %%
-void yyerror(yyscan_t, theExpressionEngine::expression::ptr *const, theExpressionEngine::factory::ptr const &, theExpressionEngine::factory::name2int const &, const char*const _p)
-{	throw std::logic_error(_p);
+void yy::parser::error(const std::string&_r)
+{	throw std::logic_error(_r);
 }

@@ -2,6 +2,7 @@
 #include <memory>
 #include <string>
 #include <map>
+#include "expression.h"
 namespace theExpressionEngine
 {
 struct expression;

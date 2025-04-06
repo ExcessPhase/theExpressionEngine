@@ -1,7 +1,8 @@
 all: theExpressionEngine.exe test.exe
-#CXXFLAGS=-O3 -DNDEBUG -march=native -ffast-math -I $(BOOST_ROOT)/include $(shell llvm-config --cxxflags) -std=c++17 -fexceptions -MMD -MP
-CXXFLAGS=-g -DNDEBUG -march=native -ffast-math -I $(BOOST_ROOT)/include $(shell llvm-config --cxxflags) -std=c++17 -fexceptions -MMD -MP -fsanitize=address
-CXX=clang++
+CXXFLAGS=-O3 -DNDEBUG -march=native -ffast-math -I $(BOOST_ROOT)/include $(shell llvm-config --cxxflags) -fexceptions -MMD -MP -std=c++17
+#CXXFLAGS=-g -DDEBUG -march=native -ffast-math -I $(BOOST_ROOT)/include $(shell llvm-config --cxxflags) -fexceptions -MMD -MP -std=c++17 -fsanitize=address -fno-inline -O0 -fno-omit-frame-pointer -fsanitize=undefined
+CXX=clang++-15
+#CXX=g++-13
 LDFLAGS=$(shell llvm-config --ldflags --system-libs --libs core irreader bitreader bitwriter support executionengine target)
 
 %.o: %.cpp
@@ -19,7 +20,7 @@ theExpressionEngine.exe:$(OBJECTS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $(OBJECTS)
 
 bison.cpp bison.h: bison.y
-	bison --header=bison.h --output=bison.cpp bison.y
+	bison --header=bison.h --output=bison.cpp bison.y --language=c++
 
 flex.cpp: flex.l
 	flex --reentrant --outfile=flex.cpp flex.l
@@ -28,4 +29,5 @@ factory.o:flex.cpp
 
 test.exe:$(TEST_OBJECTS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $(TEST_OBJECTS)
+
 -include $(DEPS)
