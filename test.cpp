@@ -72,7 +72,13 @@ BOOST_AUTO_TEST_CASE(zero_002)
 BOOST_AUTO_TEST_CASE(zero_003)
 {	const auto pFactory = theExpressionEngine::factory::getFactory();
 	const theExpressionEngine::factory::name2int s = {{"x", pFactory->parameter(0)}};
-	//const auto sDiv = pFactory->parse("x/1", s);
-	//const auto sX = pFactory->parse("x", s);
 	BOOST_CHECK(pFactory->parse("x/1", s) == pFactory->parse("x", s));
+}
+BOOST_AUTO_TEST_CASE(zero_004)
+{	const auto pFactory = theExpressionEngine::factory::getFactory();
+	const theExpressionEngine::factory::name2int s = {{"x", pFactory->parameter(0)}};
+	BOOST_CHECK(pFactory->parse("0+x", s) == pFactory->parse("x", s));
+	BOOST_CHECK(pFactory->parse("x+0", s) == pFactory->parse("x", s));
+	BOOST_CHECK(pFactory->parse("x-0", s) == pFactory->parse("x", s));
+	BOOST_CHECK(pFactory->parse("0-x", s) == pFactory->parse("-x", s));
 }
