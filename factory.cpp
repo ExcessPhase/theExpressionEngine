@@ -504,10 +504,28 @@ struct factoryImpl:factory
 	{	return unique<onDestroy<theExpressionEngine::subtraction> >::create(*this, _p0, _p1);
 	}
 	virtual exprPtr multiplication(const exprPtr&_p0, const exprPtr&_p1) const override
-	{	return unique<onDestroy<theExpressionEngine::multiplication> >::create(*this, _p0, _p1);
+	{	if (const auto p = _p0->getPtr(dummy<theExpressionEngine::realConstant>()))
+			if (p->m_d == 1)
+				return _p1;
+			else
+			if (p->m_d == 0)
+				return _p0;
+		if (const auto p = _p1->getPtr(dummy<theExpressionEngine::realConstant>()))
+			if (p->m_d == 1)
+				return _p0;
+			else
+			if (p->m_d == 0)
+				return _p1;
+		return unique<onDestroy<theExpressionEngine::multiplication> >::create(*this, _p0, _p1);
 	}
 	virtual exprPtr division(const exprPtr&_p0, const exprPtr&_p1) const override
-	{	return unique<onDestroy<theExpressionEngine::division> >::create(*this, _p0, _p1);
+	{	if (const auto p = _p0->getPtr(dummy<theExpressionEngine::realConstant>()); p && p->m_d == 0)
+			return _p0;
+		else
+		if (const auto p = _p1->getPtr(dummy<theExpressionEngine::realConstant>()); p && p->m_d == 1)
+			return _p0;
+		else
+		return unique<onDestroy<theExpressionEngine::division> >::create(*this, _p0, _p1);
 	}
 	virtual exprPtr negation(const exprPtr&_r) const override
 	{	return unique<onDestroy<theExpressionEngine::negation> >::create(*this, _r);

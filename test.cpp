@@ -23,10 +23,11 @@ BOOST_GLOBAL_FIXTURE(LLVMSetup);
 #define __TEST__(sin, val, name)\
 BOOST_AUTO_TEST_CASE(name)\
 {	const auto pFactory = theExpressionEngine::factory::getFactory();\
-	const auto pExpr = pFactory->parse(#sin "(" #val ")", {{"x", pFactory->parameter(0)}});\
+	const theExpressionEngine::factory::name2int s = {{"x", pFactory->parameter(0)}};\
+	const auto pExpr = pFactory->parse(#sin "(" #val ")", s);\
 	BOOST_CHECK(pExpr->evaluate(nullptr) == std::sin(val));\
 	BOOST_CHECK(pExpr->evaluateLLVM(nullptr) == std::sin(val));\
-	BOOST_CHECK(pFactory->parse(#sin "(" "x" ")", {{"x", pFactory->parameter(0)}})->replace({{pFactory->parameter(0), pFactory->realConstant(val)}}, *pFactory) == pExpr);\
+	BOOST_CHECK(pFactory->parse(#sin "(" "x" ")", s)->replace({{pFactory->parameter(0), pFactory->realConstant(val)}}, *pFactory) == pExpr);\
 }
 
 __TEST__(sin, 1.0, expression_000)
@@ -51,3 +52,27 @@ __TEST__(erfc, 2.0, expression_018)
 __TEST__(tgamma, 2.0, expression_019)
 __TEST__(lgamma, 2.0, expression_020)
 __TEST__(cbrt, 2.0, expression_021)
+BOOST_AUTO_TEST_CASE(zero_000)
+{	const auto pFactory = theExpressionEngine::factory::getFactory();
+	const theExpressionEngine::factory::name2int s = {{"x", pFactory->parameter(0)}};
+	BOOST_CHECK(pFactory->parse("0*x", s) == pFactory->parse("0", s));
+	BOOST_CHECK(pFactory->parse("x*0", s) == pFactory->parse("0", s));
+}
+BOOST_AUTO_TEST_CASE(zero_001)
+{	const auto pFactory = theExpressionEngine::factory::getFactory();
+	const theExpressionEngine::factory::name2int s = {{"x", pFactory->parameter(0)}};
+	BOOST_CHECK(pFactory->parse("1*x", s) == pFactory->parse("x", s));
+	BOOST_CHECK(pFactory->parse("x*1", s) == pFactory->parse("x", s));
+}
+BOOST_AUTO_TEST_CASE(zero_002)
+{	const auto pFactory = theExpressionEngine::factory::getFactory();
+	const theExpressionEngine::factory::name2int s = {{"x", pFactory->parameter(0)}};
+	BOOST_CHECK(pFactory->parse("0/x", s) == pFactory->parse("0", s));
+}
+BOOST_AUTO_TEST_CASE(zero_003)
+{	const auto pFactory = theExpressionEngine::factory::getFactory();
+	const theExpressionEngine::factory::name2int s = {{"x", pFactory->parameter(0)}};
+	//const auto sDiv = pFactory->parse("x/1", s);
+	//const auto sX = pFactory->parse("x", s);
+	BOOST_CHECK(pFactory->parse("x/1", s) == pFactory->parse("x", s));
+}
