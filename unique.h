@@ -45,12 +45,9 @@ struct unique:T
 	}
 	template<typename ...REST>
 	static typename T::ptr _create(const factory&_rF, REST&&..._r)
-	{	std::lock_guard<std::recursive_mutex> sLock(getMutex());
-		const auto s = std::make_shared<const unique<T> >(std::forward<REST>(_r)...);
-		//const auto s1 = collapse(*s, _rF);
-		return (*getSet().insert(
-			static_cast<const unique<T>*>(s.get())
-		).first)->shared_from_this();
+	{	const auto s = std::make_shared<const unique<T> >(std::forward<REST>(_r)...);
+		std::lock_guard<std::recursive_mutex> sLock(getMutex());
+		return (*getSet().insert(s.get()).first)->shared_from_this();
 	}
 	template<typename ...REST>
 	static typename T::ptr create(const factory&_rF, REST&&..._r)
