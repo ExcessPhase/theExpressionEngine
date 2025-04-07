@@ -1,7 +1,11 @@
+ifndef BOOST_ROOT
+$(error BOOST_ROOT is not set)
+endif
+
 all: theExpressionEngine.exe test.exe
 CXXFLAGS=-O3 -DNDEBUG -march=native -ffast-math -I $(BOOST_ROOT)/include $(shell llvm-config --cxxflags) -fexceptions -MMD -MP -std=c++17
 #CXXFLAGS=-g -DDEBUG -march=native -ffast-math -I $(BOOST_ROOT)/include $(shell llvm-config --cxxflags) -fexceptions -MMD -MP -std=c++17 -fsanitize=address -fno-inline -O0 -fno-omit-frame-pointer -fsanitize=undefined
-CXX=clang++-15
+CXX=clang++
 #CXX=g++-13
 LDFLAGS=$(shell llvm-config --ldflags --system-libs --libs core irreader bitreader bitwriter support executionengine target)
 
