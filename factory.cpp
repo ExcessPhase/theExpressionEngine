@@ -41,7 +41,7 @@ struct realConstant:expression
 	{	return llvm::ConstantFP::get(context, llvm::APFloat(m_d));
 	}
 	virtual ptr recreateFromChildren(children, const factory&) const override
-	{	return shared_from_this();
+	{	return this;
 	}
 	virtual std::size_t getWeight(void) const override
 	{	return 1;
@@ -57,7 +57,7 @@ expression::ptr expression::collapse(const factory&_rF) const
 	))
 		return _rF.realConstant(evaluate(nullptr));
 	else
-		return shared_from_this();
+		return this;
 }
 namespace
 {
@@ -451,7 +451,7 @@ struct parameter:expression
 		);
 	}
 	virtual ptr recreateFromChildren(children, const factory&) const override
-	{	return shared_from_this();
+	{	return this;
 	}
 	virtual std::size_t getWeight(void) const override
 	{	return 1;
@@ -459,44 +459,44 @@ struct parameter:expression
 };
 struct factoryImpl:factory
 {	virtual exprPtr realConstant(const double _d) const override
-	{	return unique<onDestroy<dynamic_cast_implementation<theExpressionEngine::realConstant> > >::create(*this, _d);
+	{	return theExpressionEngine::expression::create<dynamic_cast_implementation<theExpressionEngine::realConstant> >(*this, _d);
 	}
 	virtual exprPtr parameter(const std::size_t _i) const override
-	{	return unique<onDestroy<theExpressionEngine::parameter> >::create(*this, _i);
+	{	return theExpressionEngine::expression::create<theExpressionEngine::parameter>(*this, _i);
 	}
 #define __COMMA__
 #define __COMMA2__
 #define __MAKE_ENTRY2__(a)\
 	static constexpr const char s_ac_##a[] = #a;\
 	virtual exprPtr a(const exprPtr&_p) const override\
-	{	return unique<onDestroy<theExpressionEngine::unaryF<std::a, s_ac_##a, &factory::a> > >::create(*this, _p);\
+	{	return theExpressionEngine::expression::create<theExpressionEngine::unaryF<std::a, s_ac_##a, &factory::a> >(*this, _p);\
 	}
 #define __MAKE_ENTRY__(a)\
 	virtual exprPtr a(const exprPtr&_p) const override\
-	{	return unique<onDestroy<theExpressionEngine::unary<std::a, llvm::Intrinsic::a, &factory::a> > >::create(*this, _p);\
+	{	return theExpressionEngine::expression::create<theExpressionEngine::unary<std::a, llvm::Intrinsic::a, &factory::a> >(*this, _p);\
 	}
 #include "unary.h"
 	virtual exprPtr pow(const exprPtr&_p0, const exprPtr&_p1) const override
 	{	static const char ac[] = "pow";
-		return unique<onDestroy<theExpressionEngine::binary<ac, &std::pow, &factory::pow> > >::create(*this, _p0, _p1);
+		return theExpressionEngine::expression::create<theExpressionEngine::binary<ac, &std::pow, &factory::pow> >(*this, _p0, _p1);
 	}
 	virtual exprPtr fmod(const exprPtr&_p0, const exprPtr&_p1) const override
 	{	static const char ac[] = "fmod";
-		return unique<onDestroy<theExpressionEngine::binary<ac, &std::fmod, &factory::fmod> > >::create(*this, _p0, _p1);
+		return theExpressionEngine::expression::create<theExpressionEngine::binary<ac, &std::fmod, &factory::fmod> >(*this, _p0, _p1);
 	}
 	virtual exprPtr hypot(const exprPtr&_p0, const exprPtr&_p1) const override
 	{	static const char ac[] = "hypot";
-		return unique<onDestroy<theExpressionEngine::binary<ac, &std::hypot, &factory::hypot> > >::create(*this, _p0, _p1);
+		return theExpressionEngine::expression::create<theExpressionEngine::binary<ac, &std::hypot, &factory::hypot> >(*this, _p0, _p1);
 	}
 	virtual exprPtr atan2(const exprPtr&_p0, const exprPtr&_p1) const override
 	{	static const char ac[] = "atan2";
-		return unique<onDestroy<theExpressionEngine::binary<ac, &std::atan2, &factory::atan2> > >::create(*this, _p0, _p1);
+		return theExpressionEngine::expression::create<theExpressionEngine::binary<ac, &std::atan2, &factory::atan2> >(*this, _p0, _p1);
 	}
 	virtual exprPtr max(const exprPtr&_p0, const exprPtr&_p1) const override
-	{	return unique<onDestroy<theExpressionEngine::max> >::create(*this, _p0, _p1);
+	{	return theExpressionEngine::expression::create<theExpressionEngine::max>(*this, _p0, _p1);
 	}
 	virtual exprPtr min(const exprPtr&_p0, const exprPtr&_p1) const override
-	{	return unique<onDestroy<theExpressionEngine::min> >::create(*this, _p0, _p1);
+	{	return theExpressionEngine::expression::create<theExpressionEngine::min>(*this, _p0, _p1);
 	}
 	virtual exprPtr addition(const exprPtr&_p0, const exprPtr&_p1) const override
 	{	if (const auto p = _p0->getPtr(dummy<theExpressionEngine::realConstant>()); p && p->m_d == 0)
@@ -505,7 +505,7 @@ struct factoryImpl:factory
 		if (const auto p = _p1->getPtr(dummy<theExpressionEngine::realConstant>()); p && p->m_d == 0)
 			return _p0;
 		else
-			return unique<onDestroy<theExpressionEngine::addition> >::create(*this, _p0, _p1);
+			return theExpressionEngine::expression::create<theExpressionEngine::addition>(*this, _p0, _p1);
 	}
 	virtual exprPtr subtraction(const exprPtr&_p0, const exprPtr&_p1) const override
 	{	if (const auto p = _p0->getPtr(dummy<theExpressionEngine::realConstant>()); p && p->m_d == 0)
@@ -514,7 +514,7 @@ struct factoryImpl:factory
 		if (const auto p = _p1->getPtr(dummy<theExpressionEngine::realConstant>()); p && p->m_d == 0)
 			return _p0;
 		else
-		return unique<onDestroy<theExpressionEngine::subtraction> >::create(*this, _p0, _p1);
+		return theExpressionEngine::expression::create<theExpressionEngine::subtraction>(*this, _p0, _p1);
 	}
 	virtual exprPtr multiplication(const exprPtr&_p0, const exprPtr&_p1) const override
 	{	if (const auto p = _p0->getPtr(dummy<theExpressionEngine::realConstant>()))
@@ -529,7 +529,7 @@ struct factoryImpl:factory
 			else
 			if (p->m_d == 0)
 				return _p1;
-		return unique<onDestroy<theExpressionEngine::multiplication> >::create(*this, _p0, _p1);
+		return theExpressionEngine::expression::create<theExpressionEngine::multiplication>(*this, _p0, _p1);
 	}
 	virtual exprPtr division(const exprPtr&_p0, const exprPtr&_p1) const override
 	{	if (const auto p = _p0->getPtr(dummy<theExpressionEngine::realConstant>()); p && p->m_d == 0)
@@ -538,10 +538,10 @@ struct factoryImpl:factory
 		if (const auto p = _p1->getPtr(dummy<theExpressionEngine::realConstant>()); p && p->m_d == 1)
 			return _p0;
 		else
-		return unique<onDestroy<theExpressionEngine::division> >::create(*this, _p0, _p1);
+		return theExpressionEngine::expression::create<theExpressionEngine::division>(*this, _p0, _p1);
 	}
 	virtual exprPtr negation(const exprPtr&_r) const override
-	{	return unique<onDestroy<theExpressionEngine::negation> >::create(*this, _r);
+	{	return theExpressionEngine::expression::create<theExpressionEngine::negation>(*this, _r);
 	}
 	virtual exprPtr parse(const char *const _r, const name2int&_rP) const override
 	{	yyscan_t scanner;
@@ -550,7 +550,7 @@ struct factoryImpl:factory
 		exprPtr p;
 		yy::parser my_parser(scanner, &p, shared_from_this(), _rP);
 		my_parser.parse();
-		//yyparse(scanner, &p, shared_from_this(), _rP);
+		//yyparse(scanner, &p, this, _rP);
 		yy_delete_buffer(pBuffer, scanner);
 		yylex_destroy(scanner);
 		return p;

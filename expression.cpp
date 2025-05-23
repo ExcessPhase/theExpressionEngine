@@ -150,7 +150,7 @@ double expression::evaluateLLVM(const double *const _p) const
 }
 expression::ptr expression::replace(const ptr2ptr&_r, const factory&_rF) const
 {	std::vector<std::tuple<ptr, size_t, children, bool> > sStack;
-	sStack.push_back({shared_from_this(), std::numeric_limits<std::size_t>::max(), children(), true});
+	sStack.push_back({this, std::numeric_limits<std::size_t>::max(), children(), true});
 	while (!sStack.empty())
 	{	const auto [pThis, iParentPos, sChildren, b] = sStack.back();
 		sStack.pop_back();
@@ -186,7 +186,7 @@ expression::ptr expression::replace(const ptr2ptr&_r, const factory&_rF) const
 }
 std::size_t expression::getWeightW(void) const
 {	std::stack<ptr> s;
-	s.push(shared_from_this());
+	s.push(this);
 	std::size_t i = 0;
 	while (!s.empty())
 	{	const auto p = s.top();

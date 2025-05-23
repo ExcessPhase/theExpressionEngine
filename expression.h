@@ -9,9 +9,11 @@
 //#include <variant>
 //#include <map>
 #include "dynamic_cast.h"
+#include "unique.h"
 //#include "environment.h"
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/IRBuilder.h>
+#include <boost/intrusive_ptr.hpp>
 //#include <llvm/IR/Module.h>
 //#include <llvm/IR/Constants.h>
 
@@ -26,8 +28,8 @@ struct factory;
 /// the base class of all expression types
 /// immutable
 /// no two with the same content are guaranteed to exist
-struct expression:std::enable_shared_from_this<const expression>, dynamic_cast_interface<realConstant>
-{	typedef std::shared_ptr<const expression> ptr;
+struct expression:dynamic_cast_interface<realConstant>, unique<expression>
+{	typedef boost::intrusive_ptr<const expression> ptr;
 	typedef std::vector<ptr> children;
 	enum enumAttachedData
 	{	eLLVMValuePtr,

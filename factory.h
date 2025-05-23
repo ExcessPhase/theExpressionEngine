@@ -2,12 +2,13 @@
 #include <memory>
 #include <string>
 #include <map>
+#include "unique.h"
 #include "expression.h"
 namespace theExpressionEngine
 {
 struct expression;
 struct factory:std::enable_shared_from_this<const factory>
-{	typedef std::shared_ptr<const expression> exprPtr;
+{	typedef boost::intrusive_ptr<const expression> exprPtr;
 	virtual exprPtr realConstant(const double) const = 0;
 	//virtual exprPtr sqrt(const exprPtr&) const = 0;
 #define __COMMA2__
