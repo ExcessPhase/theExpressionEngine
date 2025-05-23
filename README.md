@@ -49,6 +49,9 @@ e.g.
 which prints the values of sin(0) and sin(1).
 
 ## News
+I made the registration of existing objects threading safe.
+I don't know how to implement this, other than protecting increment/decrement reference counting by a mutex.
+
 Implemented collapsing of constant values. So it is no longer possible to create an expression object sin(0.0) as it is immediately collapsed to 0.0.
 Implemented a name2ptr object passed to factory::parse() to parse predefined parameters and constants.
 All the LLVM code is now hidden behind the expression engine and multiple instances might exist and executed in parallel.
