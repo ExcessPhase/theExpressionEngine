@@ -49,6 +49,9 @@ e.g.
 which prints the values of sin(0) and sin(1).
 
 ## News
+The code is organized in a way so that it can be either multithreaded or single thread.
+This can be switched using the BTHREADED template argument for unique in unique.h.
+
 I made the current implementation thread-safe (not really tested in a multithreaded environment).
 
 I made the registration of existing objects threading safe.
