@@ -67,7 +67,8 @@ void expression::onDestroy(void) const
 		r();
 }
 void expression::addOnDestroy(onDestroyFunctor _s) const
-{	m_sOnDestroyList.emplace_back(std::move(_s));
+{	std::unique_lock<std::recursive_mutex> sLock(getMutex());
+	m_sOnDestroyList.emplace_back(std::move(_s));
 }
 namespace
 {
@@ -136,16 +137,19 @@ struct llvmData
 };
 }
 double expression::evaluateLLVM(const double *const _p, const expression*const _pRoot) const
-{	const auto sInsert = m_sAttachedData.emplace(_pRoot, ARRAY());
+{	std::unique_lock<std::recursive_mutex> sLock(getMutex());
+	const auto sInsert = m_sAttachedData.emplace(_pRoot, ARRAY());
 	std::any &r = sInsert.first->second[eLLVMdata];
 	if (sInsert.second)
 	{	_pRoot->addOnDestroy(
 			[_pRoot, this](void)
-			{	m_sAttachedData.erase(_pRoot);
+			{	std::unique_lock<std::recursive_mutex> sLock(getMutex());
+				m_sAttachedData.erase(_pRoot);
 			}
 		);
 		r = std::make_shared<const llvmData>(this, _pRoot);
 	}
+	sLock.unlock();
 	return std::any_cast<const std::shared_ptr<const llvmData>&>(r)->jitFunction(_p);
 }
 expression::ptr expression::replace(const ptr2ptr&_r, const factory&_rF) const
@@ -204,11 +208,13 @@ llvm::Value *expression::generateCodeW(
 	llvm::Module *const M,
 	llvm::Value*const _pP
 ) const
-{	const auto sInsert = m_sAttachedData.emplace(_pRoot, ARRAY());
+{	std::unique_lock<std::recursive_mutex> sLock(getMutex());
+	const auto sInsert = m_sAttachedData.emplace(_pRoot, ARRAY());
 	if (sInsert.second)
 		_pRoot->addOnDestroy(
 			[_pRoot, this](void)
-			{	m_sAttachedData.erase(_pRoot);
+			{	std::unique_lock<std::recursive_mutex> sLock(getMutex());
+				m_sAttachedData.erase(_pRoot);
 			}
 		);
 	auto &rAny = sInsert.first->second[eLLVMValuePtr];

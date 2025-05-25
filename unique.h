@@ -60,6 +60,9 @@ class unique
 		return s;
 	}
 	public:
+	static MUTEX&getMutex(void)
+	{	return getSet().second;
+	}
 	template<typename DERIVED, typename ...ARGS>
 	static boost::intrusive_ptr<const T> _create(ARGS&&..._r)
 	{	const auto s = boost::intrusive_ptr<const T>(new onDestroy<DERIVED>(std::forward<ARGS>(_r)...));
