@@ -26,7 +26,7 @@ BOOST_AUTO_TEST_CASE(name)\
 	const theExpressionEngine::factory::name2int s = {{"x", pFactory->parameter(0)}};\
 	const auto pExpr = pFactory->parse(#sin "(" #val ")", s);\
 	BOOST_CHECK_CLOSE(pExpr->evaluate(nullptr), std::sin(val), 0.001);\
-	BOOST_CHECK_CLOSE(pExpr->evaluateLLVM(nullptr), std::sin(val), 0.001);\
+	BOOST_CHECK_CLOSE(pExpr->evaluateLLVM(nullptr, pExpr.get()), std::sin(val), 0.001);\
 	BOOST_CHECK(pFactory->parse(#sin "(" "x" ")", s)->replace({{pFactory->parameter(0), pFactory->realConstant(val)}}, *pFactory) == pExpr);\
 }
 __TEST__(sin, 1.0, expression_000)

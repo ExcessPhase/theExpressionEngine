@@ -35,7 +35,7 @@ int main(int argc, char**argv)
 		sX[0] = std::stod(sLine.c_str());
 		//GenericValue GV = EE->runFunction(GetValueFunc, Args);
 		//std::cout << GV.DoubleVal << std::endl; // Output: 3.14
-		std::cout << pE->evaluateLLVM(sX.data()) << " " << pE->evaluate(sX.data()) << std::endl;
+		std::cout << pE->evaluateLLVM(sX.data(), pE.get()) << " " << pE->evaluate(sX.data()) << std::endl;
 	}
 	return 0;
 }

@@ -50,7 +50,7 @@ struct expression:dynamic_cast_interface<realConstant>, unique<expression>
 		/// the type of the LHS and RHS is guaranteed to be identical
 	virtual bool isSmaller(const expression&) const;
 	virtual double evaluate(const double *const) const = 0;
-	double evaluateLLVM(const double *const) const;
+	double evaluateLLVM(const double *const, const expression*const) const;
 	llvm::Value *generateCodeW(
 		const expression *const _pRoot,
 		llvm::LLVMContext& context,
@@ -60,7 +60,7 @@ struct expression:dynamic_cast_interface<realConstant>, unique<expression>
 	) const
 	{	const auto sInsert = m_sAttachedData.emplace(_pRoot, ARRAY());
 		if (sInsert.second)
-			addOnDestroy(
+			_pRoot->addOnDestroy(
 				[_pRoot, this](void)
 				{	m_sAttachedData.erase(_pRoot);
 				}

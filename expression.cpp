@@ -79,7 +79,7 @@ struct llvmData
 	std::unique_ptr<ExecutionEngine> EE;// = std::unique_ptr<ExecutionEngine>(EngineBuilder(std::move(M)).setErrorStr(&ErrStr).setEngineKind(EngineKind::JIT).create());
 	using JITFunctionType = double(*)(const double*);
 	JITFunctionType jitFunction;// = reinterpret_cast<JITFunctionType>(funcAddress);
-	explicit llvmData(const expression *_p)
+	explicit llvmData(const expression *const _p, const expression*const _pRoot)
 		:Context(),
 		M(std::make_unique<Module>("top", Context))
 		//EE(std::unique_ptr<ExecutionEngine>(EngineBuilder(std::move(M)).setErrorStr(&ErrStr).setEngineKind(EngineKind::JIT).create()))
@@ -98,7 +98,7 @@ struct llvmData
 		Function::arg_iterator args = GetValueFunc->arg_begin();
 		Value* doublePtrArg = &(*args);
 		// Create a constant double value
-		Value* const ConstantVal = _p->generateCodeW(nullptr, Context, Builder, M.get(), doublePtrArg);//ConstantFP::get(Context, APFloat(3.14));
+		Value* const ConstantVal = _p->generateCodeW(_pRoot, Context, Builder, M.get(), doublePtrArg);//ConstantFP::get(Context, APFloat(3.14));
 
 		// Return the constant value
 		Builder.CreateRet(ConstantVal);
@@ -135,16 +135,16 @@ struct llvmData
 	}
 };
 }
-double expression::evaluateLLVM(const double *const _p) const
-{	const auto sInsert = m_sAttachedData.emplace(this, ARRAY());
+double expression::evaluateLLVM(const double *const _p, const expression*const _pRoot) const
+{	const auto sInsert = m_sAttachedData.emplace(_pRoot, ARRAY());
 	std::any &r = sInsert.first->second[eLLVMdata];
 	if (sInsert.second)
-	{	addOnDestroy(
-			[this](void)
-			{	m_sAttachedData.erase(this);	
+	{	_pRoot->addOnDestroy(
+			[_pRoot, this](void)
+			{	m_sAttachedData.erase(_pRoot);
 			}
 		);
-		r = std::make_shared<const llvmData>(this);
+		r = std::make_shared<const llvmData>(this, _pRoot);
 	}
 	return std::any_cast<const std::shared_ptr<const llvmData>&>(r)->jitFunction(_p);
 }
