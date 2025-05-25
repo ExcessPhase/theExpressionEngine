@@ -49,6 +49,8 @@ e.g.
 which prints the values of sin(0) and sin(1).
 
 ## News
+The current implementation is not thread-safe! I'm thinking about how to solve this.
+
 I made the registration of existing objects threading safe.
 I don't know how to implement this, other than protecting increment/decrement reference counting by a mutex.
 
