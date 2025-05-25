@@ -67,7 +67,7 @@ void expression::onDestroy(void) const
 		r();
 }
 void expression::addOnDestroy(onDestroyFunctor _s) const
-{	std::unique_lock<std::recursive_mutex> sLock(getMutex());
+{	std::unique_lock<MUTEX> sLock(getMutex());
 	m_sOnDestroyList.emplace_back(std::move(_s));
 }
 namespace
@@ -137,13 +137,13 @@ struct llvmData
 };
 }
 double expression::evaluateLLVM(const double *const _p, const expression*const _pRoot) const
-{	std::unique_lock<std::recursive_mutex> sLock(getMutex());
+{	std::unique_lock<MUTEX> sLock(getMutex());
 	const auto sInsert = m_sAttachedData.emplace(_pRoot, ARRAY());
 	std::any &r = sInsert.first->second[eLLVMdata];
 	if (sInsert.second)
 	{	_pRoot->addOnDestroy(
 			[_pRoot, this](void)
-			{	std::unique_lock<std::recursive_mutex> sLock(getMutex());
+			{	std::unique_lock<MUTEX> sLock(getMutex());
 				m_sAttachedData.erase(_pRoot);
 			}
 		);
@@ -208,12 +208,12 @@ llvm::Value *expression::generateCodeW(
 	llvm::Module *const M,
 	llvm::Value*const _pP
 ) const
-{	std::unique_lock<std::recursive_mutex> sLock(getMutex());
+{	std::unique_lock<MUTEX> sLock(getMutex());
 	const auto sInsert = m_sAttachedData.emplace(_pRoot, ARRAY());
 	if (sInsert.second)
 		_pRoot->addOnDestroy(
 			[_pRoot, this](void)
-			{	std::unique_lock<std::recursive_mutex> sLock(getMutex());
+			{	std::unique_lock<MUTEX> sLock(getMutex());
 				m_sAttachedData.erase(_pRoot);
 			}
 		);

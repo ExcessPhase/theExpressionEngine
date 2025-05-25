@@ -32,11 +32,13 @@ class NullMutex
 	/// default is multithreaded using std::recursive_mutex
 template<typename T, bool BTHREADED = true>
 class unique
-{	typedef typename std::conditional<
+{	public:
+	typedef typename std::conditional<
 		BTHREADED,
 		std::recursive_mutex,
 		NullMutex
 	>::type MUTEX;
+	private:
 		/// does not need to be std::atomic as protected by a mutex
 	mutable std::size_t m_sRefCount;
 	public:
