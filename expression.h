@@ -57,25 +57,7 @@ struct expression:dynamic_cast_interface<realConstant>, unique<expression>
 		llvm::IRBuilder<>& builder,
 		llvm::Module *const M,
 		llvm::Value*const _pP
-	) const
-	{	const auto sInsert = m_sAttachedData.emplace(_pRoot, ARRAY());
-		if (sInsert.second)
-			_pRoot->addOnDestroy(
-				[_pRoot, this](void)
-				{	m_sAttachedData.erase(_pRoot);
-				}
-			);
-		auto &rAny = sInsert.first->second[eLLVMValuePtr];
-		if (!rAny.has_value())
-			rAny = generateCode(
-				_pRoot ? _pRoot : this,
-				context,
-				builder,
-				M,
-				_pP
-			);
-		return std::any_cast<llvm::Value*>(rAny);
-	}
+	) const;
 	virtual void onDestroy(void) const;
 	ptr collapse(const factory&_rF) const;
 	typedef std::map<ptr, ptr> ptr2ptr;
