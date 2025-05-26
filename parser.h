@@ -13,22 +13,6 @@ namespace parser
 {
 namespace x3 = boost::spirit::x3;
 
-//---------------------------------------------------------------------
-// AST Node Definitions
-//---------------------------------------------------------------------
-
-// For convenience, define a type alias for a pointer to an AST node.
-//---------------------------------------------------------------------
-// Parser Grammar Using Boost Spirit X3 (returning an AST)
-//---------------------------------------------------------------------
-
-// We declare rules with a synthesized attribute of type ast_ptr.
-#if 0
-x3::rule<class factor, ast_ptr> const factor("factor");
-x3::rule<class term, ast_ptr> const term("term");
-x3::rule<class expression, ast_ptr> const expression("expression");
-#endif
-
 static const factory::ptr s_pFactory = factory::getFactory();
 x3::rule<class NUMBER, expression::ptr> const NUMBER("number");
 x3::rule<class factor, expression::ptr> const factor("factor");
