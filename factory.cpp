@@ -545,16 +545,12 @@ struct factoryImpl:factory
 	{	return theExpressionEngine::expression::create<theExpressionEngine::negation>(*this, _r);
 	}
 	virtual exprPtr parse(const char *const _r, const name2int&_rP) const override
-	{	yyscan_t scanner;
-		yylex_init(&scanner);
-		auto pBuffer = yy_scan_string(_r, scanner);
-		exprPtr p;
-		yy::parser my_parser(scanner, &p, shared_from_this(), _rP);
-		my_parser.parse();
-		//yyparse(scanner, &p, this, _rP);
-		yy_delete_buffer(pBuffer, scanner);
-		yylex_destroy(scanner);
-		return p;
+    	{	exprPtr pRet;
+		auto p = _r;
+		if (phrase_parse(p, _r + std::strlen(_r), parser::expr, boost::spirit::x3::space, pRet) && p == _r + std::strlen(_r))
+			return pRet;
+		else
+			throw std::runtime_error(p);
 	}
 };
 }
