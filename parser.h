@@ -111,11 +111,11 @@ BOOST_SPIRIT_DEFINE(factor);
 auto const expr_def = addition;
 BOOST_SPIRIT_DEFINE(expr);
 
-x3::rule<class plus_minus_pair, char> const plus_minus_pair = "plus_minus_pair";
-auto const plus_minus_pair_def = x3::attr('+') | x3::attr('-');
-BOOST_SPIRIT_DEFINE(plus_minus_pair);
+//x3::rule<class plus_minus_pair, char> const plus_minus_pair = "plus_minus_pair";
+//auto const plus_minus_pair_def = x3::char_("+-");
+//BOOST_SPIRIT_DEFINE(plus_minus_pair);
 
-auto const addition_def = (term >> *(plus_minus_pair >> term))
+auto const addition_def = (term >> *(x3::char_("+-") >> term))
 	[(	[](auto& ctx)
 		{	auto const& attr = x3::_attr(ctx);
 			expression::ptr result = boost::fusion::at_c<0>(attr);
@@ -135,11 +135,11 @@ auto const addition_def = (term >> *(plus_minus_pair >> term))
 BOOST_SPIRIT_DEFINE(addition);
 
 
-x3::rule<class mult_div_pair, char> const mult_div_pair = "mult_div_pair";
-auto const mult_div_pair_def = x3::attr('*') | x3::attr('/');
-BOOST_SPIRIT_DEFINE(mult_div_pair);
+//x3::rule<class mult_div_pair, char> const mult_div_pair = "mult_div_pair";
+//auto const mult_div_pair_def = x3::attr('*') | x3::attr('/');
+//BOOST_SPIRIT_DEFINE(mult_div_pair);
 
-auto const term_def = (factor >> *(mult_div_pair >> factor))
+auto const term_def = (factor >> *(x3::char_("*/") >> factor))
 	[(	[](auto& ctx)
 		{	auto const& attr = x3::_attr(ctx);
 			expression::ptr result = boost::fusion::at_c<0>(attr);
