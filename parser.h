@@ -83,7 +83,12 @@ auto const x_def = x3::lit("x")
 	)];
 BOOST_SPIRIT_DEFINE(x);
 
-auto const negation_def = '-' >> factor;
+auto const negation_def = ('-' >> factor)
+	[(
+		[](auto& ctx)
+		{	x3::_val(ctx) = s_pFactory->negation(x3::_attr(ctx));
+		}
+	)];
 BOOST_SPIRIT_DEFINE(negation);
 
 auto const plus_def = '+' >> factor;

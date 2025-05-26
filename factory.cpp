@@ -3,7 +3,6 @@
 #include "unique.h"
 #include "onDestroy.h"
 #include "parser.h"
-#include "flex.cpp"
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
