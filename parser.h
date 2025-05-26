@@ -35,9 +35,6 @@ x3::rule<class factor, expression::ptr> const factor("factor");
 x3::rule<class term, expression::ptr> const term("term");
 x3::rule<class expr, expression::ptr> const expr("expr");
 x3::rule<class addition, expression::ptr> const addition("addition");
-x3::rule<class subtraction, expression::ptr> const subtraction("subtraction");
-x3::rule<class multiplication, expression::ptr> const multiplication("multiplication");
-x3::rule<class division, expression::ptr> const division("division");
 x3::rule<class negation, expression::ptr> const negation("negation");
 x3::rule<class plus, expression::ptr> const plus("plus");
 x3::rule<class x, expression::ptr> const x("x");
@@ -92,7 +89,7 @@ BOOST_SPIRIT_DEFINE(negation);
 auto const plus_def = '+' >> factor;
 BOOST_SPIRIT_DEFINE(plus);
 
-auto const factor_def = NUMBER | ('(' >> expr >> ')') | negation | x
+auto const factor_def = NUMBER 
 	| sin | cos | tan
 	| asin | acos | atan
 	| sinh | cosh | tanh
@@ -107,62 +104,59 @@ auto const factor_def = NUMBER | ('(' >> expr >> ')') | negation | x
 	| tgamma
 	| lgamma
 	| cbrt
-	| plus;
+	| plus
+	| ('(' >> expr >> ')') | negation | x;
 BOOST_SPIRIT_DEFINE(factor);
 
-auto const term_def = factor | multiplication | division;
-BOOST_SPIRIT_DEFINE(term);
-
-auto const expr_def = term | addition | subtraction;
+auto const expr_def = addition;
 BOOST_SPIRIT_DEFINE(expr);
 
-auto const addition_def = (term >> *(x3::lit('+') >> term))
+x3::rule<class plus_minus_pair, char> const plus_minus_pair = "plus_minus_pair";
+auto const plus_minus_pair_def = x3::attr('+') | x3::attr('-');
+BOOST_SPIRIT_DEFINE(plus_minus_pair);
+
+auto const addition_def = (term >> *(plus_minus_pair >> term))
 	[(	[](auto& ctx)
 		{	auto const& attr = x3::_attr(ctx);
 			expression::ptr result = boost::fusion::at_c<0>(attr);
-			auto const& vec = boost::fusion::at_c<1>(attr);
-			for (auto const& sub : vec)
-				result = s_pFactory->addition(result, sub);
+			auto const& ops = boost::fusion::at_c<1>(attr);
+			for (auto const& op_pair : ops)
+			{
+				char op = boost::fusion::at_c<0>(op_pair); // '+' or '-'
+				expression::ptr rhs = boost::fusion::at_c<1>(op_pair);
+				if (op == '+')
+					result = s_pFactory->addition(result, rhs);
+				else
+					result = s_pFactory->subtraction(result, rhs);
+			}
 			x3::_val(ctx) = result;
 		}
 	)];
 BOOST_SPIRIT_DEFINE(addition);
 
-auto const multiplication_def = (factor >> *(x3::lit('*') >> factor))
-	[(	[](auto& ctx)
-		{	auto const& attr = x3::_attr(ctx);
-			expression::ptr result = boost::fusion::at_c<0>(attr);
-			auto const& vec = boost::fusion::at_c<1>(attr);
-			for (auto const& sub : vec)
-				result = s_pFactory->multiplication(result, sub);
-			x3::_val(ctx) = result;
-		}
-	)];
-BOOST_SPIRIT_DEFINE(multiplication);
 
-auto const division_def = (factor >> *(x3::lit('/') >> factor))
-	[(	[](auto& ctx)
-		{	auto const& attr = x3::_attr(ctx);
-			expression::ptr result = boost::fusion::at_c<0>(attr);
-			auto const& vec = boost::fusion::at_c<1>(attr);
-			for (auto const& sub : vec)
-				result = s_pFactory->division(result, sub);
-			x3::_val(ctx) = result;
-		}
-	)];
-BOOST_SPIRIT_DEFINE(division);
+x3::rule<class mult_div_pair, char> const mult_div_pair = "mult_div_pair";
+auto const mult_div_pair_def = x3::attr('*') | x3::attr('/');
+BOOST_SPIRIT_DEFINE(mult_div_pair);
 
-auto const subtraction_def = (term >> *(x3::lit('-') >> term))
+auto const term_def = (factor >> *(mult_div_pair >> factor))
 	[(	[](auto& ctx)
 		{	auto const& attr = x3::_attr(ctx);
 			expression::ptr result = boost::fusion::at_c<0>(attr);
-			auto const& vec = boost::fusion::at_c<1>(attr);
-			for (auto const& sub : vec)
-				result = s_pFactory->subtraction(result, sub);
+			auto const& ops = boost::fusion::at_c<1>(attr);
+			for (auto const& op_pair : ops)
+			{
+				char op = boost::fusion::at_c<0>(op_pair); // '+' or '-'
+				expression::ptr rhs = boost::fusion::at_c<1>(op_pair);
+				if (op == '*')
+					result = s_pFactory->multiplication(result, rhs);
+				else
+					result = s_pFactory->division(result, rhs);
+			}
 			x3::_val(ctx) = result;
 		}
 	)];
-BOOST_SPIRIT_DEFINE(subtraction);
+BOOST_SPIRIT_DEFINE(term);
 
 
 }
