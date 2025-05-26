@@ -49,6 +49,11 @@ e.g.
 which prints the values of sin(0) and sin(1).
 
 ## News
+The switch to single threaded code makes sense, due to performance reasons!
+Since changing from multithreaded to single threaded code requires changing the source code,
+I tried to make expression and factory a template class. But this requires a different parser/lexer
+as bison/flex are still living in the stone age and don't allow for generation of templated code.
+
 The code is organized in a way so that it can be either multithreaded or single thread.
 This can be switched using the BTHREADED template argument for unique in unique.h.
 
