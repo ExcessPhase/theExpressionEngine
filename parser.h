@@ -32,14 +32,6 @@ x3::rule<class expression, ast_ptr> const expression("expression");
 #endif
 
 static const factory::ptr s_pFactory = factory::getFactory();
-class addition;
-class subtraction;
-class term;
-class NUMBER;
-class expr;
-class factor;
-class multiplication;
-class division;
 
 x3::rule<class NUMBER, expression::ptr> const NUMBER("number");
 x3::rule<class factor, expression::ptr> const factor("factor");
@@ -47,6 +39,8 @@ x3::rule<class term, expression::ptr> const term("term");
 x3::rule<class expr, expression::ptr> const expr("expr");
 x3::rule<class addition, expression::ptr> const addition("addition");
 x3::rule<class subtraction, expression::ptr> const subtraction("subtraction");
+x3::rule<class multiplication, expression::ptr> const multiplication("multiplication");
+x3::rule<class division, expression::ptr> const division("division");
 auto const NUMBER_def = x3::double_
 	[(
 		[](auto& ctx)
@@ -58,7 +52,7 @@ BOOST_SPIRIT_DEFINE(NUMBER);
 auto const factor_def = NUMBER | ('(' >> expr >> ')');
 BOOST_SPIRIT_DEFINE(factor);
 
-auto const term_def = factor;// | multiplication | division;
+auto const term_def = factor | multiplication | division;
 BOOST_SPIRIT_DEFINE(term);
 
 auto const expr_def = term | addition | subtraction;
@@ -75,6 +69,30 @@ auto const addition_def = term >> *(x3::lit('+') >> term)
 		}
 	)];
 BOOST_SPIRIT_DEFINE(addition);
+
+auto const multiplication_def = factor >> *(x3::lit('*') >> factor)
+	[(	[](auto& ctx)
+		{	auto const& attr = x3::_attr(ctx);
+			ast_ptr result = boost::fusion::at_c<0>(attr);
+			auto const& vec = boost::fusion::at_c<1>(attr);
+			for (auto const& sub : vec)
+				result = s_pFactory->multiplication(result, sub);
+			x3::_val(ctx) = result;
+		}
+	)];
+BOOST_SPIRIT_DEFINE(multiplication);
+
+auto const division_def = factor >> *(x3::lit('/') >> factor)
+	[(	[](auto& ctx)
+		{	auto const& attr = x3::_attr(ctx);
+			ast_ptr result = boost::fusion::at_c<0>(attr);
+			auto const& vec = boost::fusion::at_c<1>(attr);
+			for (auto const& sub : vec)
+				result = s_pFactory->division(result, sub);
+			x3::_val(ctx) = result;
+		}
+	)];
+BOOST_SPIRIT_DEFINE(division);
 
 auto const subtraction_def = term >> *(x3::lit('-') >> term)
 	[(	[](auto& ctx)
