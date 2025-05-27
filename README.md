@@ -49,6 +49,8 @@ e.g.
 which prints the values of sin(0) and sin(1).
 
 ## News
+I'm having problems making the boost::spirit::x3 parser a template class...
+
 Removed flex/bison in favor of boost::spirit::x3.
 
 The switch to single threaded code makes sense, due to performance reasons!
