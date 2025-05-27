@@ -49,6 +49,8 @@ e.g.
 which prints the values of sin(0) and sin(1).
 
 ## News
+Removed flex/bison in favor of boost::spirit::x3.
+
 The switch to single threaded code makes sense, due to performance reasons!
 Since changing from multithreaded to single threaded code requires changing the source code,
 I tried to make expression and factory a template class. But this requires a different parser/lexer
