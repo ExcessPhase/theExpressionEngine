@@ -28,7 +28,17 @@ struct factory;
 /// the base class of all expression types
 /// immutable
 /// no two with the same content are guaranteed to exist
-struct expression:dynamic_cast_interface<realConstant>, unique<expression>
+#if 0
+template<typename>
+struct hasId
+{
+	static std::size_t s_iNextId;
+	const std::size_t m_iId = s_iNextId++;
+};
+template<typename T>
+std::size_t hasId<T>::s_iNextId;
+#endif
+struct expression:dynamic_cast_interface<realConstant>, unique<expression>//, hasId<expression>
 {	typedef boost::intrusive_ptr<const expression> ptr;
 	typedef std::vector<ptr> children;
 	enum enumAttachedData

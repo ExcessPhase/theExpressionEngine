@@ -33,6 +33,6 @@ struct factory:std::enable_shared_from_this<const factory>
 	typedef std::map<std::string, exprPtr> name2int;
 	virtual exprPtr parse(const char *const, const name2int&) const = 0;
 	typedef std::shared_ptr<const factory> ptr;
-	static ptr getFactory(void);
+	static const ptr &getFactory(void);
 };
 }

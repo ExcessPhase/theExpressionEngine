@@ -545,15 +545,18 @@ struct factoryImpl:factory
 	}
 	virtual exprPtr parse(const char *const _r, const name2int&_rP) const override
     	{	exprPtr pRet;
+		auto sParam = std::tie(_rP, static_cast<const factory&>(*this));
+		auto const sParser = parser::x3::with<parser::lookup_table_tag>(std::ref(sParam))[ parser::expr ];
+
 		auto p = _r;
-		if (phrase_parse(p, _r + std::strlen(_r), parser::expr, boost::spirit::x3::space, pRet) && p == _r + std::strlen(_r))
+		if (phrase_parse(p, _r + std::strlen(_r), sParser, boost::spirit::x3::space, pRet) && p == _r + std::strlen(_r))
 			return pRet;
 		else
 			throw std::runtime_error(p);
 	}
 };
 }
-factory::ptr factory::getFactory(void)
+const factory::ptr &factory::getFactory(void)
 {	static const factory::ptr s(std::make_shared<const factoryImpl>());
 	return s;
 }
