@@ -10,10 +10,14 @@
 
 namespace theExpressionEngine
 {
+template<bool BTHREADED>
 struct realConstant;
+template<bool BTHREADED>
 struct factory;
+template<bool BTHREADED>
 struct expression;
-boost::intrusive_ptr<const expression> collapse(const expression&, const factory&);
+template<bool BTHREADED>
+boost::intrusive_ptr<const expression<BTHREADED> > collapse(const expression<BTHREADED> &, const factory<BTHREADED>&);
 	/// a nullmutex in case of a single threaded environment
 class NullMutex
 {	public:
@@ -71,8 +75,8 @@ class unique
 		return *getSet().first.insert(s.get()).first;
 	}
 	template<typename DERIVED, typename ...REST>
-	static boost::intrusive_ptr<const T> create(const factory&_rF, REST&&..._r)
-	{	return collapse(*_create<DERIVED>(std::forward<REST>(_r)...), _rF);
+	static boost::intrusive_ptr<const T> create(const factory<BTHREADED>&_rF, REST&&..._r)
+	{	return collapse<BTHREADED>(*_create<DERIVED>(std::forward<REST>(_r)...), _rF);
 	}
 		/// the factory method
 	private:

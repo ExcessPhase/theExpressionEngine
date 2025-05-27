@@ -20,16 +20,19 @@
 
 namespace theExpressionEngine
 {
-expression::ptr collapse(const expression&_r, const factory&_rF)
+template<bool BTHREADED>
+boost::intrusive_ptr<const expression<BTHREADED> > collapse(const expression<BTHREADED>&_r, const factory<BTHREADED>&_rF)
 {	return _r.collapse(_rF);
 }
-expression::expression(
+template<bool BTHREADED>
+expression<BTHREADED>::expression(
 	children&&_rChildren
 )
 	:m_sChildren(std::move(_rChildren))
 {
 }
-bool expression::operator<(const expression&_r) const
+template<bool BTHREADED>
+bool expression<BTHREADED>::operator<(const expression<BTHREADED>&_r) const
 {	if (m_sChildren.size() < _r.m_sChildren.size())
 		return true;
 	else
@@ -59,20 +62,24 @@ bool expression::operator<(const expression&_r) const
 		}
 	}
 }
-bool expression::isSmaller(const expression&) const
+template<bool BTHREADED>
+bool expression<BTHREADED>::isSmaller(const expression<BTHREADED>&) const
 {	return false;
 }
-void expression::onDestroy(void) const
+template<bool BTHREADED>
+void expression<BTHREADED>::onDestroy(void) const
 {	for (auto &r : m_sOnDestroyList)
 		r();
 }
-void expression::addOnDestroy(onDestroyFunctor _s) const
+template<bool BTHREADED>
+void expression<BTHREADED>::addOnDestroy(onDestroyFunctor _s) const
 {	std::unique_lock<MUTEX> sLock(getMutex());
 	m_sOnDestroyList.emplace_back(std::move(_s));
 }
 namespace
 {
 using namespace llvm;
+template<bool BTHREADED>
 struct llvmData
 {
 	LLVMContext Context;
@@ -80,7 +87,7 @@ struct llvmData
 	std::unique_ptr<ExecutionEngine> EE;// = std::unique_ptr<ExecutionEngine>(EngineBuilder(std::move(M)).setErrorStr(&ErrStr).setEngineKind(EngineKind::JIT).create());
 	using JITFunctionType = double(*)(const double*);
 	JITFunctionType jitFunction;// = reinterpret_cast<JITFunctionType>(funcAddress);
-	explicit llvmData(const expression *const _p, const expression*const _pRoot)
+	explicit llvmData(const expression<BTHREADED> *const _p, const expression<BTHREADED>*const _pRoot)
 		:Context(),
 		M(std::make_unique<Module>("top", Context))
 		//EE(std::unique_ptr<ExecutionEngine>(EngineBuilder(std::move(M)).setErrorStr(&ErrStr).setEngineKind(EngineKind::JIT).create()))
@@ -136,7 +143,8 @@ struct llvmData
 	}
 };
 }
-double expression::evaluateLLVM(const double *const _p, const expression*const _pRoot) const
+template<bool BTHREADED>
+double expression<BTHREADED>::evaluateLLVM(const double *const _p, const expression<BTHREADED>*const _pRoot) const
 {	std::unique_lock<MUTEX> sLock(getMutex());
 	const auto sInsert = m_sAttachedData.emplace(_pRoot, ARRAY());
 	std::any &r = sInsert.first->second[eLLVMdata];
@@ -147,12 +155,13 @@ double expression::evaluateLLVM(const double *const _p, const expression*const _
 				m_sAttachedData.erase(_pRoot);
 			}
 		);
-		r = std::make_shared<const llvmData>(this, _pRoot);
+		r = std::make_shared<const llvmData<BTHREADED> >(this, _pRoot);
 	}
 	sLock.unlock();
-	return std::any_cast<const std::shared_ptr<const llvmData>&>(r)->jitFunction(_p);
+	return std::any_cast<const std::shared_ptr<const llvmData<BTHREADED> >&>(r)->jitFunction(_p);
 }
-expression::ptr expression::replace(const ptr2ptr&_r, const factory&_rF) const
+template<bool BTHREADED>
+typename expression<BTHREADED>::ptr expression<BTHREADED>::replace(const ptr2ptr&_r, const factory<BTHREADED>&_rF) const
 {	std::vector<std::tuple<ptr, size_t, children, bool> > sStack;
 	sStack.push_back({this, std::numeric_limits<std::size_t>::max(), children(), true});
 	while (!sStack.empty())
@@ -188,7 +197,8 @@ expression::ptr expression::replace(const ptr2ptr&_r, const factory&_rF) const
 	std::abort();
 	return nullptr;
 }
-std::size_t expression::getWeightW(void) const
+template<bool BTHREADED>
+std::size_t expression<BTHREADED>::getWeightW(void) const
 {	std::stack<ptr> s;
 	s.push(this);
 	std::size_t i = 0;
@@ -201,8 +211,9 @@ std::size_t expression::getWeightW(void) const
 	}
 	return i;
 }
-llvm::Value *expression::generateCodeW(
-	const expression *const _pRoot,
+template<bool BTHREADED>
+llvm::Value *expression<BTHREADED>::generateCodeW(
+	const expression<BTHREADED> *const _pRoot,
 	llvm::LLVMContext& context,
 	llvm::IRBuilder<>& builder,
 	llvm::Module *const M,

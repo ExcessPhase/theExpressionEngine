@@ -25,7 +25,7 @@ int main(int argc, char**argv)
 	InitializeNativeTarget();
 	InitializeNativeTargetAsmPrinter();
 	InitializeNativeTargetAsmParser();
-	const auto pFactory = factory::getFactory();
+	const auto pFactory = factory<false>::getFactory();
 	const auto pE = pFactory->parse(argv[1], {{"x", pFactory->parameter(0)}});
 	std::vector<double> sX(1);
 	std::string sLine;

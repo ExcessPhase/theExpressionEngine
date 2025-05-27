@@ -1,4 +1,3 @@
-#pragma once
 #include <iostream>
 #include <string>
 #include <memory>
@@ -9,23 +8,23 @@
 namespace theExpressionEngine
 {
 
-namespace parser
+namespace __PARSER__
 {
 namespace x3 = boost::spirit::x3;
 
 struct lookup_table_tag;
-x3::rule<class NUMBER, expression::ptr> const NUMBER("number");
-x3::rule<class factor, expression::ptr> const factor("factor");
-x3::rule<class term, expression::ptr> const term("term");
-x3::rule<class expr, expression::ptr> const expr("expr");
-x3::rule<class addition, expression::ptr> const addition("addition");
-x3::rule<class negation, expression::ptr> const negation("negation");
-x3::rule<class plus, expression::ptr> const plus("plus");
-x3::rule<class x, expression::ptr> const x("x");
-#define __unary__(a) x3::rule<class a, expression::ptr> const a(#a);\
+x3::rule<class NUMBER, expression<__BTHREADED__>::ptr> const NUMBER("number");
+x3::rule<class factor, expression<__BTHREADED__>::ptr> const factor("factor");
+x3::rule<class term, expression<__BTHREADED__>::ptr> const term("term");
+x3::rule<class expr, expression<__BTHREADED__>::ptr> const expr("expr");
+x3::rule<class addition, expression<__BTHREADED__>::ptr> const addition("addition");
+x3::rule<class negation_, expression<__BTHREADED__>::ptr> const negation_("negation_");
+x3::rule<class plus, expression<__BTHREADED__>::ptr> const plus("plus");
+x3::rule<class x, expression<__BTHREADED__>::ptr> const x("x");
+#define __unary__(a) x3::rule<class a, expression<__BTHREADED__>::ptr> const a(#a);\
 auto const a##_def = (x3::lit(#a) >> "(" >> expr >> ")")\
 	[(	[](auto& ctx)\
-		{	const std::tuple<const factory::name2int&, const factory&> &r = x3::get<lookup_table_tag>(ctx);\
+		{	const std::tuple<const factory<__BTHREADED__>::name2int&, const factory<__BTHREADED__>&> &r = x3::get<lookup_table_tag>(ctx);\
 			x3::_val(ctx) = std::get<1>(r).a(x3::_attr(ctx));\
 		}\
 	)];\
@@ -53,10 +52,10 @@ __unary__(tgamma)
 __unary__(lgamma)
 __unary__(cbrt)
 
-#define __binary__(a) x3::rule<class a, expression::ptr> const a(#a);\
+#define __binary__(a) x3::rule<class a, expression<__BTHREADED__>::ptr> const a(#a);\
 auto const a##_def = (x3::lit(#a) >> "(" >> expr >> "," >> expr >> ")")\
 	[(	[](auto& ctx)\
-		{	const std::tuple<const factory::name2int&, const factory&> &r = x3::get<lookup_table_tag>(ctx);\
+		{	const std::tuple<const factory<__BTHREADED__>::name2int&, const factory<__BTHREADED__>&> &r = x3::get<lookup_table_tag>(ctx);\
 			auto &rA = x3::_attr(ctx);\
 			x3::_val(ctx) = std::get<1>(r).a(boost::fusion::at_c<0>(rA), boost::fusion::at_c<1>(rA));\
 		}\
@@ -81,7 +80,7 @@ x3::real_parser<double, unsigned_double_policies> const unsigned_double = {};
 auto const NUMBER_def = unsigned_double
 	[([](auto& ctx)
 	{
-		const std::tuple<const factory::name2int&, const factory&> &r = x3::get<lookup_table_tag>(ctx);
+		const std::tuple<const factory<__BTHREADED__>::name2int&, const factory<__BTHREADED__>&> &r = x3::get<lookup_table_tag>(ctx);
 		x3::_val(ctx) = std::get<1>(r).realConstant(x3::_attr(ctx));
 	}
 	)];
@@ -95,20 +94,20 @@ BOOST_SPIRIT_DEFINE(identifier);
 auto const x_def = identifier
 	[(
 		[](auto& ctx)
-		{	const std::tuple<const factory::name2int&, const factory&> &r = x3::get<lookup_table_tag>(ctx);
+		{	const std::tuple<const factory<__BTHREADED__>::name2int&, const factory<__BTHREADED__>&> &r = x3::get<lookup_table_tag>(ctx);
 			x3::_val(ctx) = std::get<0>(r).at(x3::_attr(ctx));
 		}
 	)];
 BOOST_SPIRIT_DEFINE(x);
 
-auto const negation_def = ('-' >> factor)
+auto const negation__def = ('-' >> factor)
 	[(
 		[](auto& ctx)
-		{	const std::tuple<const factory::name2int&, const factory&> &r = x3::get<lookup_table_tag>(ctx);
+		{	const std::tuple<const factory<__BTHREADED__>::name2int&, const factory<__BTHREADED__>&> &r = x3::get<lookup_table_tag>(ctx);
 			x3::_val(ctx) = std::get<1>(r).negation(x3::_attr(ctx));
 		}
 	)];
-BOOST_SPIRIT_DEFINE(negation);
+BOOST_SPIRIT_DEFINE(negation_);
 
 auto const plus_def = '+' >> factor;
 BOOST_SPIRIT_DEFINE(plus);
@@ -135,7 +134,7 @@ auto const factor_def = NUMBER
 	| fmod
 	| hypot
 	| plus
-	| ('(' >> expr >> ')') | negation | x;
+	| ('(' >> expr >> ')') | negation_ | x;
 BOOST_SPIRIT_DEFINE(factor);
 
 auto const expr_def = addition;
@@ -148,13 +147,13 @@ BOOST_SPIRIT_DEFINE(expr);
 auto const addition_def = (term >> *(x3::char_("+-") >> term))
 	[(	[](auto& ctx)
 		{	auto const& attr = x3::_attr(ctx);
-			expression::ptr result = boost::fusion::at_c<0>(attr);
+			expression<__BTHREADED__>::ptr result = boost::fusion::at_c<0>(attr);
 			auto const& ops = boost::fusion::at_c<1>(attr);
-			const std::tuple<const factory::name2int&, const factory&> &r = x3::get<lookup_table_tag>(ctx);
+			const std::tuple<const factory<__BTHREADED__>::name2int&, const factory<__BTHREADED__>&> &r = x3::get<lookup_table_tag>(ctx);
 			for (auto const& op_pair : ops)
 			{
 				char op = boost::fusion::at_c<0>(op_pair); // '+' or '-'
-				expression::ptr rhs = boost::fusion::at_c<1>(op_pair);
+				expression<__BTHREADED__>::ptr rhs = boost::fusion::at_c<1>(op_pair);
 				if (op == '+')
 					result = std::get<1>(r).addition(result, rhs);
 				else
@@ -173,13 +172,13 @@ BOOST_SPIRIT_DEFINE(addition);
 auto const term_def = (factor >> *(x3::char_("*/") >> factor))
 	[(	[](auto& ctx)
 		{	auto const& attr = x3::_attr(ctx);
-			expression::ptr result = boost::fusion::at_c<0>(attr);
+			expression<__BTHREADED__>::ptr result = boost::fusion::at_c<0>(attr);
 			auto const& ops = boost::fusion::at_c<1>(attr);
-			const std::tuple<const factory::name2int&, const factory&> &r = x3::get<lookup_table_tag>(ctx);
+			const std::tuple<const factory<__BTHREADED__>::name2int&, const factory<__BTHREADED__>&> &r = x3::get<lookup_table_tag>(ctx);
 			for (auto const& op_pair : ops)
 			{
 				char op = boost::fusion::at_c<0>(op_pair); // '+' or '-'
-				expression::ptr rhs = boost::fusion::at_c<1>(op_pair);
+				expression<__BTHREADED__>::ptr rhs = boost::fusion::at_c<1>(op_pair);
 				if (op == '*')
 					result = std::get<1>(r).multiplication(result, rhs);
 				else

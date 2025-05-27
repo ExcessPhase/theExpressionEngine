@@ -20,7 +20,9 @@
 
 namespace theExpressionEngine
 {
+template<bool BTHREADED>
 struct realConstant;
+template<bool BTHREADED>
 struct factory;
 //struct type;
 //struct environment;
@@ -38,8 +40,11 @@ struct hasId
 template<typename T>
 std::size_t hasId<T>::s_iNextId;
 #endif
-struct expression:dynamic_cast_interface<realConstant>, unique<expression>//, hasId<expression>
-{	typedef boost::intrusive_ptr<const expression> ptr;
+template<bool BTHREADED>
+struct expression:dynamic_cast_interface<realConstant<BTHREADED> >, unique<expression<BTHREADED>, BTHREADED>//, hasId<expression>
+{	using typename unique<expression<BTHREADED>, BTHREADED>::MUTEX;
+	using unique<expression<BTHREADED>, BTHREADED>::getMutex;
+	typedef boost::intrusive_ptr<const expression<BTHREADED> > ptr;
 	typedef std::vector<ptr> children;
 	enum enumAttachedData
 	{	eLLVMValuePtr,
@@ -47,7 +52,7 @@ struct expression:dynamic_cast_interface<realConstant>, unique<expression>//, ha
 		__NUMBER_OF_DATA__
 	};
 	typedef std::array<std::any, __NUMBER_OF_DATA__> ARRAY;
-	typedef std::map<const expression*, ARRAY> MAP;
+	typedef std::map<const expression<BTHREADED> *, ARRAY> MAP;
 	const children m_sChildren;
 	expression(
 		children&&_rChildren = {}
@@ -55,28 +60,28 @@ struct expression:dynamic_cast_interface<realConstant>, unique<expression>//, ha
 	virtual ~expression(void) = default;
 		/// this compares everything contained in expression
 		/// and calls isSmaller() if there is no difference
-	bool operator<(const expression&_r) const;
+	bool operator<(const expression<BTHREADED> &_r) const;
 		/// this is to be implemented for all derived classes containing data
 		/// the type of the LHS and RHS is guaranteed to be identical
-	virtual bool isSmaller(const expression&) const;
+	virtual bool isSmaller(const expression<BTHREADED> &) const;
 	virtual double evaluate(const double *const) const = 0;
-	double evaluateLLVM(const double *const, const expression*const) const;
+	double evaluateLLVM(const double *const, const expression<BTHREADED> *const) const;
 	llvm::Value *generateCodeW(
-		const expression *const _pRoot,
+		const expression<BTHREADED>  *const _pRoot,
 		llvm::LLVMContext& context,
 		llvm::IRBuilder<>& builder,
 		llvm::Module *const M,
 		llvm::Value*const _pP
 	) const;
 	virtual void onDestroy(void) const;
-	ptr collapse(const factory&_rF) const;
+	ptr collapse(const factory<BTHREADED>&_rF) const;
 	typedef std::map<ptr, ptr> ptr2ptr;
-	virtual ptr recreateFromChildren(children, const factory&) const = 0;
-	ptr replace(const ptr2ptr&, const factory&) const;
+	virtual ptr recreateFromChildren(children, const factory<BTHREADED>&) const = 0;
+	ptr replace(const ptr2ptr&, const factory<BTHREADED>&) const;
 	private:
 	mutable MAP m_sAttachedData;
 	virtual llvm::Value* generateCode(
-		const expression *const _pRoot,
+		const expression<BTHREADED>  *const _pRoot,
 		llvm::LLVMContext& context,
 		llvm::IRBuilder<>& builder,
 		llvm::Module *const M,
@@ -89,5 +94,7 @@ struct expression:dynamic_cast_interface<realConstant>, unique<expression>//, ha
 	std::size_t getWeightW(void) const;
 	//mutable llvm::Value *m_pValue = nullptr;
 };
-expression::ptr collapse(const expression&, const factory&);
+template<bool BTHREADED>
+boost::intrusive_ptr<const expression<BTHREADED> > collapse(const expression<BTHREADED> &, const factory<BTHREADED>&);
 }
+#include "expression.cpp"

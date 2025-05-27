@@ -12,8 +12,8 @@ LDFLAGS=$(shell llvm-config --ldflags --system-libs --libs core irreader bitread
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-OBJECTS=expression.o factory.o theExpressionEngine.o
-TEST_OBJECTS=expression.o factory.o test.o
+OBJECTS=theExpressionEngine.o
+TEST_OBJECTS=test.o
 
 DEPS = $(OBJECTS:.o=.d) $(TEST_OBJECTS:.o=.d)
 

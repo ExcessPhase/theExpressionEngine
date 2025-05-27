@@ -6,9 +6,11 @@
 #include "expression.h"
 namespace theExpressionEngine
 {
+template<bool BTHREADED>
 struct expression;
-struct factory:std::enable_shared_from_this<const factory>
-{	typedef boost::intrusive_ptr<const expression> exprPtr;
+template<bool BTHREADED>
+struct factory:std::enable_shared_from_this<const factory<BTHREADED> >
+{	typedef boost::intrusive_ptr<const expression<BTHREADED> > exprPtr;
 	virtual exprPtr realConstant(const double) const = 0;
 	//virtual exprPtr sqrt(const exprPtr&) const = 0;
 #define __COMMA2__
@@ -32,7 +34,8 @@ struct factory:std::enable_shared_from_this<const factory>
 	virtual exprPtr negation(const exprPtr&) const = 0;
 	typedef std::map<std::string, exprPtr> name2int;
 	virtual exprPtr parse(const char *const, const name2int&) const = 0;
-	typedef std::shared_ptr<const factory> ptr;
+	typedef std::shared_ptr<const factory<BTHREADED> > ptr;
 	static const ptr &getFactory(void);
 };
 }
+#include "factory.cpp"
