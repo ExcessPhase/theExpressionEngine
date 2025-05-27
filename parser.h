@@ -52,6 +52,22 @@ __unary__(erfc)
 __unary__(tgamma)
 __unary__(lgamma)
 __unary__(cbrt)
+
+#define __binary__(a) x3::rule<class a, expression::ptr> const a(#a);\
+auto const a##_def = (x3::lit(#a) >> "(" >> expr >> "," >> expr >> ")")\
+	[(	[](auto& ctx)\
+		{	const std::tuple<const factory::name2int&, const factory&> &r = x3::get<lookup_table_tag>(ctx);\
+			auto &rA = x3::_attr(ctx);\
+			x3::_val(ctx) = std::get<1>(r).a(boost::fusion::at_c<0>(rA), boost::fusion::at_c<1>(rA));\
+		}\
+	)];\
+BOOST_SPIRIT_DEFINE(a);
+__binary__(pow)
+__binary__(max)
+__binary__(min)
+__binary__(atan2)
+__binary__(fmod)
+__binary__(hypot)
 // Custom policies disabling the optional sign.
 struct unsigned_double_policies : x3::real_policies<double>
 {
@@ -112,6 +128,12 @@ auto const factor_def = NUMBER
 	| tgamma
 	| lgamma
 	| cbrt
+	| pow
+	| max
+	| min
+	| atan2
+	| fmod
+	| hypot
 	| plus
 	| ('(' >> expr >> ')') | negation | x;
 BOOST_SPIRIT_DEFINE(factor);
