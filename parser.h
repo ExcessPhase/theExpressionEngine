@@ -1,7 +1,7 @@
 #include <iostream>
 #include <string>
 #include <memory>
-#include <boost/spirit/home/x3.hpp>
+#include <boost/parser/parser.hpp>
 #include <boost/fusion/include/at_c.hpp>  // for tuple element access
 #include "expression.h"
 #include "factory.h"
@@ -10,25 +10,25 @@ namespace theExpressionEngine
 
 namespace __PARSER__
 {
-namespace x3 = boost::spirit::x3;
+namespace bp = boost::parser;
 
 struct lookup_table_tag;
-x3::rule<class NUMBER, expression<__BTHREADED__>::ptr> const NUMBER("number");
-x3::rule<class factor, expression<__BTHREADED__>::ptr> const factor("factor");
-x3::rule<class term, expression<__BTHREADED__>::ptr> const term("term");
-x3::rule<class expr, expression<__BTHREADED__>::ptr> const expr("expr");
-x3::rule<class addition, expression<__BTHREADED__>::ptr> const addition("addition");
-x3::rule<class negation_, expression<__BTHREADED__>::ptr> const negation_("negation_");
-x3::rule<class plus, expression<__BTHREADED__>::ptr> const plus("plus");
-x3::rule<class x, expression<__BTHREADED__>::ptr> const x("x");
-#define __unary__(a) x3::rule<class a, expression<__BTHREADED__>::ptr> const a(#a);\
-auto const a##_def = (x3::lit(#a) >> "(" >> expr >> ")")\
+bp::rule<class NUMBER, expression<__BTHREADED__>::ptr> const NUMBER("number");
+bp::rule<class factor, expression<__BTHREADED__>::ptr> const factor("factor");
+bp::rule<class term, expression<__BTHREADED__>::ptr> const term("term");
+bp::rule<class expr, expression<__BTHREADED__>::ptr> const expr("expr");
+bp::rule<class addition, expression<__BTHREADED__>::ptr> const addition("addition");
+bp::rule<class negation_, expression<__BTHREADED__>::ptr> const negation_("negation_");
+bp::rule<class plus, expression<__BTHREADED__>::ptr> const plus("plus");
+bp::rule<class x, expression<__BTHREADED__>::ptr> const x("x");
+#define __unary__(a) bp::rule<class a, expression<__BTHREADED__>::ptr> const a(#a);\
+auto const a##_def = (bp::lit(#a) >> "(" >> expr >> ")")\
 	[(	[](auto& ctx)\
-		{	const std::tuple<const factory<__BTHREADED__>::name2int&, const factory<__BTHREADED__>&> &r = x3::get<lookup_table_tag>(ctx);\
-			x3::_val(ctx) = std::get<1>(r).a(x3::_attr(ctx));\
+		{	const std::tuple<const factory<__BTHREADED__>::name2int&, const factory<__BTHREADED__>&> &r = bp::_globals(ctx);\
+			bp::_val(ctx) = std::get<1>(r).a(bp::_attr(ctx));\
 		}\
 	)];\
-BOOST_SPIRIT_DEFINE(a);
+BOOST_PARSER_DEFINE_RULES(a);
 __unary__(sin)
 __unary__(cos)
 __unary__(tan)
@@ -52,15 +52,15 @@ __unary__(tgamma)
 __unary__(lgamma)
 __unary__(cbrt)
 
-#define __binary__(a) x3::rule<class a, expression<__BTHREADED__>::ptr> const a(#a);\
-auto const a##_def = (x3::lit(#a) >> "(" >> expr >> "," >> expr >> ")")\
+#define __binary__(a) bp::rule<class a, expression<__BTHREADED__>::ptr> const a(#a);\
+auto const a##_def = (bp::lit(#a) >> "(" >> expr >> "," >> expr >> ")")\
 	[(	[](auto& ctx)\
-		{	const std::tuple<const factory<__BTHREADED__>::name2int&, const factory<__BTHREADED__>&> &r = x3::get<lookup_table_tag>(ctx);\
-			auto &rA = x3::_attr(ctx);\
-			x3::_val(ctx) = std::get<1>(r).a(boost::fusion::at_c<0>(rA), boost::fusion::at_c<1>(rA));\
+		{	const std::tuple<const factory<__BTHREADED__>::name2int&, const factory<__BTHREADED__>&> &r = bp::_globals(ctx);\
+			auto &rA = bp::_attr(ctx);\
+			bp::_val(ctx) = std::get<1>(r).a(std::get<0>(rA), std::get<1>(rA));\
 		}\
 	)];\
-BOOST_SPIRIT_DEFINE(a);
+BOOST_PARSER_DEFINE_RULES(a);
 __binary__(pow)
 __binary__(max)
 __binary__(min)
@@ -68,49 +68,51 @@ __binary__(atan2)
 __binary__(fmod)
 __binary__(hypot)
 // Custom policies disabling the optional sign.
-struct unsigned_double_policies : x3::real_policies<double>
+#if 0
+struct unsigned_double_policies : bp::real_policies<double>
 {
 	static bool const allow_leading_sign = false;
 };
 
 // Define a parser that uses the custom policies.
-x3::real_parser<double, unsigned_double_policies> const unsigned_double = {};
+bp::real_parser<double, unsigned_double_policies> const unsigned_double = {};
+#endif
 
-// Now update your NUMBER rule to use unsigned_double instead of x3::double_
-auto const NUMBER_def = unsigned_double
+// Now update your NUMBER rule to use unsigned_double instead of bp::double_
+auto const NUMBER_def = !bp::char_('-') >> bp::double_//unsigned_double
 	[([](auto& ctx)
 	{
-		const std::tuple<const factory<__BTHREADED__>::name2int&, const factory<__BTHREADED__>&> &r = x3::get<lookup_table_tag>(ctx);
-		x3::_val(ctx) = std::get<1>(r).realConstant(x3::_attr(ctx));
+		const std::tuple<const factory<__BTHREADED__>::name2int&, const factory<__BTHREADED__>&> &r = bp::_globals(ctx);
+		bp::_val(ctx) = std::get<1>(r).realConstant(bp::_attr(ctx));
 	}
 	)];
-BOOST_SPIRIT_DEFINE(NUMBER);
-x3::rule<class identifier, std::string> const identifier = "identifier";
+BOOST_PARSER_DEFINE_RULES(NUMBER);
+bp::rule<class identifier, std::string> const identifier = "identifier";
 auto const identifier_def =
-    x3::lexeme[
-        (x3::alpha | x3::char_('_')) >> *(x3::alnum | x3::char_('_'))
+    bp::lexeme[
+        (bp::char_('a', 'z') | bp::char_('A', 'Z') | bp::char_('_')) >> *(bp::char_('a', 'z') | bp::char_('A', 'Z') | bp::char_('0', '9') | bp::char_('_'))
     ];
-BOOST_SPIRIT_DEFINE(identifier);
+BOOST_PARSER_DEFINE_RULES(identifier);
 auto const x_def = identifier
 	[(
 		[](auto& ctx)
-		{	const std::tuple<const factory<__BTHREADED__>::name2int&, const factory<__BTHREADED__>&> &r = x3::get<lookup_table_tag>(ctx);
-			x3::_val(ctx) = std::get<0>(r).at(x3::_attr(ctx));
+		{	const std::tuple<const factory<__BTHREADED__>::name2int&, const factory<__BTHREADED__>&> &r = bp::_globals(ctx);
+			bp::_val(ctx) = std::get<0>(r).at(bp::_attr(ctx));
 		}
 	)];
-BOOST_SPIRIT_DEFINE(x);
+BOOST_PARSER_DEFINE_RULES(x);
 
 auto const negation__def = ('-' >> factor)
 	[(
 		[](auto& ctx)
-		{	const std::tuple<const factory<__BTHREADED__>::name2int&, const factory<__BTHREADED__>&> &r = x3::get<lookup_table_tag>(ctx);
-			x3::_val(ctx) = std::get<1>(r).negation(x3::_attr(ctx));
+		{	const std::tuple<const factory<__BTHREADED__>::name2int&, const factory<__BTHREADED__>&> &r = bp::_globals(ctx);
+			bp::_val(ctx) = std::get<1>(r).negation(bp::_attr(ctx));
 		}
 	)];
-BOOST_SPIRIT_DEFINE(negation_);
+BOOST_PARSER_DEFINE_RULES(negation_);
 
 auto const plus_def = '+' >> factor;
-BOOST_SPIRIT_DEFINE(plus);
+BOOST_PARSER_DEFINE_RULES(plus);
 
 auto const factor_def = NUMBER
 	| sin | cos | tan
@@ -135,59 +137,59 @@ auto const factor_def = NUMBER
 	| hypot
 	| plus
 	| ('(' >> expr >> ')') | negation_ | x;
-BOOST_SPIRIT_DEFINE(factor);
+BOOST_PARSER_DEFINE_RULES(factor);
 
 auto const expr_def = addition;
-BOOST_SPIRIT_DEFINE(expr);
+BOOST_PARSER_DEFINE_RULES(expr);
 
-//x3::rule<class plus_minus_pair, char> const plus_minus_pair = "plus_minus_pair";
-//auto const plus_minus_pair_def = x3::char_("+-");
-//BOOST_SPIRIT_DEFINE(plus_minus_pair);
+//bp::rule<class plus_minus_pair, char> const plus_minus_pair = "plus_minus_pair";
+//auto const plus_minus_pair_def = bp::char_("+-");
+//BOOST_PARSER_DEFINE_RULES(plus_minus_pair);
 
-auto const addition_def = (term >> *(x3::char_("+-") >> term))
+auto const addition_def = (term >> *(bp::char_("+-") >> term))
 	[(	[](auto& ctx)
-		{	auto const& attr = x3::_attr(ctx);
-			expression<__BTHREADED__>::ptr result = boost::fusion::at_c<0>(attr);
-			auto const& ops = boost::fusion::at_c<1>(attr);
-			const std::tuple<const factory<__BTHREADED__>::name2int&, const factory<__BTHREADED__>&> &r = x3::get<lookup_table_tag>(ctx);
+		{	auto const& attr = bp::_attr(ctx);
+			expression<__BTHREADED__>::ptr result = std::get<0>(attr);
+			auto const& ops = std::get<1>(attr);
+			const std::tuple<const factory<__BTHREADED__>::name2int&, const factory<__BTHREADED__>&> &r = bp::_globals(ctx);
 			for (auto const& op_pair : ops)
 			{
-				char op = boost::fusion::at_c<0>(op_pair); // '+' or '-'
-				expression<__BTHREADED__>::ptr rhs = boost::fusion::at_c<1>(op_pair);
+				char op = std::get<0>(op_pair); // '+' or '-'
+				expression<__BTHREADED__>::ptr rhs = std::get<1>(op_pair);
 				if (op == '+')
 					result = std::get<1>(r).addition(result, rhs);
 				else
 					result = std::get<1>(r).subtraction(result, rhs);
 			}
-			x3::_val(ctx) = result;
+			bp::_val(ctx) = result;
 		}
 	)];
-BOOST_SPIRIT_DEFINE(addition);
+BOOST_PARSER_DEFINE_RULES(addition);
 
 
-//x3::rule<class mult_div_pair, char> const mult_div_pair = "mult_div_pair";
-//auto const mult_div_pair_def = x3::attr('*') | x3::attr('/');
-//BOOST_SPIRIT_DEFINE(mult_div_pair);
+//bp::rule<class mult_div_pair, char> const mult_div_pair = "mult_div_pair";
+//auto const mult_div_pair_def = bp::attr('*') | bp::attr('/');
+//BOOST_PARSER_DEFINE_RULES(mult_div_pair);
 
-auto const term_def = (factor >> *(x3::char_("*/") >> factor))
+auto const term_def = (factor >> *(bp::char_("*/") >> factor))
 	[(	[](auto& ctx)
-		{	auto const& attr = x3::_attr(ctx);
-			expression<__BTHREADED__>::ptr result = boost::fusion::at_c<0>(attr);
-			auto const& ops = boost::fusion::at_c<1>(attr);
-			const std::tuple<const factory<__BTHREADED__>::name2int&, const factory<__BTHREADED__>&> &r = x3::get<lookup_table_tag>(ctx);
+		{	auto const& attr = bp::_attr(ctx);
+			expression<__BTHREADED__>::ptr result = std::get<0>(attr);
+			auto const& ops = std::get<1>(attr);
+			const std::tuple<const factory<__BTHREADED__>::name2int&, const factory<__BTHREADED__>&> &r = bp::_globals(ctx);
 			for (auto const& op_pair : ops)
 			{
-				char op = boost::fusion::at_c<0>(op_pair); // '+' or '-'
-				expression<__BTHREADED__>::ptr rhs = boost::fusion::at_c<1>(op_pair);
+				char op = std::get<0>(op_pair); // '+' or '-'
+				expression<__BTHREADED__>::ptr rhs = std::get<1>(op_pair);
 				if (op == '*')
 					result = std::get<1>(r).multiplication(result, rhs);
 				else
 					result = std::get<1>(r).division(result, rhs);
 			}
-			x3::_val(ctx) = result;
+			bp::_val(ctx) = result;
 		}
 	)];
-BOOST_SPIRIT_DEFINE(term);
+BOOST_PARSER_DEFINE_RULES(term);
 
 
 }

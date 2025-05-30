@@ -568,25 +568,33 @@ template<>
 typename factoryImpl<true>::exprPtr factoryImpl<true>::parse(const char *const _r, const name2int&_rP) const
 {	exprPtr pRet;
 	auto sParam = std::tie(_rP, static_cast<const factory<true>&>(*this));
-	auto const sParser = parser_mt::x3::with<parser_mt::lookup_table_tag>(std::ref(sParam))[ parser_mt::expr ];
+	auto const sParser = parser_st::bp::with_globals(parser_mt::expr, sParam);
 
-	auto p = _r;
-	if (phrase_parse(p, _r + std::strlen(_r), sParser, boost::spirit::x3::space, pRet) && p == _r + std::strlen(_r))
+	if (parser_mt::bp::parse(
+		std::string(_r),
+		sParser,
+		parser_mt::bp::ws,
+		pRet
+	))
 		return pRet;
 	else
-		throw std::runtime_error(p);
+		throw std::runtime_error(_r);
 }
 template<>
 typename factoryImpl<false>::exprPtr factoryImpl<false>::parse(const char *const _r, const name2int&_rP) const
 {	exprPtr pRet;
 	auto sParam = std::tie(_rP, static_cast<const factory<false>&>(*this));
-	auto const sParser = parser_st::x3::with<parser_st::lookup_table_tag>(std::ref(sParam))[ parser_st::expr ];
+	auto const sParser = parser_st::bp::with_globals(parser_st::expr, sParam);
 
-	auto p = _r;
-	if (phrase_parse(p, _r + std::strlen(_r), sParser, boost::spirit::x3::space, pRet) && p == _r + std::strlen(_r))
+	if (parser_st::bp::parse(
+		std::string(_r),
+		sParser,
+		parser_st::bp::ws,
+		pRet
+	))
 		return pRet;
 	else
-		throw std::runtime_error(p);
+		throw std::runtime_error(_r);
 }
 }
 template<bool BTHREADED>
