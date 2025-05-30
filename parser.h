@@ -112,7 +112,7 @@ BOOST_SPIRIT_DEFINE(negation_);
 auto const plus_def = '+' >> factor;
 BOOST_SPIRIT_DEFINE(plus);
 
-auto const factor_def = NUMBER 
+auto const factor_def = NUMBER
 	| sin | cos | tan
 	| asin | acos | atan
 	| sinh | cosh | tanh

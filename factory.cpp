@@ -426,7 +426,7 @@ struct parameter:expression<BTHREADED>
 {	const std::size_t m_i;
 	parameter(const std::size_t _i)
 		:
-		m_i(_i)	
+		m_i(_i)
 	{
 	}
 	virtual double evaluate(const double *const _p) const override
