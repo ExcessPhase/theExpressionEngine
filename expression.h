@@ -27,9 +27,6 @@ struct factory;
 //struct type;
 //struct environment;
 //struct realConstant;
-/// the base class of all expression types
-/// immutable
-/// no two with the same content are guaranteed to exist
 #if 0
 template<typename>
 struct hasId
@@ -40,6 +37,9 @@ struct hasId
 template<typename T>
 std::size_t hasId<T>::s_iNextId;
 #endif
+/// the base class of all expression types
+/// immutable
+/// no two with the same content are guaranteed to exist
 template<bool BTHREADED>
 struct expression:dynamic_cast_interface<realConstant<BTHREADED> >, unique<expression<BTHREADED>, BTHREADED>//, hasId<expression>
 {	using typename unique<expression<BTHREADED>, BTHREADED>::MUTEX;
@@ -93,6 +93,16 @@ struct expression:dynamic_cast_interface<realConstant<BTHREADED> >, unique<expre
 	virtual std::size_t getWeight(void) const = 0;
 	std::size_t getWeightW(void) const;
 	//mutable llvm::Value *m_pValue = nullptr;
+};
+template<bool BTHREADED>
+struct expressionSet:std::enable_shared_from_this<const expressionSet<BTHREADED> >
+{	typedef std::vector<boost::intrusive_ptr<const expression<BTHREADED> > > children;
+	//virtual const children&getChildren(void) const = 0;
+	virtual void calculate(
+		std::vector<double>&_rChildren,
+		std::vector<double>&_rTemp,
+		const double *const _pParams
+	) const = 0;
 };
 template<bool BTHREADED>
 boost::intrusive_ptr<const expression<BTHREADED> > collapse(const expression<BTHREADED> &, const factory<BTHREADED>&);

@@ -475,6 +475,30 @@ struct parameter:expression<BTHREADED>
 	}
 };
 template<bool BTHREADED>
+struct expressionSetImpl:expressionSet<BTHREADED>
+{	const std::vector<typename expression<BTHREADED>::ptr> m_sChildren;
+	expressionSetImpl(
+		const std::vector<typename expression<BTHREADED>::ptr>& _rChildren
+	)
+		:m_sChildren(_rChildren)
+	{
+	}
+	virtual void calculate(
+		std::vector<double>&_rChildren,
+		std::vector<double>&_rTemp,
+		const double *const _pParams) const override
+	{	_rChildren.resize(m_sChildren.size());
+		std::transform(
+			m_sChildren.begin(),
+			m_sChildren.end(),
+			_rChildren.begin(),
+			[_pParams](const typename expression<BTHREADED>::ptr&_p)
+			{	return _p->evaluate(_pParams);
+			}
+		);
+	}
+};
+template<bool BTHREADED>
 struct factoryImpl:factory<BTHREADED>
 {	using typename factory<BTHREADED>::exprPtr;
 	virtual exprPtr realConstant(const double _d) const override
@@ -563,6 +587,9 @@ struct factoryImpl:factory<BTHREADED>
 	{	return theExpressionEngine::expression<BTHREADED>::template create<theExpressionEngine::negation<BTHREADED> >(*this, _r);
 	}
 	virtual exprPtr parse(const char *const _r, const typename factory<BTHREADED>::name2int&_rP) const override;
+	virtual std::shared_ptr<const expressionSet<BTHREADED> > createExpressionSet(const std::vector<exprPtr>&_r) const override
+	{	return std::make_shared<const expressionSetImpl<BTHREADED> >(_r);
+	}
 };
 template<>
 typename factoryImpl<true>::exprPtr factoryImpl<true>::parse(const char *const _r, const name2int&_rP) const
