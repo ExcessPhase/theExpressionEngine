@@ -49,7 +49,7 @@ class unique
 	unique(void)
 		:
 		m_sRefCount(std::size_t())
-	{	//std::cout << typeid(*this).name() << ":" << m_iId << std::endl;
+	{
 	}
 		/// for implementing the static set of registered pointers
 	struct compare
@@ -90,7 +90,9 @@ class unique
 	friend void intrusive_ptr_release(const T* const _p) noexcept
 	{	std::optional<std::lock_guard<MUTEX> > sLock(getSet().second);
 		if (!--_p->m_sRefCount)
-		{	getSet().first.erase(_p);
+		{	const auto pFind = getSet().first.find(_p);
+			if (pFind != getSet().first.end() && *pFind == _p)
+				getSet().first.erase(pFind);
 			sLock.reset();
 			delete _p;
 		}
