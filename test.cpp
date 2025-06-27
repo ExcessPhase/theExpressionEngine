@@ -25,8 +25,8 @@ BOOST_AUTO_TEST_CASE(name)\
 {	const auto pFactory = theExpressionEngine::factory<true>::getFactory();\
 	const theExpressionEngine::factory<true>::name2int s = {{"x", pFactory->parameter(0)}};\
 	const auto pExpr = pFactory->parse(#sin "(" #val ")", s);\
-	BOOST_CHECK_CLOSE(pExpr->evaluate(nullptr), std::sin(val), 0.001);\
-	BOOST_CHECK_CLOSE(pExpr->evaluateLLVM(nullptr, pExpr.get()), std::sin(val), 0.001);\
+	BOOST_CHECK_CLOSE(pExpr->evaluate(nullptr, nullptr), std::sin(val), 0.001);\
+	BOOST_CHECK_CLOSE(pExpr->evaluateLLVM(nullptr, nullptr, pExpr.get()), std::sin(val), 0.001);\
 	BOOST_CHECK(pFactory->parse(#sin "(" "x" ")", s)->replace({{pFactory->parameter(0), pFactory->realConstant(val)}}, *pFactory) == pExpr);\
 }
 __TEST__(sin, 1.0, expression_000)
@@ -80,4 +80,21 @@ BOOST_AUTO_TEST_CASE(zero_004)
 	BOOST_CHECK(pFactory->parse("x+0", s) == pFactory->parse("x", s));
 	BOOST_CHECK(pFactory->parse("x-0", s) == pFactory->parse("x", s));
 	BOOST_CHECK(pFactory->parse("0-x", s) == pFactory->parse("-x", s));
+}
+BOOST_AUTO_TEST_CASE(zero_005)
+{	const auto pFactory = theExpressionEngine::factory<true>::getFactory();
+	const theExpressionEngine::factory<true>::name2int s = {{"x", pFactory->parameter(0)}};
+	const auto s1 = pFactory->parse("1+x", s);
+	const auto s2 = pFactory->multiplication(s1, s1);
+	const double d = 1.1;
+	BOOST_CHECK_CLOSE(s2->evaluate(&d, nullptr), (d + 1.0)*(d + 1.0), 0.001);
+	BOOST_CHECK_CLOSE(s2->evaluateLLVM(&d, nullptr, s2.get()), (d + 1.0)*(d + 1.0), 0.001);
+	std::vector<double> sC, sT;
+	const auto sES = pFactory->createExpressionSet({s2});
+	BOOST_CHECK(sES->getChildren().size() == 1);
+	BOOST_CHECK(sES->getTemps().size() == 1);
+	BOOST_CHECK(sES->getChildren().at(0) == pFactory->multiplication(pFactory->variable(0), pFactory->variable(0)));
+	BOOST_CHECK(sES->getTemps().at(0) == s1);
+	sES->calculate(sC, sT, &d);
+	BOOST_CHECK_CLOSE(sC.at(0), (d + 1.0)*(d + 1.0), 0.001);
 }

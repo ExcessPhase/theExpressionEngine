@@ -23,6 +23,7 @@ struct factory:std::enable_shared_from_this<const factory<BTHREADED> >
 	virtual exprPtr a(const exprPtr&_p) const = 0;
 #include "unary.h"
 	virtual exprPtr parameter(const std::size_t) const = 0;
+	virtual exprPtr variable(const std::size_t) const = 0;
 	virtual exprPtr pow(const exprPtr&, const exprPtr&) const = 0;
 	virtual exprPtr hypot(const exprPtr&, const exprPtr&) const = 0;
 	virtual exprPtr fmod(const exprPtr&, const exprPtr&) const = 0;

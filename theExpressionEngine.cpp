@@ -15,16 +15,16 @@
 
 int main(int argc, char**argv)
 {
-	if (argc != 2)
-	{	std::cerr << argv[0] << ": Usage : " << argv[0] << " expression" << std::endl;
-		return 1;
-	}
 	using namespace llvm;
 	using namespace theExpressionEngine;
 	// Initialize the native target
 	InitializeNativeTarget();
 	InitializeNativeTargetAsmPrinter();
 	InitializeNativeTargetAsmParser();
+	if (argc != 2)
+	{	std::cerr << argv[0] << ": Usage : " << argv[0] << " expression" << std::endl;
+		return 1;
+	}
 	const auto pFactory = factory<false>::getFactory();
 	const auto pE = pFactory->parse(argv[1], {{"x", pFactory->parameter(0)}});
 	std::vector<double> sX(1);
@@ -35,7 +35,7 @@ int main(int argc, char**argv)
 		sX[0] = std::stod(sLine.c_str());
 		//GenericValue GV = EE->runFunction(GetValueFunc, Args);
 		//std::cout << GV.DoubleVal << std::endl; // Output: 3.14
-		std::cout << pE->evaluateLLVM(sX.data(), pE.get()) << " " << pE->evaluate(sX.data()) << std::endl;
+		std::cout << pE->evaluateLLVM(sX.data(), nullptr, pE.get()) << " " << pE->evaluate(sX.data(), nullptr) << std::endl;
 	}
 	return 0;
 }

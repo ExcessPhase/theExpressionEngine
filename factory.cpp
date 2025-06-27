@@ -36,7 +36,7 @@ struct realConstant:expression<BTHREADED>
 		else
 			return false;
 	}
-	virtual double evaluate(const double *const) const override
+	virtual double evaluate(const double *const, const double*const) const override
 	{	return m_d;
 	}
 	virtual llvm::Value* generateCode(
@@ -44,7 +44,8 @@ struct realConstant:expression<BTHREADED>
 		llvm::LLVMContext& context,
 		llvm::IRBuilder<>& builder,
 		llvm::Module *const M,
-		llvm::Value*const _pP
+		llvm::Value*const,
+		llvm::Value*const
 	) const override
 	{	return llvm::ConstantFP::get(context, llvm::APFloat(m_d));
 	}
@@ -53,6 +54,9 @@ struct realConstant:expression<BTHREADED>
 	}
 	virtual std::size_t getWeight(void) const override
 	{	return 1;
+	}
+	virtual std::ostream &print(std::ostream&_r) const override
+	{	return _r << m_d;
 	}
 };
 template<bool BTHREADED>
@@ -64,12 +68,10 @@ typename expression<BTHREADED>::ptr expression<BTHREADED>::collapse(const factor
 		{	return _p->getPtr(dummy<realConstant<BTHREADED> >()) != nullptr;
 		}
 	))
-		return _rF.realConstant(evaluate(nullptr));
+		return _rF.realConstant(evaluate(nullptr, nullptr));
 	else
 		return this;
 }
-namespace
-{
 template<bool BTHREADED, const char ac[], double(*PFCT)(double, double), typename factory<BTHREADED>::exprPtr (factory<BTHREADED>::*CREATE)(const typename factory<BTHREADED>::exprPtr&, const typename factory<BTHREADED>::exprPtr&) const>
 struct binary:expression<BTHREADED>
 {	binary(const typename expression<BTHREADED>::ptr&_p0, const typename expression<BTHREADED>::ptr&_p1)
@@ -78,15 +80,21 @@ struct binary:expression<BTHREADED>
 		)
 	{
 	}
-	virtual double evaluate(const double *const _p) const override
-	{	return PFCT(this->m_sChildren.at(0)->evaluate(_p), this->m_sChildren.at(1)->evaluate(_p));
+	virtual std::ostream &print(std::ostream&_r) const override
+	{	_r << ac << "(";
+		this->m_sChildren.at(0)->print(_r) << ",";
+		return this->m_sChildren.at(1)->print(_r) << ")";
+	}
+	virtual double evaluate(const double *const _p, const double*const _pT) const override
+	{	return PFCT(this->m_sChildren.at(0)->evaluate(_p, _pT), this->m_sChildren.at(1)->evaluate(_p, _pT));
 	}
 	virtual llvm::Value* generateCode(
 		const expression<BTHREADED>*const _pRoot,
 		llvm::LLVMContext& context,
 		llvm::IRBuilder<>& builder,
 		llvm::Module *const M,
-		llvm::Value*const _pP
+		llvm::Value*const _pP,
+		llvm::Value*const _pT
 	) const override
 	{		// Create the function prototype for std::sqrt
 		using namespace llvm;
@@ -103,8 +111,8 @@ struct binary:expression<BTHREADED>
 					false // Not variadic
 				)
 			),
-			{	this->m_sChildren.at(0)->generateCodeW(_pRoot, context, builder, M, _pP),
-				this->m_sChildren.at(1)->generateCodeW(_pRoot, context, builder, M, _pP)
+			{	this->m_sChildren.at(0)->generateCodeW(_pRoot, context, builder, M, _pP, _pT),
+				this->m_sChildren.at(1)->generateCodeW(_pRoot, context, builder, M, _pP, _pT)
 			}
 		);
 	}
@@ -123,15 +131,21 @@ struct max:expression<BTHREADED>
 		)
 	{
 	}
-	virtual double evaluate(const double *const _p) const override
-	{	return std::max(this->m_sChildren.at(0)->evaluate(_p), this->m_sChildren.at(1)->evaluate(_p));
+	virtual std::ostream &print(std::ostream&_r) const override
+	{	_r << "max" << "(";
+		this->m_sChildren.at(0)->print(_r) << ",";
+		return this->m_sChildren.at(1)->print(_r) << ")";
+	}
+	virtual double evaluate(const double *const _p, const double*const _pT) const override
+	{	return std::max(this->m_sChildren.at(0)->evaluate(_p, _pT), this->m_sChildren.at(1)->evaluate(_p, _pT));
 	}
 	virtual llvm::Value* generateCode(
 		const expression<BTHREADED>*const _pRoot,
 		llvm::LLVMContext& context,
 		llvm::IRBuilder<>& builder,
 		llvm::Module *const M,
-		llvm::Value*const _pP
+		llvm::Value*const _pP,
+		llvm::Value*const _pT
 	) const override
 	{	// Create the function prototype for std::sqrt
 		using namespace llvm;
@@ -139,8 +153,8 @@ struct max:expression<BTHREADED>
 		Type* const doubleType = Type::getDoubleTy(context);
 		return builder.CreateCall(
 			Intrinsic::getDeclaration(M, Intrinsic::maxnum, {doubleType}),
-			{	this->m_sChildren.at(0)->generateCodeW(_pRoot, context, builder, M, _pP),
-				this->m_sChildren.at(1)->generateCodeW(_pRoot, context, builder, M, _pP)
+			{	this->m_sChildren.at(0)->generateCodeW(_pRoot, context, builder, M, _pP, _pT),
+				this->m_sChildren.at(1)->generateCodeW(_pRoot, context, builder, M, _pP, _pT)
 			},
 			"maxnum"
 		);
@@ -160,15 +174,21 @@ struct min:expression<BTHREADED>
 		)
 	{
 	}
-	virtual double evaluate(const double *const _p) const override
-	{	return std::min(this->m_sChildren.at(0)->evaluate(_p), this->m_sChildren.at(1)->evaluate(_p));
+	virtual std::ostream &print(std::ostream&_r) const override
+	{	_r << "min" << "(";
+		this->m_sChildren.at(0)->print(_r) << ",";
+		return this->m_sChildren.at(1)->print(_r) << ")";
+	}
+	virtual double evaluate(const double *const _p, const double*const _pT) const override
+	{	return std::min(this->m_sChildren.at(0)->evaluate(_p, _pT), this->m_sChildren.at(1)->evaluate(_p, _pT));
 	}
 	virtual llvm::Value* generateCode(
 		const expression<BTHREADED>*const _pRoot,
 		llvm::LLVMContext& context,
 		llvm::IRBuilder<>& builder,
 		llvm::Module *const M,
-		llvm::Value*const _pP
+		llvm::Value*const _pP,
+		llvm::Value*const _pT
 	) const override
 	{	// Create the function prototype for std::sqrt
 		using namespace llvm;
@@ -177,8 +197,8 @@ struct min:expression<BTHREADED>
 		Type* const doubleType = Type::getDoubleTy(context);
 		return builder.CreateCall(
 			Intrinsic::getDeclaration(M, Intrinsic::minnum, {doubleType}),
-			{	this->m_sChildren.at(0)->generateCodeW(_pRoot, context, builder, M, _pP),
-				this->m_sChildren.at(1)->generateCodeW(_pRoot, context, builder, M, _pP),
+			{	this->m_sChildren.at(0)->generateCodeW(_pRoot, context, builder, M, _pP, _pT),
+				this->m_sChildren.at(1)->generateCodeW(_pRoot, context, builder, M, _pP, _pT),
 			},
 			"minnum"
 		);
@@ -198,19 +218,25 @@ struct multiplication:expression<BTHREADED>
 		)
 	{
 	}
-	virtual double evaluate(const double *const _p) const override
-	{	return this->m_sChildren.at(0)->evaluate(_p) * this->m_sChildren.at(1)->evaluate(_p);
+	virtual std::ostream &print(std::ostream&_r) const override
+	{	_r << "(";
+		this->m_sChildren.at(0)->print(_r) << "*";
+		return this->m_sChildren.at(1)->print(_r) << ")";
+	}
+	virtual double evaluate(const double *const _p, const double*const _pT) const override
+	{	return this->m_sChildren.at(0)->evaluate(_p, _pT) * this->m_sChildren.at(1)->evaluate(_p, _pT);
 	}
 	virtual llvm::Value* generateCode(
 		const expression<BTHREADED>*const _pRoot,
 		llvm::LLVMContext& context,
 		llvm::IRBuilder<>& builder,
 		llvm::Module *const M,
-		llvm::Value*const _pP
+		llvm::Value*const _pP,
+		llvm::Value*const _pT
 	) const override
 	{	return builder.CreateFMul(
-			this->m_sChildren.at(0)->generateCodeW(_pRoot, context, builder, M, _pP),
-			this->m_sChildren.at(1)->generateCodeW(_pRoot, context, builder, M, _pP),
+			this->m_sChildren.at(0)->generateCodeW(_pRoot, context, builder, M, _pP, _pT),
+			this->m_sChildren.at(1)->generateCodeW(_pRoot, context, builder, M, _pP, _pT),
 			"plus"
 		);
 	}
@@ -229,19 +255,25 @@ struct division:expression<BTHREADED>
 		)
 	{
 	}
-	virtual double evaluate(const double *const _p) const override
-	{	return this->m_sChildren.at(0)->evaluate(_p) / this->m_sChildren.at(1)->evaluate(_p);
+	virtual std::ostream &print(std::ostream&_r) const override
+	{	_r << "(";
+		this->m_sChildren.at(0)->print(_r) << "/";
+		return this->m_sChildren.at(1)->print(_r) << ")";
+	}
+	virtual double evaluate(const double *const _p, const double*const _pT) const override
+	{	return this->m_sChildren.at(0)->evaluate(_p, _pT) / this->m_sChildren.at(1)->evaluate(_p, _pT);
 	}
 	virtual llvm::Value* generateCode(
 		const expression<BTHREADED>*const _pRoot,
 		llvm::LLVMContext& context,
 		llvm::IRBuilder<>& builder,
 		llvm::Module *const M,
-		llvm::Value*const _pP
+		llvm::Value*const _pP,
+		llvm::Value*const _pT
 	) const override
 	{	return builder.CreateFDiv(
-			this->m_sChildren.at(0)->generateCodeW(_pRoot, context, builder, M, _pP),
-			this->m_sChildren.at(1)->generateCodeW(_pRoot, context, builder, M, _pP),
+			this->m_sChildren.at(0)->generateCodeW(_pRoot, context, builder, M, _pP, _pT),
+			this->m_sChildren.at(1)->generateCodeW(_pRoot, context, builder, M, _pP, _pT),
 			"plus"
 		);
 	}
@@ -260,19 +292,25 @@ struct addition:expression<BTHREADED>
 		)
 	{
 	}
-	virtual double evaluate(const double *const _p) const override
-	{	return this->m_sChildren.at(0)->evaluate(_p) + this->m_sChildren.at(1)->evaluate(_p);
+	virtual std::ostream &print(std::ostream&_r) const override
+	{	_r << "(";
+		this->m_sChildren.at(0)->print(_r) << "+";
+		return this->m_sChildren.at(1)->print(_r) << ")";
+	}
+	virtual double evaluate(const double *const _p, const double*const _pT) const override
+	{	return this->m_sChildren.at(0)->evaluate(_p, _pT) + this->m_sChildren.at(1)->evaluate(_p, _pT);
 	}
 	virtual llvm::Value* generateCode(
 		const expression<BTHREADED>*const _pRoot,
 		llvm::LLVMContext& context,
 		llvm::IRBuilder<>& builder,
 		llvm::Module *const M,
-		llvm::Value*const _pP
+		llvm::Value*const _pP,
+		llvm::Value*const _pT
 	) const override
 	{	return builder.CreateFAdd(
-			this->m_sChildren.at(0)->generateCodeW(_pRoot, context, builder, M, _pP),
-			this->m_sChildren.at(1)->generateCodeW(_pRoot, context, builder, M, _pP),
+			this->m_sChildren.at(0)->generateCodeW(_pRoot, context, builder, M, _pP, _pT),
+			this->m_sChildren.at(1)->generateCodeW(_pRoot, context, builder, M, _pP, _pT),
 			"plus"
 		);
 	}
@@ -291,19 +329,25 @@ struct subtraction:expression<BTHREADED>
 		)
 	{
 	}
-	virtual double evaluate(const double *const _p) const override
-	{	return this->m_sChildren.at(0)->evaluate(_p) - this->m_sChildren.at(1)->evaluate(_p);
+	virtual std::ostream &print(std::ostream&_r) const override
+	{	_r << "(";
+		this->m_sChildren.at(0)->print(_r) << "-";
+		return this->m_sChildren.at(1)->print(_r) << ")";
+	}
+	virtual double evaluate(const double *const _p, const double*const _pT) const override
+	{	return this->m_sChildren.at(0)->evaluate(_p, _pT) - this->m_sChildren.at(1)->evaluate(_p, _pT);
 	}
 	virtual llvm::Value* generateCode(
 		const expression<BTHREADED>*const _pRoot,
 		llvm::LLVMContext& context,
 		llvm::IRBuilder<>& builder,
 		llvm::Module *const M,
-		llvm::Value*const _pP
+		llvm::Value*const _pP,
+		llvm::Value*const _pT
 	) const override
 	{	return builder.CreateFSub(
-			this->m_sChildren.at(0)->generateCodeW(_pRoot, context, builder, M, _pP),
-			this->m_sChildren.at(1)->generateCodeW(_pRoot, context, builder, M, _pP),
+			this->m_sChildren.at(0)->generateCodeW(_pRoot, context, builder, M, _pP, _pT),
+			this->m_sChildren.at(1)->generateCodeW(_pRoot, context, builder, M, _pP, _pT),
 			"plus"
 		);
 	}
@@ -314,7 +358,7 @@ struct subtraction:expression<BTHREADED>
 	{	return 2;
 	}
 };
-template<bool BTHREADED, double(*PMATH)(double), llvm::Intrinsic::ID EID, typename factory<BTHREADED>::exprPtr (factory<BTHREADED>::*CREATE)(const typename factory<BTHREADED>::exprPtr&) const>
+template<bool BTHREADED, double(*PMATH)(double), llvm::Intrinsic::ID EID, const char AC[], typename factory<BTHREADED>::exprPtr (factory<BTHREADED>::*CREATE)(const typename factory<BTHREADED>::exprPtr&) const>
 struct unary:expression<BTHREADED>
 {	unary(const typename expression<BTHREADED>::ptr&_p)
 		:expression<BTHREADED>(
@@ -322,21 +366,26 @@ struct unary:expression<BTHREADED>
 		)
 	{
 	}
-	virtual double evaluate(const double *const _p) const override
-	{	return PMATH(this->m_sChildren.at(0)->evaluate(_p));
+	virtual std::ostream &print(std::ostream&_r) const override
+	{	_r << AC << "(";
+		return this->m_sChildren.at(0)->print(_r) << ")";
+	}
+	virtual double evaluate(const double *const _p, const double*const _pT) const override
+	{	return PMATH(this->m_sChildren.at(0)->evaluate(_p, _pT));
 	}
 	virtual llvm::Value* generateCode(
 		const expression<BTHREADED>*const _pRoot,
 		llvm::LLVMContext& context,
 		llvm::IRBuilder<>& builder,
 		llvm::Module *const M,
-		llvm::Value*const _pP
+		llvm::Value*const _pP,
+		llvm::Value*const _pT
 	) const override
 	{	// Create the function prototype for std::sqrt
 		using namespace llvm;
 		return builder.CreateCall(
 			Intrinsic::getDeclaration(M, EID, builder.getDoubleTy()),
-			this->m_sChildren.at(0)->generateCodeW(_pRoot, context, builder, M, _pP)
+			this->m_sChildren.at(0)->generateCodeW(_pRoot, context, builder, M, _pP, _pT)
 		);
 	}
 	virtual typename expression<BTHREADED>::ptr recreateFromChildren(typename expression<BTHREADED>::children _s, const factory<BTHREADED>&_rF) const override
@@ -354,15 +403,20 @@ struct unaryF:expression<BTHREADED>
 		)
 	{
 	}
-	virtual double evaluate(const double *const _p) const override
-	{	return PMATH(this->m_sChildren.at(0)->evaluate(_p));
+	virtual std::ostream &print(std::ostream&_r) const override
+	{	_r << AC << "(";
+		return this->m_sChildren.at(0)->print(_r) << ")";
+	}
+	virtual double evaluate(const double *const _p, const double*const _pT) const override
+	{	return PMATH(this->m_sChildren.at(0)->evaluate(_p, _pT));
 	}
 	virtual llvm::Value* generateCode(
 		const expression<BTHREADED>*const _pRoot,
 		llvm::LLVMContext& context,
 		llvm::IRBuilder<>& builder,
 		llvm::Module *const M,
-		llvm::Value*const _pP
+		llvm::Value*const _pP,
+		llvm::Value*const _pT
 	) const override
 	{		// Create the function prototype for std::sqrt
 		using namespace llvm;
@@ -373,11 +427,13 @@ struct unaryF:expression<BTHREADED>
 				AC,
 				FunctionType::get(
 					llvm::Type::getDoubleTy(context), // Return type: double
-					{llvm::Type::getDoubleTy(context)}, // Argument type: double
+					{	llvm::Type::getDoubleTy(context),
+						llvm::Type::getDoubleTy(context)
+					}, // Argument type: double
 					false // Not variadic
 				)
 			),
-			{	this->m_sChildren.at(0)->generateCodeW(_pRoot, context, builder, M, _pP)
+			{	this->m_sChildren.at(0)->generateCodeW(_pRoot, context, builder, M, _pP, _pT)
 			}
 		);
 	}
@@ -396,22 +452,27 @@ struct negation:expression<BTHREADED>
 		)
 	{
 	}
-	virtual double evaluate(const double *const _p) const override
-	{	return -this->m_sChildren.at(0)->evaluate(_p);
+	virtual std::ostream &print(std::ostream&_r) const override
+	{	_r << "-(";
+		return this->m_sChildren.at(0)->print(_r) << ")";
+	}
+	virtual double evaluate(const double *const _p, const double*const _pT) const override
+	{	return -this->m_sChildren.at(0)->evaluate(_p, _pT);
 	}
 	virtual llvm::Value* generateCode(
 		const expression<BTHREADED>*const _pRoot,
 		llvm::LLVMContext& context,
 		llvm::IRBuilder<>& builder,
 		llvm::Module *const M,
-		llvm::Value*const _pP
+		llvm::Value*const _pP,
+		llvm::Value*const _pT
 	) const override
 	{	// Create the function prototype for std::sqrt
 		using namespace llvm;
 		llvm::Type* doubleType = Type::getDoubleTy(M->getContext());
 		return builder.CreateFSub(
 			ConstantFP::get(doubleType, 0.0),
-			this->m_sChildren.at(0)->generateCodeW(_pRoot, context, builder, M, _pP)
+			this->m_sChildren.at(0)->generateCodeW(_pRoot, context, builder, M, _pP, _pT)
 		);
 	}
 	virtual typename expression<BTHREADED>::ptr recreateFromChildren(typename expression<BTHREADED>::children _s, const factory<BTHREADED>&_rF) const override
@@ -422,18 +483,21 @@ struct negation:expression<BTHREADED>
 	}
 };
 template<bool BTHREADED>
-struct parameter:expression<BTHREADED>
+struct variable:expression<BTHREADED>
 {	const std::size_t m_i;
-	parameter(const std::size_t _i)
+	variable(const std::size_t _i)
 		:
 		m_i(_i)
 	{
 	}
-	virtual double evaluate(const double *const _p) const override
+	virtual std::ostream &print(std::ostream&_r) const override
+	{	return _r << "var" << m_i;
+	}
+	virtual double evaluate(const double *const, const double*const _p) const override
 	{	return _p[m_i];
 	}
 	virtual bool isSmaller(const expression<BTHREADED>&_r) const override
-	{	const auto &r = dynamic_cast<const parameter&>(_r);
+	{	const auto &r = dynamic_cast<const variable&>(_r);
 		if (m_i < r.m_i)
 			return true;
 		else
@@ -444,6 +508,7 @@ struct parameter:expression<BTHREADED>
 		llvm::LLVMContext& context,
 		llvm::IRBuilder<>& builder,
 		llvm::Module *const M,
+		llvm::Value*const,
 		llvm::Value*const _pP
 	) const override
 	{
@@ -475,27 +540,138 @@ struct parameter:expression<BTHREADED>
 	}
 };
 template<bool BTHREADED>
+struct parameter:expression<BTHREADED>
+{	const std::size_t m_i;
+	parameter(const std::size_t _i)
+		:
+		m_i(_i)
+	{
+	}
+	virtual std::ostream &print(std::ostream&_r) const override
+	{	return _r << "x" << m_i;
+	}
+	virtual double evaluate(const double *const _p, const double*const) const override
+	{	return _p[m_i];
+	}
+	virtual bool isSmaller(const expression<BTHREADED>&_r) const override
+	{	const auto &r = dynamic_cast<const parameter&>(_r);
+		if (m_i < r.m_i)
+			return true;
+		else
+			return false;
+	}
+	virtual llvm::Value* generateCode(
+		const expression<BTHREADED>*const _pRoot,
+		llvm::LLVMContext& context,
+		llvm::IRBuilder<>& builder,
+		llvm::Module *const M,
+		llvm::Value*const _pP,
+		llvm::Value*const
+	) const override
+	{
+		using namespace llvm;
+		// Step 1: Retrieve the contained integer (index)
+		// Assume `index` is a member of the `parameter` object
+		llvm::Value* indexVal = llvm::ConstantInt::get(llvm::Type::getInt64Ty(context), m_i);
+
+		// Step 2: Perform bounds checking or validation if required (optional)
+
+		// Step 3: Use GetElementPtr (GEP) to calculate the address at the given index
+		llvm::Value* indexedPointer = builder.CreateGEP(
+			llvm::Type::getDoubleTy(context), // The type of elements (double)
+			_pP,	// The pointer to be indexed
+			indexVal	// The index (as a Value*)
+		);
+
+		// Step 4: Return the indexed pointer
+		return builder.CreateLoad(
+			Type::getDoubleTy(context), // The type to load
+			indexedPointer	// The pointer to load from
+		);
+	}
+	virtual typename expression<BTHREADED>::ptr recreateFromChildren(typename expression<BTHREADED>::children, const factory<BTHREADED>&) const override
+	{	return this;
+	}
+	virtual std::size_t getWeight(void) const override
+	{	return 1;
+	}
+};
+template<bool BTHREADED>
 struct expressionSetImpl:expressionSet<BTHREADED>
-{	const std::vector<typename expression<BTHREADED>::ptr> m_sChildren;
-	expressionSetImpl(
-		const std::vector<typename expression<BTHREADED>::ptr>& _rChildren
+{
+	typedef typename expression<BTHREADED>::children children;
+	const std::pair<children, children> m_sChildren;
+	static auto get(
+		const children& _rChildren,
+		const factory<BTHREADED>&_rF
 	)
-		:m_sChildren(_rChildren)
+	{	std::set<
+			const expression<BTHREADED>*
+		> sSet;
+		typename expression<BTHREADED>::ptr2ptr sMap;
+		for (const auto &p : _rChildren)
+			p->DFS(
+				[&](const expression<BTHREADED>*const _p)
+				{	if (_p->m_sChildren.empty())
+						return false;
+					const auto sInsert = sSet.emplace(_p);
+					if (sInsert.second)
+						return true;
+					if (auto s = sMap.emplace(_p, nullptr); s.second)
+						s.first->second = _rF.variable(sMap.size() - 1);
+					return false;
+				}
+			);
+		children sC;
+		sC.reserve(_rChildren.size());
+		for (const auto &p : _rChildren)
+			sC.push_back(p->replace(sMap, _rF));
+		children sTemp;
+		sTemp.reserve(sMap.size());
+		auto sM = sMap;
+		for (const auto &r : sMap)
+		{	sM.erase(r.first);
+			sTemp.push_back(r.first->replace(sM, _rF));
+			sM.insert(r);
+		}
+		return std::make_pair(sC, sTemp);
+	}
+	expressionSetImpl(
+		const children& _rChildren,
+		const factory<BTHREADED>&_rF
+	)
+		:m_sChildren(get(_rChildren, _rF))
 	{
 	}
 	virtual void calculate(
 		std::vector<double>&_rChildren,
 		std::vector<double>&_rTemp,
-		const double *const _pParams) const override
-	{	_rChildren.resize(m_sChildren.size());
+		const double *const _pParams
+	) const override
+	{	_rTemp.reserve(m_sChildren.second.size());
 		std::transform(
-			m_sChildren.begin(),
-			m_sChildren.end(),
-			_rChildren.begin(),
-			[_pParams](const typename expression<BTHREADED>::ptr&_p)
-			{	return _p->evaluate(_pParams);
+			m_sChildren.second.begin(),
+			m_sChildren.second.end(),
+			_rTemp.begin(),
+			[_pParams, &_rTemp](const typename expression<BTHREADED>::ptr&_p)
+			{	return _p->evaluate(_pParams, _rTemp.data());
 			}
 		);
+		_rChildren.resize(m_sChildren.first.size());
+		std::transform(
+			m_sChildren.first.begin(),
+			m_sChildren.first.end(),
+			_rChildren.begin(),
+			[_pParams, &_rTemp](const typename expression<BTHREADED>::ptr&_p)
+			{	return _p->evaluate(_pParams, _rTemp.data());
+			}
+		);
+	}
+	virtual const typename expression<BTHREADED>::children &getChildren(void) const override
+	{	return m_sChildren.first;
+	}
+	virtual const typename expression<BTHREADED>::children &getTemps(void) const override
+	{	return m_sChildren.second;
 	}
 };
 template<bool BTHREADED>
@@ -507,6 +683,9 @@ struct factoryImpl:factory<BTHREADED>
 	virtual exprPtr parameter(const std::size_t _i) const override
 	{	return theExpressionEngine::expression<BTHREADED>::template create<theExpressionEngine::parameter<BTHREADED> >(*this, _i);
 	}
+	virtual exprPtr variable(const std::size_t _i) const override
+	{	return theExpressionEngine::expression<BTHREADED>::template create<theExpressionEngine::variable<BTHREADED> >(*this, _i);
+	}
 #define __COMMA__
 #define __COMMA2__
 #define __MAKE_ENTRY2__(a)\
@@ -515,8 +694,9 @@ struct factoryImpl:factory<BTHREADED>
 	{	return theExpressionEngine::expression<BTHREADED>::template create<theExpressionEngine::unaryF<BTHREADED, std::a, s_ac_##a, &factory<BTHREADED>::a> >(*this, _p);\
 	}
 #define __MAKE_ENTRY__(a)\
+	static constexpr const char s_ac_##a[] = #a;\
 	virtual exprPtr a(const exprPtr&_p) const override\
-	{	return theExpressionEngine::expression<BTHREADED>::template create<theExpressionEngine::unary<BTHREADED, std::a, llvm::Intrinsic::a, &factory<BTHREADED>::a> >(*this, _p);\
+	{	return theExpressionEngine::expression<BTHREADED>::template create<theExpressionEngine::unary<BTHREADED, std::a, llvm::Intrinsic::a, s_ac_##a, &factory<BTHREADED>::a> >(*this, _p);\
 	}
 #include "unary.h"
 	virtual exprPtr pow(const exprPtr&_p0, const exprPtr&_p1) const override
@@ -588,7 +768,7 @@ struct factoryImpl:factory<BTHREADED>
 	}
 	virtual exprPtr parse(const char *const _r, const typename factory<BTHREADED>::name2int&_rP) const override;
 	virtual std::shared_ptr<const expressionSet<BTHREADED> > createExpressionSet(const std::vector<exprPtr>&_r) const override
-	{	return std::make_shared<const expressionSetImpl<BTHREADED> >(_r);
+	{	return std::make_shared<const expressionSetImpl<BTHREADED> >(_r, *this);
 	}
 };
 template<>
@@ -622,7 +802,6 @@ typename factoryImpl<false>::exprPtr factoryImpl<false>::parse(const char *const
 		return pRet;
 	else
 		throw std::runtime_error(_r);
-}
 }
 template<bool BTHREADED>
 const typename factory<BTHREADED>::ptr &factory<BTHREADED>::getFactory(void)

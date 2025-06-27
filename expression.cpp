@@ -76,8 +76,6 @@ void expression<BTHREADED>::addOnDestroy(onDestroyFunctor _s) const
 {	std::unique_lock<MUTEX> sLock(getMutex());
 	m_sOnDestroyList.emplace_back(std::move(_s));
 }
-namespace
-{
 using namespace llvm;
 template<bool BTHREADED>
 struct llvmData
@@ -85,7 +83,7 @@ struct llvmData
 	LLVMContext Context;
 	std::unique_ptr<Module> M;// = std::make_unique<Module>("top", Context);
 	std::unique_ptr<ExecutionEngine> EE;// = std::unique_ptr<ExecutionEngine>(EngineBuilder(std::move(M)).setErrorStr(&ErrStr).setEngineKind(EngineKind::JIT).create());
-	using JITFunctionType = double(*)(const double*);
+	using JITFunctionType = double(*)(const double*, const double*);
 	JITFunctionType jitFunction;// = reinterpret_cast<JITFunctionType>(funcAddress);
 	explicit llvmData(const expression<BTHREADED> *const _p, const expression<BTHREADED>*const _pRoot)
 		:Context(),
@@ -95,7 +93,8 @@ struct llvmData
 		IRBuilder<> Builder(Context);
 		FunctionType* FT = FunctionType::get(
 			Type::getDoubleTy(Context),
-			{	Type::getDoubleTy(Context)->getPointerTo()
+			{	Type::getDoubleTy(Context)->getPointerTo(),
+				Type::getDoubleTy(Context)->getPointerTo()
 			},
 			false
 		);
@@ -104,9 +103,10 @@ struct llvmData
 		Builder.SetInsertPoint(BB);
 
 		Function::arg_iterator args = GetValueFunc->arg_begin();
-		Value* doublePtrArg = &(*args);
+		Value* doublePtrArg0 = &(*args++);
+		Value* doublePtrArg1 = &(*args);
 		// Create a constant double value
-		Value* const ConstantVal = _p->generateCodeW(_pRoot, Context, Builder, M.get(), doublePtrArg);//ConstantFP::get(Context, APFloat(3.14));
+		Value* const ConstantVal = _p->generateCodeW(_pRoot, Context, Builder, M.get(), doublePtrArg0, doublePtrArg1);//ConstantFP::get(Context, APFloat(3.14));
 
 		// Return the constant value
 		Builder.CreateRet(ConstantVal);
@@ -138,13 +138,12 @@ struct llvmData
 		}
 
 		// Cast the function address to a function pointer with the correct signature
-		using JITFunctionType = double(*)(const double*);
+		//using JITFunctionType = double(*)(const double*, const double*);
 		jitFunction = reinterpret_cast<JITFunctionType>(funcAddress);
 	}
 };
-}
 template<bool BTHREADED>
-double expression<BTHREADED>::evaluateLLVM(const double *const _p, const expression<BTHREADED>*const _pRoot) const
+double expression<BTHREADED>::evaluateLLVM(const double *const _p, const double *const _pT, const expression<BTHREADED>*const _pRoot) const
 {	std::unique_lock<MUTEX> sLock(getMutex());
 	const auto sInsert = m_sAttachedData.emplace(_pRoot, ARRAY());
 	std::any &r = sInsert.first->second[eLLVMdata];
@@ -158,14 +157,14 @@ double expression<BTHREADED>::evaluateLLVM(const double *const _p, const express
 		r = std::make_shared<const llvmData<BTHREADED> >(this, _pRoot);
 	}
 	sLock.unlock();
-	return std::any_cast<const std::shared_ptr<const llvmData<BTHREADED> >&>(r)->jitFunction(_p);
+	return std::any_cast<const std::shared_ptr<const llvmData<BTHREADED> >&>(r)->jitFunction(_p, _pT);
 }
 template<bool BTHREADED>
 typename expression<BTHREADED>::ptr expression<BTHREADED>::replace(const ptr2ptr&_r, const factory<BTHREADED>&_rF) const
 {	std::vector<std::tuple<ptr, size_t, children, bool> > sStack;
 	sStack.push_back({this, std::numeric_limits<std::size_t>::max(), children(), true});
 	while (!sStack.empty())
-	{	const auto [pThis, iParentPos, sChildren, b] = sStack.back();
+	{	const auto [pThis, iParentPos, sChildren, b] = std::move(sStack.back());
 		sStack.pop_back();
 		if (b)
 		{	const auto pFind = _r.find(pThis);
@@ -180,14 +179,24 @@ typename expression<BTHREADED>::ptr expression<BTHREADED>::replace(const ptr2ptr
 		}
 		else
 			if (iParentPos == std::numeric_limits<std::size_t>::max())
-				if (pThis->m_sChildren != sChildren)
-					return pThis->recreateFromChildren(sChildren, _rF);
+				if (!std::equal(
+					pThis->m_sChildren.begin(),
+					pThis->m_sChildren.end(),
+					sChildren.rbegin(),
+					sChildren.rend()
+				))
+					return pThis->recreateFromChildren({sChildren.rbegin(), sChildren.rend()}, _rF);
 				else
 					return pThis;
 			else
-				if (pThis->m_sChildren != sChildren)
+				if (!std::equal(
+					pThis->m_sChildren.begin(),
+					pThis->m_sChildren.end(),
+					sChildren.rbegin(),
+					sChildren.rend()
+				))
 					std::get<2>(sStack.at(iParentPos)).push_back(
-						pThis->recreateFromChildren(sChildren, _rF)
+						pThis->recreateFromChildren({sChildren.rbegin(), sChildren.rend()}, _rF)
 					);
 				else
 					std::get<2>(sStack.at(iParentPos)).push_back(
@@ -217,7 +226,8 @@ llvm::Value *expression<BTHREADED>::generateCodeW(
 	llvm::LLVMContext& context,
 	llvm::IRBuilder<>& builder,
 	llvm::Module *const M,
-	llvm::Value*const _pP
+	llvm::Value*const _pP,
+	llvm::Value*const _pT
 ) const
 {	std::unique_lock<MUTEX> sLock(getMutex());
 	const auto sInsert = m_sAttachedData.emplace(_pRoot, ARRAY());
@@ -235,7 +245,8 @@ llvm::Value *expression<BTHREADED>::generateCodeW(
 			context,
 			builder,
 			M,
-			_pP
+			_pP,
+			_pT
 		);
 	return std::any_cast<llvm::Value*>(rAny);
 }
