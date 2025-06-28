@@ -49,6 +49,8 @@ e.g.
 which prints the values of sin(0) and sin(1).
 
 ## News
+Fixed a bug in unique.h which I fixed already many times in other versions. When attempting to erase a pointer from  the object registry, one has to make certain, that not another pointer of an identical object is going to be erased.
+
 Replaced boost::spirit::x3 with boost::parser.
 I'm having problems making the boost::spirit::x3 parser a template class...
 
