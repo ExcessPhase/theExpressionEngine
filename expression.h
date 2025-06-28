@@ -118,7 +118,12 @@ template<bool BTHREADED>
 struct expressionSet:std::enable_shared_from_this<const expressionSet<BTHREADED> >
 {	typedef std::vector<boost::intrusive_ptr<const expression<BTHREADED> > > children;
 	//virtual const children&getChildren(void) const = 0;
-	virtual void calculate(
+	virtual void evaluate(
+		std::vector<double>&_rChildren,
+		std::vector<double>&_rTemp,
+		const double *const _pParams
+	) const = 0;
+	virtual void evaluateLLVM(
 		std::vector<double>&_rChildren,
 		std::vector<double>&_rTemp,
 		const double *const _pParams

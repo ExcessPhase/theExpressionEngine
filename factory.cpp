@@ -643,7 +643,7 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 		:m_sChildren(get(_rChildren, _rF))
 	{
 	}
-	virtual void calculate(
+	virtual void evaluate(
 		std::vector<double>&_rChildren,
 		std::vector<double>&_rTemp,
 		const double *const _pParams
@@ -664,6 +664,30 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 			_rChildren.begin(),
 			[_pParams, &_rTemp](const typename expression<BTHREADED>::ptr&_p)
 			{	return _p->evaluate(_pParams, _rTemp.data());
+			}
+		);
+	}
+	virtual void evaluateLLVM(
+		std::vector<double>&_rChildren,
+		std::vector<double>&_rTemp,
+		const double *const _pParams
+	) const override
+	{	_rTemp.reserve(m_sChildren.second.size());
+		std::transform(
+			m_sChildren.second.begin(),
+			m_sChildren.second.end(),
+			_rTemp.begin(),
+			[_pParams, &_rTemp](const typename expression<BTHREADED>::ptr&_p)
+			{	return _p->evaluateLLVM(_pParams, _rTemp.data(), _p.get());
+			}
+		);
+		_rChildren.resize(m_sChildren.first.size());
+		std::transform(
+			m_sChildren.first.begin(),
+			m_sChildren.first.end(),
+			_rChildren.begin(),
+			[_pParams, &_rTemp](const typename expression<BTHREADED>::ptr&_p)
+			{	return _p->evaluateLLVM(_pParams, _rTemp.data(), _p.get());
 			}
 		);
 	}
