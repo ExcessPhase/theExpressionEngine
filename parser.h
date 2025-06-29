@@ -114,29 +114,21 @@ BOOST_PARSER_DEFINE_RULES(negation_);
 auto const plus_def = '+' >> factor;
 BOOST_PARSER_DEFINE_RULES(plus);
 
-auto const factor_def = NUMBER
-	| sin | cos | tan
-	| asin | acos | atan
-	| sinh | cosh | tanh
-	| asinh | acosh | atanh
-	| exp
-	| log
-	| sqrt
-	| fabs
-	| log10
-	| erf
-	| erfc
-	| tgamma
-	| lgamma
-	| cbrt
-	| pow
-	| max
-	| min
-	| atan2
-	| fmod
-	| hypot
-	| plus
-	| ('(' >> expr >> ')') | negation_ | x;
+auto const trig_def = sin | cos | tan | asin | acos | atan;
+auto const hyperbolic_def = sinh | cosh | tanh | asinh | acosh | atanh;
+auto const math1_def = exp | log | sqrt | fabs | log10;
+auto const math2_def = erf | erfc | tgamma | lgamma | cbrt;
+auto const binary_def = pow | max | min | atan2 | fmod | hypot;
+auto const primary_def = NUMBER | ('(' >> expr >> ')') | negation_ | x;
+
+auto const factor_def =
+    trig_def
+    | hyperbolic_def
+    | math1_def
+    | math2_def
+    | binary_def
+    | plus
+    | primary_def;
 BOOST_PARSER_DEFINE_RULES(factor);
 
 auto const expr_def = addition;

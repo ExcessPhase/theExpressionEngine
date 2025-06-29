@@ -796,7 +796,7 @@ struct factoryImpl:factory<BTHREADED>
 	}
 };
 template<>
-typename factoryImpl<true>::exprPtr factoryImpl<true>::parse(const char *const _r, const name2int&_rP) const
+typename factoryImpl<true>::exprPtr factoryImpl<true>::parse(const char *const _r, const typename factoryImpl<true>::name2int&_rP) const
 {	exprPtr pRet;
 	auto sParam = std::tie(_rP, static_cast<const factory<true>&>(*this));
 	auto const sParser = parser_st::bp::with_globals(parser_mt::expr, sParam);
@@ -812,7 +812,7 @@ typename factoryImpl<true>::exprPtr factoryImpl<true>::parse(const char *const _
 		throw std::runtime_error(_r);
 }
 template<>
-typename factoryImpl<false>::exprPtr factoryImpl<false>::parse(const char *const _r, const name2int&_rP) const
+typename factoryImpl<false>::exprPtr factoryImpl<false>::parse(const char *const _r, const typename factoryImpl<false>::name2int&_rP) const
 {	exprPtr pRet;
 	auto sParam = std::tie(_rP, static_cast<const factory<false>&>(*this));
 	auto const sParser = parser_st::bp::with_globals(parser_st::expr, sParam);
