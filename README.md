@@ -49,6 +49,9 @@ e.g.
 which prints the values of sin(0) and sin(1).
 
 ## News
+Added a CMakeLists.txt and removed the Visual Studio solution as I did not get it to work.
+cmake might work on windows if you manage to get the LLVM  libraries installed or built.
+
 Implemented expressionSet, which is supposed to optimize repeated expressions.
 
 Fixed a bug in unique.h which I fixed already many times in other versions. When attempting to erase a pointer from  the object registry, one has to make certain, that not another pointer of an identical object is going to be erased.
