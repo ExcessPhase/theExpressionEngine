@@ -51,6 +51,7 @@ which prints the values of sin(0) and sin(1).
 ## News
 Added a CMakeLists.txt and removed the Visual Studio solution as I did not get it to work.
 cmake might work on windows if you manage to get the LLVM  libraries installed or built.
+At least it compiles using Visual C++.
 
 Implemented expressionSet, which is supposed to optimize repeated expressions.
 
