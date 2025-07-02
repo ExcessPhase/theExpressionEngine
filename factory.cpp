@@ -19,6 +19,10 @@
 #include <regex>
 #include <iostream>
 #include <cmath>
+#include <thread>
+#include <functional>
+#include <mutex>
+#include <future>
 
 namespace theExpressionEngine
 {
@@ -600,7 +604,12 @@ template<bool BTHREADED>
 struct expressionSetImpl:expressionSet<BTHREADED>
 {
 	typedef typename expression<BTHREADED>::children children;
-	const std::pair<children, children> m_sChildren;
+	const std::tuple<
+		children,
+		children,
+		std::vector<std::vector<std::size_t> >,
+		std::vector<std::vector<std::size_t> >
+	> m_sChildren;
 	static auto get(
 		const children& _rChildren,
 		const factory<BTHREADED>&_rF
@@ -634,7 +643,27 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 			sTemp.push_back(r.first->replace(sM, _rF));
 			sM.insert(r);
 		}
-		return std::make_pair(sC, sTemp);
+		std::vector<std::vector<std::size_t> > sDep2T, sT2Dep;
+		sDep2T.resize(sTemp.size());
+		sT2Dep.resize(sTemp.size());
+		for (std::size_t i = 0; i < sTemp.size(); ++i)
+		{	std::set<
+				const expression<BTHREADED>*
+			> sSet;
+			sTemp[i]->DFS(
+				[&](const expression<BTHREADED>*const _p)
+				{	if (!sSet.insert(_p).second)
+						return false;
+					if (const auto pV = dynamic_cast<const variable<BTHREADED>*>(_p))
+					{	sDep2T[pV->m_i].push_back(i);
+						sT2Dep[i].push_back(pV->m_i);
+					}
+					return true;
+				}
+			);
+		}
+		std::for_each(sDep2T.begin(), sDep2T.end(), [](std::vector<std::size_t>&_r){_r.shrink_to_fit();});
+		return std::make_tuple(sC, sTemp, sDep2T, sT2Dep);
 	}
 	expressionSetImpl(
 		const children& _rChildren,
@@ -648,19 +677,58 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 		std::vector<double>&_rTemp,
 		const double *const _pParams
 	) const override
-	{	_rTemp.reserve(m_sChildren.second.size());
+	{	const auto &[rChildren, rTemp, rDep2T, rT2Dep] = m_sChildren;
+		const auto iVars = rTemp.size();
+		_rTemp.resize(iVars);
+#if 1
+		auto sCount(std::make_unique<std::atomic<std::size_t>[]>(iVars));
+		/// 0 -- no dep
+		/// 1 depends on 0
+		/// 2 depends on 0, 1
+		/// rDep2T = {{1, 2}, {2}}
+		// rT2Dep = {{}, {0}, {1, 2}}
+		for (std::size_t i = 0; i < iVars; ++i)
+			sCount.get()[i] = rT2Dep.at(i).size();
+		std::vector<std::optional<std::future<void> > > sFutures(iVars);
+		const std::function<void(std::size_t)> sRunTemp = [&, this](const std::size_t i)
+		{	_rTemp.at(i) = std::get<1>(m_sChildren).at(i)->evaluate(_pParams, _rTemp.data());
+			for (auto iV : std::get<2>(m_sChildren).at(i))
+				if (!--sCount[iV])
+					sFutures.at(iV) = std::async(
+						sRunTemp,
+						iV
+					);
+		};
+		for (std::size_t i = 0; i < iVars; ++i)
+			if (rT2Dep.at(i).empty())
+				sFutures.at(i) = std::async(
+					sRunTemp,
+					i
+				);
+		while (true)
+		{	std::size_t iFailed = 0;
+			for (std::size_t i = 0; i < iVars; ++i)
+				if (auto &r = sFutures.at(i))
+					r->wait();
+				else
+					++iFailed;
+			if (!iFailed)
+				break;
+		}
+#else
 		std::transform(
-			m_sChildren.second.begin(),
-			m_sChildren.second.end(),
+			std::get<1>(m_sChildren).begin(),
+			std::get<1>(m_sChildren).end(),
 			_rTemp.begin(),
 			[_pParams, &_rTemp](const typename expression<BTHREADED>::ptr&_p)
 			{	return _p->evaluate(_pParams, _rTemp.data());
 			}
 		);
-		_rChildren.resize(m_sChildren.first.size());
+#endif
+		_rChildren.resize(std::get<0>(m_sChildren).size());
 		std::transform(
-			m_sChildren.first.begin(),
-			m_sChildren.first.end(),
+			std::get<0>(m_sChildren).begin(),
+			std::get<0>(m_sChildren).end(),
 			_rChildren.begin(),
 			[_pParams, &_rTemp](const typename expression<BTHREADED>::ptr&_p)
 			{	return _p->evaluate(_pParams, _rTemp.data());
@@ -672,19 +740,19 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 		std::vector<double>&_rTemp,
 		const double *const _pParams
 	) const override
-	{	_rTemp.reserve(m_sChildren.second.size());
+	{	_rTemp.resize(std::get<1>(m_sChildren).size());
 		std::transform(
-			m_sChildren.second.begin(),
-			m_sChildren.second.end(),
+			std::get<1>(m_sChildren).begin(),
+			std::get<1>(m_sChildren).end(),
 			_rTemp.begin(),
 			[_pParams, &_rTemp](const typename expression<BTHREADED>::ptr&_p)
 			{	return _p->evaluateLLVM(_pParams, _rTemp.data(), _p.get());
 			}
 		);
-		_rChildren.resize(m_sChildren.first.size());
+		_rChildren.resize(std::get<0>(m_sChildren).size());
 		std::transform(
-			m_sChildren.first.begin(),
-			m_sChildren.first.end(),
+			std::get<0>(m_sChildren).begin(),
+			std::get<0>(m_sChildren).end(),
 			_rChildren.begin(),
 			[_pParams, &_rTemp](const typename expression<BTHREADED>::ptr&_p)
 			{	return _p->evaluateLLVM(_pParams, _rTemp.data(), _p.get());
@@ -692,10 +760,10 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 		);
 	}
 	virtual const typename expression<BTHREADED>::children &getChildren(void) const override
-	{	return m_sChildren.first;
+	{	return std::get<0>(m_sChildren);
 	}
 	virtual const typename expression<BTHREADED>::children &getTemps(void) const override
-	{	return m_sChildren.second;
+	{	return std::get<1>(m_sChildren);
 	}
 };
 template<bool BTHREADED>

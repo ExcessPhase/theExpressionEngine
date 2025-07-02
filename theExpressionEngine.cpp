@@ -21,21 +21,27 @@ int main(int argc, char**argv)
 	InitializeNativeTarget();
 	InitializeNativeTargetAsmPrinter();
 	InitializeNativeTargetAsmParser();
-	if (argc != 2)
+	if (argc < 2)
 	{	std::cerr << argv[0] << ": Usage : " << argv[0] << " expression" << std::endl;
 		return 1;
 	}
 	const auto pFactory = factory<false>::getFactory();
-	const auto pE = pFactory->parse(argv[1], {{"x", pFactory->parameter(0)}});
+	std::vector<expression<false>::ptr> sE;
+	for (auto p = argv + 1; *p; ++p)
+		sE.push_back(pFactory->parse(*p, {{"x", pFactory->parameter(0)}}));
+	const auto sES = pFactory->createExpressionSet(sE);
 	std::vector<double> sX(1);
 	std::string sLine;
+	std::vector<double> sChildren, sTemp;
 	while (std::getline(std::cin, sLine))
 	{	if (sLine.empty())
 			continue;
 		sX[0] = std::stod(sLine.c_str());
-		//GenericValue GV = EE->runFunction(GetValueFunc, Args);
-		//std::cout << GV.DoubleVal << std::endl; // Output: 3.14
-		std::cout << pE->evaluateLLVM(sX.data(), nullptr, pE.get()) << " " << pE->evaluate(sX.data(), nullptr) << std::endl;
+		sES->evaluate(sChildren, sTemp, sX.data());
+		std::cout << sX[0] << "\t";
+		for (const auto &d : sChildren)
+			std::cout << d << "\t";
+		std::cout << std::endl;
 	}
 	return 0;
 }
