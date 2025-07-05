@@ -34,7 +34,7 @@ class NullMutex
 	/// the template class to implement the BASE class
 	/// look for example usage below
 	/// default is multithreaded using std::recursive_mutex
-template<typename T, bool BTHREADED = true>
+template<typename T, bool BTHREADED>
 class unique
 {	public:
 	typedef typename std::conditional<
@@ -42,15 +42,20 @@ class unique
 		std::recursive_mutex,
 		NullMutex
 	>::type MUTEX;
+	typedef typename std::conditional<
+		BTHREADED,
+		std::atomic<std::size_t>,
+		std::size_t
+	>::type ATOMIC;
 	private:
 		/// does not need to be std::atomic as protected by a mutex
-	mutable std::size_t m_sRefCount;
+	mutable ATOMIC m_sRefCount = std::size_t();
 	public:
-	unique(void)
-		:
-		m_sRefCount(std::size_t())
-	{
-	}
+	unique(void) = default;
+	unique(const unique&) = delete;
+	unique(unique&&) = delete;
+	unique&operator=(const unique&) = delete;
+	unique&operator=(unique&&) = delete;
 		/// for implementing the static set of registered pointers
 	struct compare
 	{	bool operator()(const T*const _p0, const T*const _p1) const

@@ -38,13 +38,15 @@ struct hasId
 template<typename T>
 std::size_t hasId<T>::s_iNextId;
 #endif
+template<bool BTHREADED>
+struct llvmData;
 /// the base class of all expression types
 /// immutable
 /// no two with the same content are guaranteed to exist
 template<bool BTHREADED>
 struct expression:dynamic_cast_interface<realConstant<BTHREADED> >, unique<expression<BTHREADED>, BTHREADED>//, hasId<expression>
 {	using typename unique<expression<BTHREADED>, BTHREADED>::MUTEX;
-	using unique<expression<BTHREADED>, BTHREADED>::getMutex;
+	//using unique<expression<BTHREADED>, BTHREADED>::getMutex;
 	typedef boost::intrusive_ptr<const expression<BTHREADED> > ptr;
 	typedef std::vector<ptr> children;
 	enum enumAttachedData
@@ -70,7 +72,7 @@ struct expression:dynamic_cast_interface<realConstant<BTHREADED> >, unique<expre
 		/// the type of the LHS and RHS is guaranteed to be identical
 	virtual bool isSmaller(const expression<BTHREADED> &) const;
 	virtual double evaluate(const double *const, const double*const) const = 0;
-	double evaluateLLVM(const double *const, const double *const, const expression<BTHREADED> *const) const;
+	double evaluateLLVM(const double *const, const double *const) const;
 	llvm::Value *generateCodeW(
 		const expression<BTHREADED>  *const _pRoot,
 		llvm::LLVMContext& context,
@@ -98,6 +100,7 @@ struct expression:dynamic_cast_interface<realConstant<BTHREADED> >, unique<expre
 	}
 	virtual std::ostream &print(std::ostream&) const = 0;
 	private:
+	mutable MUTEX m_sMutex;
 	mutable MAP m_sAttachedData;
 	virtual llvm::Value* generateCode(
 		const expression<BTHREADED>  *const _pRoot,

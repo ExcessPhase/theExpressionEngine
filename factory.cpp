@@ -698,6 +698,7 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 			for (auto iV : std::get<1>(m_sChildren).at(i))
 				if (!--sCount[iV])
 					sFutures.at(iV) = std::async(
+						BTHREADED ? std::launch::async | std::launch::deferred : std::launch(),
 						sRunTemp,
 						iV
 					);
@@ -705,6 +706,7 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 		for (std::size_t i = 0; i < iVars; ++i)
 			if (rT2Dep.at(i).empty())
 				sFutures.at(i) = std::async(
+					BTHREADED ? std::launch::async | std::launch::deferred : std::launch(),
 					sRunTemp,
 					i
 				);
@@ -736,10 +738,11 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 			sCount.get()[i] = rT2Dep.at(i).size();
 		std::vector<std::optional<std::future<void> > > sFutures(iVars);
 		const std::function<void(std::size_t)> sRunTemp = [&, this](const std::size_t i)
-		{	_rChildren.at(i) = std::get<0>(m_sChildren).at(i)->evaluateLLVM(_pParams, _rChildren.data(), std::get<0>(m_sChildren).at(i).get());
+		{	_rChildren.at(i) = std::get<0>(m_sChildren).at(i)->evaluateLLVM(_pParams, _rChildren.data());
 			for (auto iV : std::get<1>(m_sChildren).at(i))
 				if (!--sCount[iV])
 					sFutures.at(iV) = std::async(
+						BTHREADED ? std::launch::async | std::launch::deferred : std::launch(),
 						sRunTemp,
 						iV
 					);
@@ -747,6 +750,7 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 		for (std::size_t i = 0; i < iVars; ++i)
 			if (rT2Dep.at(i).empty())
 				sFutures.at(i) = std::async(
+					BTHREADED ? std::launch::async | std::launch::deferred : std::launch(),
 					sRunTemp,
 					i
 				);

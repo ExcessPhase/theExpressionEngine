@@ -73,7 +73,7 @@ void expression<BTHREADED>::onDestroy(void) const
 }
 template<bool BTHREADED>
 void expression<BTHREADED>::addOnDestroy(onDestroyFunctor _s) const
-{	std::unique_lock<MUTEX> sLock(getMutex());
+{	std::unique_lock<MUTEX> sLock(m_sMutex);
 	m_sOnDestroyList.emplace_back(std::move(_s));
 }
 using namespace llvm;
@@ -85,7 +85,7 @@ struct llvmData
 	std::unique_ptr<ExecutionEngine> EE;// = std::unique_ptr<ExecutionEngine>(EngineBuilder(std::move(M)).setErrorStr(&ErrStr).setEngineKind(EngineKind::JIT).create());
 	using JITFunctionType = double(*)(const double*, const double*);
 	JITFunctionType jitFunction;// = reinterpret_cast<JITFunctionType>(funcAddress);
-	explicit llvmData(const expression<BTHREADED> *const _p, const expression<BTHREADED>*const _pRoot)
+	explicit llvmData(const expression<BTHREADED> *const _p)
 		:Context(),
 		M(std::make_unique<Module>("top", Context))
 		//EE(std::unique_ptr<ExecutionEngine>(EngineBuilder(std::move(M)).setErrorStr(&ErrStr).setEngineKind(EngineKind::JIT).create()))
@@ -106,7 +106,7 @@ struct llvmData
 		Value* doublePtrArg0 = &(*args++);
 		Value* doublePtrArg1 = &(*args);
 		// Create a constant double value
-		Value* const ConstantVal = _p->generateCodeW(_pRoot, Context, Builder, M.get(), doublePtrArg0, doublePtrArg1);//ConstantFP::get(Context, APFloat(3.14));
+		Value* const ConstantVal = _p->generateCodeW(_p, Context, Builder, M.get(), doublePtrArg0, doublePtrArg1);//ConstantFP::get(Context, APFloat(3.14));
 
 		// Return the constant value
 		Builder.CreateRet(ConstantVal);
@@ -143,18 +143,18 @@ struct llvmData
 	}
 };
 template<bool BTHREADED>
-double expression<BTHREADED>::evaluateLLVM(const double *const _p, const double *const _pT, const expression<BTHREADED>*const _pRoot) const
-{	std::unique_lock<MUTEX> sLock(getMutex());
-	const auto sInsert = m_sAttachedData.emplace(_pRoot, ARRAY());
+double expression<BTHREADED>::evaluateLLVM(const double *const _p, const double *const _pT) const
+{	std::unique_lock<MUTEX> sLock(m_sMutex);
+	const auto sInsert = m_sAttachedData.emplace(this, ARRAY());
 	std::any &r = sInsert.first->second[eLLVMdata];
 	if (sInsert.second)
-	{	_pRoot->addOnDestroy(
-			[_pRoot, this](void)
-			{	std::unique_lock<MUTEX> sLock(getMutex());
-				m_sAttachedData.erase(_pRoot);
+	{	addOnDestroy(
+			[this](void)
+			{	std::unique_lock<MUTEX> sLock(m_sMutex);
+				m_sAttachedData.erase(this);
 			}
 		);
-		r = std::make_shared<const llvmData<BTHREADED> >(this, _pRoot);
+		r = std::make_shared<const llvmData<BTHREADED> >(this);
 	}
 	sLock.unlock();
 	return std::any_cast<const std::shared_ptr<const llvmData<BTHREADED> >&>(r)->jitFunction(_p, _pT);
@@ -229,12 +229,12 @@ llvm::Value *expression<BTHREADED>::generateCodeW(
 	llvm::Value*const _pP,
 	llvm::Value*const _pT
 ) const
-{	std::unique_lock<MUTEX> sLock(getMutex());
+{	std::unique_lock<MUTEX> sLock(m_sMutex);
 	const auto sInsert = m_sAttachedData.emplace(_pRoot, ARRAY());
 	if (sInsert.second)
 		_pRoot->addOnDestroy(
 			[_pRoot, this](void)
-			{	std::unique_lock<MUTEX> sLock(getMutex());
+			{	std::unique_lock<MUTEX> sLock(m_sMutex);
 				m_sAttachedData.erase(_pRoot);
 			}
 		);

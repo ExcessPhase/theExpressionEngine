@@ -25,8 +25,8 @@ int main(int argc, char**argv)
 	{	std::cerr << argv[0] << ": Usage : " << argv[0] << " expression" << std::endl;
 		return 1;
 	}
-	const auto pFactory = factory<false>::getFactory();
-	std::vector<expression<false>::ptr> sE;
+	const auto pFactory = factory<true>::getFactory();
+	std::vector<expression<true>::ptr> sE;
 	for (auto p = argv + 1; *p; ++p)
 		sE.push_back(pFactory->parse(*p, {{"x", pFactory->parameter(0)}}));
 	const auto sES = pFactory->createExpressionSet(sE);
