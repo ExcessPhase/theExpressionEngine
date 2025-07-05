@@ -154,6 +154,8 @@ double expression<BTHREADED>::evaluateLLVM(const double *const _p, const double 
 				m_sAttachedData.erase(this);
 			}
 		);
+		static MUTEX sMutex;
+		std::unique_lock<MUTEX> sLock(sMutex);
 		r = std::make_shared<const llvmData<BTHREADED> >(this);
 	}
 	sLock.unlock();
