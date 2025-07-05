@@ -667,6 +667,8 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 			);
 		}
 		std::for_each(sDep2T.begin(), sDep2T.end(), [](std::vector<std::size_t>&_r){_r.shrink_to_fit();});
+		for (const auto &p : sTemp)
+			p->initializeLLVM();
 		return std::make_tuple(sTemp, sDep2T, sT2Dep);
 	}
 	expressionSetImpl(
@@ -692,31 +694,39 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 		// rT2Dep = {{}, {0}, {1, 2}}
 		for (std::size_t i = 0; i < iVars; ++i)
 			sCount.get()[i] = rT2Dep.at(i).size();
-		std::vector<std::optional<std::future<void> > > sFutures(iVars);
+		std::vector<std::pair<std::mutex, std::optional<std::future<void> > > > sFutures(iVars);
 		const std::function<void(std::size_t)> sRunTemp = [&, this](const std::size_t i)
 		{	_rChildren.at(i) = std::get<0>(m_sChildren).at(i)->evaluate(_pParams, _rChildren.data());
 			for (auto iV : std::get<1>(m_sChildren).at(i))
 				if (!--sCount[iV])
-					sFutures.at(iV) = std::async(
+				{	std::unique_lock<std::mutex> sLock(sFutures.at(iV).first);
+					sFutures.at(iV).second = std::async(
 						BTHREADED ? std::launch::async | std::launch::deferred : std::launch(),
 						sRunTemp,
 						iV
 					);
+				}
 		};
 		for (std::size_t i = 0; i < iVars; ++i)
 			if (rT2Dep.at(i).empty())
-				sFutures.at(i) = std::async(
+			{	std::unique_lock<std::mutex> sLock(sFutures.at(i).first);
+				sFutures.at(i).second = std::async(
 					BTHREADED ? std::launch::async | std::launch::deferred : std::launch(),
 					sRunTemp,
 					i
 				);
+			}
 		while (true)
 		{	std::size_t iFailed = 0;
 			for (std::size_t i = 0; i < iVars; ++i)
-				if (auto &r = sFutures.at(i))
+			{	std::unique_lock<std::mutex> sLock(sFutures.at(i).first);
+				if (auto &r = sFutures.at(i).second)
+				{	sLock.unlock();
 					r->wait();
+				}
 				else
 					++iFailed;
+			}
 			if (!iFailed)
 				break;
 		}
@@ -736,31 +746,39 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 		// rT2Dep = {{}, {0}, {1, 2}}
 		for (std::size_t i = 0; i < iVars; ++i)
 			sCount.get()[i] = rT2Dep.at(i).size();
-		std::vector<std::optional<std::future<void> > > sFutures(iVars);
+		std::vector<std::pair<std::mutex, std::optional<std::future<void> > > > sFutures(iVars);
 		const std::function<void(std::size_t)> sRunTemp = [&, this](const std::size_t i)
 		{	_rChildren.at(i) = std::get<0>(m_sChildren).at(i)->evaluateLLVM(_pParams, _rChildren.data());
 			for (auto iV : std::get<1>(m_sChildren).at(i))
 				if (!--sCount[iV])
-					sFutures.at(iV) = std::async(
+				{	std::unique_lock<std::mutex> sLock(sFutures.at(iV).first);
+					sFutures.at(iV).second = std::async(
 						BTHREADED ? std::launch::async | std::launch::deferred : std::launch(),
 						sRunTemp,
 						iV
 					);
+				}
 		};
 		for (std::size_t i = 0; i < iVars; ++i)
 			if (rT2Dep.at(i).empty())
-				sFutures.at(i) = std::async(
+			{	std::unique_lock<std::mutex> sLock(sFutures.at(i).first);
+				sFutures.at(i).second = std::async(
 					BTHREADED ? std::launch::async | std::launch::deferred : std::launch(),
 					sRunTemp,
 					i
 				);
+			}
 		while (true)
 		{	std::size_t iFailed = 0;
 			for (std::size_t i = 0; i < iVars; ++i)
-				if (auto &r = sFutures.at(i))
+			{	std::unique_lock<std::mutex> sLock(sFutures.at(i).first);
+				if (auto &r = sFutures.at(i).second)
+				{	sLock.unlock();
 					r->wait();
+				}
 				else
 					++iFailed;
+			}
 			if (!iFailed)
 				break;
 		}

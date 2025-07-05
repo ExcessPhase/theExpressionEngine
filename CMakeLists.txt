@@ -34,3 +34,7 @@ target_include_directories(theExpressionEngine.exe PRIVATE ${Boost_INCLUDE_DIRS}
 
 target_link_libraries(test.exe PRIVATE ${LLVM_LIBS})
 target_link_libraries(theExpressionEngine.exe PRIVATE ${LLVM_LIBS})
+
+# Enable ThreadSanitizer
+#target_compile_options(theExpressionEngine.exe PRIVATE -fsanitize=thread -g -O0 -fno-omit-frame-pointer -fno-inline)
+#target_link_options(theExpressionEngine.exe PRIVATE -fsanitize=thread)
