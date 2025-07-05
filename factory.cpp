@@ -606,10 +606,10 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 	typedef typename expression<BTHREADED>::children children;
 	const std::tuple<
 		children,
-		children,
 		std::vector<std::vector<std::size_t> >,
 		std::vector<std::vector<std::size_t> >
 	> m_sChildren;
+	const std::size_t m_iTempSize;
 	static auto get(
 		const children& _rChildren,
 		const factory<BTHREADED>&_rF
@@ -618,6 +618,7 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 			const expression<BTHREADED>*
 		> sSet;
 		typename expression<BTHREADED>::ptr2ptr sMap;
+		typename expression<BTHREADED>::children sI2P;
 		for (const auto &p : _rChildren)
 			p->DFS(
 				[&](const expression<BTHREADED>*const _p)
@@ -627,22 +628,25 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 					if (sInsert.second)
 						return true;
 					if (auto s = sMap.emplace(_p, nullptr); s.second)
-						s.first->second = _rF.variable(sMap.size() - 1);
+					{	s.first->second = _rF.variable(sMap.size() - 1);
+						sI2P.emplace_back(_p);
+					}
 					return false;
 				}
 			);
-		children sC;
-		sC.reserve(_rChildren.size());
-		for (const auto &p : _rChildren)
-			sC.push_back(p->replace(sMap, _rF));
 		children sTemp;
-		sTemp.reserve(sMap.size());
-		auto sM = sMap;
-		for (const auto &r : sMap)
-		{	sM.erase(r.first);
-			sTemp.push_back(r.first->replace(sM, _rF));
-			sM.insert(r);
+		sTemp.reserve(sMap.size() + _rChildren.size());
+		{	auto sM = sMap;
+			for (const auto &p : sI2P)
+			{	const auto pFind = sM.find(p);
+				const auto s = *pFind;
+				sM.erase(pFind);
+				sTemp.push_back(p->replace(sM, _rF));
+				sM.insert(s);
+			}
 		}
+		for (const auto &p : _rChildren)
+			sTemp.push_back(p->replace(sMap, _rF));
 		std::vector<std::vector<std::size_t> > sDep2T, sT2Dep;
 		sDep2T.resize(sTemp.size());
 		sT2Dep.resize(sTemp.size());
@@ -663,24 +667,23 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 			);
 		}
 		std::for_each(sDep2T.begin(), sDep2T.end(), [](std::vector<std::size_t>&_r){_r.shrink_to_fit();});
-		return std::make_tuple(sC, sTemp, sDep2T, sT2Dep);
+		return std::make_tuple(sTemp, sDep2T, sT2Dep);
 	}
 	expressionSetImpl(
 		const children& _rChildren,
 		const factory<BTHREADED>&_rF
 	)
-		:m_sChildren(get(_rChildren, _rF))
+		:m_sChildren(get(_rChildren, _rF)),
+		m_iTempSize(std::get<0>(m_sChildren).size() - _rChildren.size())
 	{
 	}
 	virtual void evaluate(
 		std::vector<double>&_rChildren,
-		std::vector<double>&_rTemp,
 		const double *const _pParams
 	) const override
-	{	const auto &[rChildren, rTemp, rDep2T, rT2Dep] = m_sChildren;
-		const auto iVars = rTemp.size();
-		_rTemp.resize(iVars);
-#if 1
+	{	const auto &[rChildren, rDep2T, rT2Dep] = m_sChildren;
+		const auto iVars = rChildren.size();
+		_rChildren.resize(iVars);
 		auto sCount(std::make_unique<std::atomic<std::size_t>[]>(iVars));
 		/// 0 -- no dep
 		/// 1 depends on 0
@@ -691,8 +694,8 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 			sCount.get()[i] = rT2Dep.at(i).size();
 		std::vector<std::optional<std::future<void> > > sFutures(iVars);
 		const std::function<void(std::size_t)> sRunTemp = [&, this](const std::size_t i)
-		{	_rTemp.at(i) = std::get<1>(m_sChildren).at(i)->evaluate(_pParams, _rTemp.data());
-			for (auto iV : std::get<2>(m_sChildren).at(i))
+		{	_rChildren.at(i) = std::get<0>(m_sChildren).at(i)->evaluate(_pParams, _rChildren.data());
+			for (auto iV : std::get<1>(m_sChildren).at(i))
 				if (!--sCount[iV])
 					sFutures.at(iV) = std::async(
 						sRunTemp,
@@ -715,55 +718,54 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 			if (!iFailed)
 				break;
 		}
-#else
-		std::transform(
-			std::get<1>(m_sChildren).begin(),
-			std::get<1>(m_sChildren).end(),
-			_rTemp.begin(),
-			[_pParams, &_rTemp](const typename expression<BTHREADED>::ptr&_p)
-			{	return _p->evaluate(_pParams, _rTemp.data());
-			}
-		);
-#endif
-		_rChildren.resize(std::get<0>(m_sChildren).size());
-		std::transform(
-			std::get<0>(m_sChildren).begin(),
-			std::get<0>(m_sChildren).end(),
-			_rChildren.begin(),
-			[_pParams, &_rTemp](const typename expression<BTHREADED>::ptr&_p)
-			{	return _p->evaluate(_pParams, _rTemp.data());
-			}
-		);
 	}
 	virtual void evaluateLLVM(
 		std::vector<double>&_rChildren,
-		std::vector<double>&_rTemp,
 		const double *const _pParams
 	) const override
-	{	_rTemp.resize(std::get<1>(m_sChildren).size());
-		std::transform(
-			std::get<1>(m_sChildren).begin(),
-			std::get<1>(m_sChildren).end(),
-			_rTemp.begin(),
-			[_pParams, &_rTemp](const typename expression<BTHREADED>::ptr&_p)
-			{	return _p->evaluateLLVM(_pParams, _rTemp.data(), _p.get());
-			}
-		);
-		_rChildren.resize(std::get<0>(m_sChildren).size());
-		std::transform(
-			std::get<0>(m_sChildren).begin(),
-			std::get<0>(m_sChildren).end(),
-			_rChildren.begin(),
-			[_pParams, &_rTemp](const typename expression<BTHREADED>::ptr&_p)
-			{	return _p->evaluateLLVM(_pParams, _rTemp.data(), _p.get());
-			}
-		);
+	{	const auto &[rChildren, rDep2T, rT2Dep] = m_sChildren;
+		const auto iVars = rChildren.size();
+		_rChildren.resize(iVars);
+		auto sCount(std::make_unique<std::atomic<std::size_t>[]>(iVars));
+		/// 0 -- no dep
+		/// 1 depends on 0
+		/// 2 depends on 0, 1
+		/// rDep2T = {{1, 2}, {2}}
+		// rT2Dep = {{}, {0}, {1, 2}}
+		for (std::size_t i = 0; i < iVars; ++i)
+			sCount.get()[i] = rT2Dep.at(i).size();
+		std::vector<std::optional<std::future<void> > > sFutures(iVars);
+		const std::function<void(std::size_t)> sRunTemp = [&, this](const std::size_t i)
+		{	_rChildren.at(i) = std::get<0>(m_sChildren).at(i)->evaluateLLVM(_pParams, _rChildren.data(), std::get<0>(m_sChildren).at(i).get());
+			for (auto iV : std::get<1>(m_sChildren).at(i))
+				if (!--sCount[iV])
+					sFutures.at(iV) = std::async(
+						sRunTemp,
+						iV
+					);
+		};
+		for (std::size_t i = 0; i < iVars; ++i)
+			if (rT2Dep.at(i).empty())
+				sFutures.at(i) = std::async(
+					sRunTemp,
+					i
+				);
+		while (true)
+		{	std::size_t iFailed = 0;
+			for (std::size_t i = 0; i < iVars; ++i)
+				if (auto &r = sFutures.at(i))
+					r->wait();
+				else
+					++iFailed;
+			if (!iFailed)
+				break;
+		}
 	}
 	virtual const typename expression<BTHREADED>::children &getChildren(void) const override
 	{	return std::get<0>(m_sChildren);
 	}
-	virtual const typename expression<BTHREADED>::children &getTemps(void) const override
-	{	return std::get<1>(m_sChildren);
+	virtual std::size_t getTempSize(void) const override
+	{	return m_iTempSize;
 	}
 };
 template<bool BTHREADED>

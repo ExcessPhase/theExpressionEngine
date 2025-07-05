@@ -32,15 +32,15 @@ int main(int argc, char**argv)
 	const auto sES = pFactory->createExpressionSet(sE);
 	std::vector<double> sX(1);
 	std::string sLine;
-	std::vector<double> sChildren, sTemp;
+	std::vector<double> sChildren;
 	while (std::getline(std::cin, sLine))
 	{	if (sLine.empty())
 			continue;
 		sX[0] = std::stod(sLine.c_str());
-		sES->evaluate(sChildren, sTemp, sX.data());
+		sES->evaluateLLVM(sChildren, sX.data());
 		std::cout << sX[0] << "\t";
-		for (const auto &d : sChildren)
-			std::cout << d << "\t";
+		for (std::size_t i = sES->getTempSize(), iMax = sES->getChildren().size(); i < iMax; ++i)
+			std::cout << sChildren[i] << "\t";
 		std::cout << std::endl;
 	}
 	return 0;
