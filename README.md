@@ -49,6 +49,11 @@ e.g.
 which prints the values of sin(0) and sin(1).
 
 ## News
+I finally make multithreading work and fixed some MT-related problems.
+It seems one cannot call into LLVM JIT-Compile from within multiple threads, even if nothing is shared (context, module, builder).
+It is a good idea for multithreading to call expression::initializeLLVM() on every root.
+This code can still be optimized by avoiding to allocate an array of atomic from inside expressionSetImpl::evalute*() but pass it in as an argument.
+
 Added a CMakeLists.txt and removed the Visual Studio solution as I did not get it to work.
 cmake might work on windows if you manage to get the LLVM  libraries installed or built.
 At least it compiles using Visual C++.
