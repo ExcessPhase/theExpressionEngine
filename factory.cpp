@@ -689,7 +689,7 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 	{	const auto &[rChildren, rDep2T, rT2Dep] = m_sChildren;
 		const auto iVars = rChildren.size();
 		_rChildren.resize(iVars);
-		if constexpr (BTHREADED)
+		if constexpr (!BTHREADED)
 			std::transform(
 				rChildren.begin(),
 				rChildren.end(),
@@ -744,7 +744,7 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 	{	const auto &[rChildren, rDep2T, rT2Dep] = m_sChildren;
 		const auto iVars = rChildren.size();
 		_rChildren.resize(iVars);
-		if constexpr (BTHREADED)
+		if constexpr (!BTHREADED)
 			std::transform(
 				rChildren.begin(),
 				rChildren.end(),
