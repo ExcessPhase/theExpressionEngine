@@ -23,6 +23,8 @@
 #include <functional>
 #include <mutex>
 #include <future>
+#include <boost/asio/thread_pool.hpp>
+#include <boost/asio/post.hpp>
 
 namespace theExpressionEngine
 {
@@ -695,41 +697,32 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 		// rT2Dep = {{}, {0}, {1, 2}}
 		for (std::size_t i = 0; i < iVars; ++i)
 			_rC.m_p.get()[i] = rT2Dep.at(i).size();
-		std::vector<std::pair<std::mutex, std::optional<std::future<void> > > > sFutures(iVars);
+		static boost::asio::thread_pool sPool(std::thread::hardware_concurrency());
+		//std::vector<std::pair<std::mutex, std::optional<std::future<void> > > > sFutures(iVars);
+		std::mutex sMutex;
+		std::condition_variable sEvent;
+		std::atomic<std::size_t> sChildCount = iVars;
 		const std::function<void(std::size_t)> sRunTemp = [&, this](const std::size_t i)
 		{	_rChildren.at(i) = std::get<0>(m_sChildren).at(i)->evaluate(_pParams, _rChildren.data());
 			for (auto iV : std::get<1>(m_sChildren).at(i))
 				if (!--_rC.m_p[iV])
-				{	std::unique_lock<std::mutex> sLock(sFutures.at(iV).first);
-					sFutures.at(iV).second = std::async(
-						BTHREADED ? std::launch::async | std::launch::deferred : std::launch(),
-						sRunTemp,
-						iV
-					);
-				}
+					boost::asio::post(sPool, std::bind(sRunTemp, iV));
+			if (!--sChildCount)
+			{	std::unique_lock<std::mutex> sLock(sMutex);
+				sEvent.notify_one();
+			}
 		};
 		for (std::size_t i = 0; i < iVars; ++i)
 			if (rT2Dep.at(i).empty())
-			{	std::unique_lock<std::mutex> sLock(sFutures.at(i).first);
-				sFutures.at(i).second = std::async(
-					BTHREADED ? std::launch::async | std::launch::deferred : std::launch(),
-					sRunTemp,
-					i
-				);
-			}
-		while (true)
-		{	std::size_t iFailed = 0;
-			for (std::size_t i = 0; i < iVars; ++i)
-			{	std::unique_lock<std::mutex> sLock(sFutures.at(i).first);
-				if (auto &r = sFutures.at(i).second)
-				{	sLock.unlock();
-					r->wait();
+				boost::asio::post(sPool, std::bind(sRunTemp, i));
+		if (sChildCount)
+		{	std::unique_lock<std::mutex> sLock(sMutex);
+			sEvent.wait(
+				sLock,
+				[&](void)
+				{	return sChildCount == 0;
 				}
-				else
-					++iFailed;
-			}
-			if (!iFailed)
-				break;
+			);
 		}
 	}
 	virtual void evaluateLLVM(
@@ -748,41 +741,31 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 		// rT2Dep = {{}, {0}, {1, 2}}
 		for (std::size_t i = 0; i < iVars; ++i)
 			_rC.m_p.get()[i] = rT2Dep.at(i).size();
-		std::vector<std::pair<std::mutex, std::optional<std::future<void> > > > sFutures(iVars);
+		static boost::asio::thread_pool sPool(std::thread::hardware_concurrency());
+		std::mutex sMutex;
+		std::condition_variable sEvent;
+		std::atomic<std::size_t> sChildCount = iVars;
 		const std::function<void(std::size_t)> sRunTemp = [&, this](const std::size_t i)
 		{	_rChildren.at(i) = std::get<0>(m_sChildren).at(i)->evaluateLLVM(_pParams, _rChildren.data());
 			for (auto iV : std::get<1>(m_sChildren).at(i))
 				if (!--_rC.m_p[iV])
-				{	std::unique_lock<std::mutex> sLock(sFutures.at(iV).first);
-					sFutures.at(iV).second = std::async(
-						BTHREADED ? std::launch::async | std::launch::deferred : std::launch(),
-						sRunTemp,
-						iV
-					);
-				}
+					boost::asio::post(sPool, std::bind(sRunTemp, iV));
+			if (!--sChildCount)
+			{	std::unique_lock<std::mutex> sLock(sMutex);
+				sEvent.notify_one();
+			}
 		};
 		for (std::size_t i = 0; i < iVars; ++i)
 			if (rT2Dep.at(i).empty())
-			{	std::unique_lock<std::mutex> sLock(sFutures.at(i).first);
-				sFutures.at(i).second = std::async(
-					BTHREADED ? std::launch::async | std::launch::deferred : std::launch(),
-					sRunTemp,
-					i
-				);
-			}
-		while (true)
-		{	std::size_t iFailed = 0;
-			for (std::size_t i = 0; i < iVars; ++i)
-			{	std::unique_lock<std::mutex> sLock(sFutures.at(i).first);
-				if (auto &r = sFutures.at(i).second)
-				{	sLock.unlock();
-					r->wait();
+				boost::asio::post(sPool, std::bind(sRunTemp, i));
+		if (sChildCount)
+		{	std::unique_lock<std::mutex> sLock(sMutex);
+			sEvent.wait(
+				sLock,
+				[&](void)
+				{	return sChildCount == 0;
 				}
-				else
-					++iFailed;
-			}
-			if (!iFailed)
-				break;
+			);
 		}
 	}
 	virtual const typename expression<BTHREADED>::children &getChildren(void) const override
