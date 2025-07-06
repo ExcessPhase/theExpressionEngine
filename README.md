@@ -49,9 +49,13 @@ e.g.
 which prints the values of sin(0) and sin(1).
 
 ## News
+I used boost::asio::thread_pool and I allocated the atomic vector outside and passed both as parameters.
+The output vector of expressionSet::evaluate*() (first argument) contains first temporary values (expressionSet::getTempSize()) and only after the output of the vector of expressions.
+This is for optimization as the temporary values are used more than once.
+
 I finally make multithreading work and fixed some MT-related problems.
 It seems one cannot call into LLVM JIT-Compile from within multiple threads, even if nothing is shared (context, module, builder).
-It is a good idea for multithreading to call expression::initializeLLVM() on every root.
+It is a good idea for multithreading to call expression::initializeLLVM() on every root (which is now done automatically in the constructor of expressionSetImpl).
 This code can still be optimized by avoiding to allocate an array of atomic from inside expressionSetImpl::evalute*() but pass it in as an argument.
 
 Added a CMakeLists.txt and removed the Visual Studio solution as I did not get it to work.
