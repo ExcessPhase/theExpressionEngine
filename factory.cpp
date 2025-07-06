@@ -88,11 +88,11 @@ struct binary:expression<BTHREADED>
 	}
 	virtual std::ostream &print(std::ostream&_r) const override
 	{	_r << ac << "(";
-		this->m_sChildren.at(0)->print(_r) << ",";
-		return this->m_sChildren.at(1)->print(_r) << ")";
+		this->m_sChildren[0]->print(_r) << ",";
+		return this->m_sChildren[1]->print(_r) << ")";
 	}
 	virtual double evaluate(const double *const _p, const double*const _pT) const override
-	{	return PFCT(this->m_sChildren.at(0)->evaluate(_p, _pT), this->m_sChildren.at(1)->evaluate(_p, _pT));
+	{	return PFCT(this->m_sChildren[0]->evaluate(_p, _pT), this->m_sChildren[1]->evaluate(_p, _pT));
 	}
 	virtual llvm::Value* generateCode(
 		const expression<BTHREADED>*const _pRoot,
@@ -117,13 +117,13 @@ struct binary:expression<BTHREADED>
 					false // Not variadic
 				)
 			),
-			{	this->m_sChildren.at(0)->generateCodeW(_pRoot, context, builder, M, _pP, _pT),
-				this->m_sChildren.at(1)->generateCodeW(_pRoot, context, builder, M, _pP, _pT)
+			{	this->m_sChildren[0]->generateCodeW(_pRoot, context, builder, M, _pP, _pT),
+				this->m_sChildren[1]->generateCodeW(_pRoot, context, builder, M, _pP, _pT)
 			}
 		);
 	}
 	virtual typename expression<BTHREADED>::ptr recreateFromChildren(typename expression<BTHREADED>::children _s, const factory<BTHREADED>&_rF) const override
-	{	return (_rF.*CREATE)(_s.at(0), _s.at(1));
+	{	return (_rF.*CREATE)(_s[0], _s[1]);
 	}
 	virtual std::size_t getWeight(void) const override
 	{	return 10;
@@ -139,11 +139,11 @@ struct max:expression<BTHREADED>
 	}
 	virtual std::ostream &print(std::ostream&_r) const override
 	{	_r << "max" << "(";
-		this->m_sChildren.at(0)->print(_r) << ",";
-		return this->m_sChildren.at(1)->print(_r) << ")";
+		this->m_sChildren[0]->print(_r) << ",";
+		return this->m_sChildren[1]->print(_r) << ")";
 	}
 	virtual double evaluate(const double *const _p, const double*const _pT) const override
-	{	return std::max(this->m_sChildren.at(0)->evaluate(_p, _pT), this->m_sChildren.at(1)->evaluate(_p, _pT));
+	{	return std::max(this->m_sChildren[0]->evaluate(_p, _pT), this->m_sChildren[1]->evaluate(_p, _pT));
 	}
 	virtual llvm::Value* generateCode(
 		const expression<BTHREADED>*const _pRoot,
@@ -159,14 +159,14 @@ struct max:expression<BTHREADED>
 		Type* const doubleType = Type::getDoubleTy(context);
 		return builder.CreateCall(
 			Intrinsic::getDeclaration(M, Intrinsic::maxnum, {doubleType}),
-			{	this->m_sChildren.at(0)->generateCodeW(_pRoot, context, builder, M, _pP, _pT),
-				this->m_sChildren.at(1)->generateCodeW(_pRoot, context, builder, M, _pP, _pT)
+			{	this->m_sChildren[0]->generateCodeW(_pRoot, context, builder, M, _pP, _pT),
+				this->m_sChildren[1]->generateCodeW(_pRoot, context, builder, M, _pP, _pT)
 			},
 			"maxnum"
 		);
 	}
 	virtual typename expression<BTHREADED>::ptr recreateFromChildren(typename expression<BTHREADED>::children _s, const factory<BTHREADED>&_rF) const override
-	{	return _rF.max(_s.at(0), _s.at(1));
+	{	return _rF.max(_s[0], _s[1]);
 	}
 	virtual std::size_t getWeight(void) const override
 	{	return 2;
@@ -182,11 +182,11 @@ struct min:expression<BTHREADED>
 	}
 	virtual std::ostream &print(std::ostream&_r) const override
 	{	_r << "min" << "(";
-		this->m_sChildren.at(0)->print(_r) << ",";
-		return this->m_sChildren.at(1)->print(_r) << ")";
+		this->m_sChildren[0]->print(_r) << ",";
+		return this->m_sChildren[1]->print(_r) << ")";
 	}
 	virtual double evaluate(const double *const _p, const double*const _pT) const override
-	{	return std::min(this->m_sChildren.at(0)->evaluate(_p, _pT), this->m_sChildren.at(1)->evaluate(_p, _pT));
+	{	return std::min(this->m_sChildren[0]->evaluate(_p, _pT), this->m_sChildren[1]->evaluate(_p, _pT));
 	}
 	virtual llvm::Value* generateCode(
 		const expression<BTHREADED>*const _pRoot,
@@ -203,14 +203,14 @@ struct min:expression<BTHREADED>
 		Type* const doubleType = Type::getDoubleTy(context);
 		return builder.CreateCall(
 			Intrinsic::getDeclaration(M, Intrinsic::minnum, {doubleType}),
-			{	this->m_sChildren.at(0)->generateCodeW(_pRoot, context, builder, M, _pP, _pT),
-				this->m_sChildren.at(1)->generateCodeW(_pRoot, context, builder, M, _pP, _pT),
+			{	this->m_sChildren[0]->generateCodeW(_pRoot, context, builder, M, _pP, _pT),
+				this->m_sChildren[1]->generateCodeW(_pRoot, context, builder, M, _pP, _pT),
 			},
 			"minnum"
 		);
 	}
 	virtual typename expression<BTHREADED>::ptr recreateFromChildren(typename expression<BTHREADED>::children _s, const factory<BTHREADED>&_rF) const override
-	{	return _rF.min(_s.at(0), _s.at(1));
+	{	return _rF.min(_s[0], _s[1]);
 	}
 	virtual std::size_t getWeight(void) const override
 	{	return 2;
@@ -226,11 +226,11 @@ struct multiplication:expression<BTHREADED>
 	}
 	virtual std::ostream &print(std::ostream&_r) const override
 	{	_r << "(";
-		this->m_sChildren.at(0)->print(_r) << "*";
-		return this->m_sChildren.at(1)->print(_r) << ")";
+		this->m_sChildren[0]->print(_r) << "*";
+		return this->m_sChildren[1]->print(_r) << ")";
 	}
 	virtual double evaluate(const double *const _p, const double*const _pT) const override
-	{	return this->m_sChildren.at(0)->evaluate(_p, _pT) * this->m_sChildren.at(1)->evaluate(_p, _pT);
+	{	return this->m_sChildren[0]->evaluate(_p, _pT) * this->m_sChildren[1]->evaluate(_p, _pT);
 	}
 	virtual llvm::Value* generateCode(
 		const expression<BTHREADED>*const _pRoot,
@@ -241,13 +241,13 @@ struct multiplication:expression<BTHREADED>
 		llvm::Value*const _pT
 	) const override
 	{	return builder.CreateFMul(
-			this->m_sChildren.at(0)->generateCodeW(_pRoot, context, builder, M, _pP, _pT),
-			this->m_sChildren.at(1)->generateCodeW(_pRoot, context, builder, M, _pP, _pT),
+			this->m_sChildren[0]->generateCodeW(_pRoot, context, builder, M, _pP, _pT),
+			this->m_sChildren[1]->generateCodeW(_pRoot, context, builder, M, _pP, _pT),
 			"plus"
 		);
 	}
 	virtual typename expression<BTHREADED>::ptr recreateFromChildren(typename expression<BTHREADED>::children _s, const factory<BTHREADED>&_rF) const override
-	{	return _rF.multiplication(_s.at(0), _s.at(1));
+	{	return _rF.multiplication(_s[0], _s[1]);
 	}
 	virtual std::size_t getWeight(void) const override
 	{	return 4;
@@ -263,11 +263,11 @@ struct division:expression<BTHREADED>
 	}
 	virtual std::ostream &print(std::ostream&_r) const override
 	{	_r << "(";
-		this->m_sChildren.at(0)->print(_r) << "/";
-		return this->m_sChildren.at(1)->print(_r) << ")";
+		this->m_sChildren[0]->print(_r) << "/";
+		return this->m_sChildren[1]->print(_r) << ")";
 	}
 	virtual double evaluate(const double *const _p, const double*const _pT) const override
-	{	return this->m_sChildren.at(0)->evaluate(_p, _pT) / this->m_sChildren.at(1)->evaluate(_p, _pT);
+	{	return this->m_sChildren[0]->evaluate(_p, _pT) / this->m_sChildren[1]->evaluate(_p, _pT);
 	}
 	virtual llvm::Value* generateCode(
 		const expression<BTHREADED>*const _pRoot,
@@ -278,13 +278,13 @@ struct division:expression<BTHREADED>
 		llvm::Value*const _pT
 	) const override
 	{	return builder.CreateFDiv(
-			this->m_sChildren.at(0)->generateCodeW(_pRoot, context, builder, M, _pP, _pT),
-			this->m_sChildren.at(1)->generateCodeW(_pRoot, context, builder, M, _pP, _pT),
+			this->m_sChildren[0]->generateCodeW(_pRoot, context, builder, M, _pP, _pT),
+			this->m_sChildren[1]->generateCodeW(_pRoot, context, builder, M, _pP, _pT),
 			"plus"
 		);
 	}
 	virtual typename expression<BTHREADED>::ptr recreateFromChildren(typename expression<BTHREADED>::children _s, const factory<BTHREADED>&_rF) const override
-	{	return _rF.division(_s.at(0), _s.at(1));
+	{	return _rF.division(_s[0], _s[1]);
 	}
 	virtual std::size_t getWeight(void) const override
 	{	return 10;
@@ -300,11 +300,11 @@ struct addition:expression<BTHREADED>
 	}
 	virtual std::ostream &print(std::ostream&_r) const override
 	{	_r << "(";
-		this->m_sChildren.at(0)->print(_r) << "+";
-		return this->m_sChildren.at(1)->print(_r) << ")";
+		this->m_sChildren[0]->print(_r) << "+";
+		return this->m_sChildren[1]->print(_r) << ")";
 	}
 	virtual double evaluate(const double *const _p, const double*const _pT) const override
-	{	return this->m_sChildren.at(0)->evaluate(_p, _pT) + this->m_sChildren.at(1)->evaluate(_p, _pT);
+	{	return this->m_sChildren[0]->evaluate(_p, _pT) + this->m_sChildren[1]->evaluate(_p, _pT);
 	}
 	virtual llvm::Value* generateCode(
 		const expression<BTHREADED>*const _pRoot,
@@ -315,13 +315,13 @@ struct addition:expression<BTHREADED>
 		llvm::Value*const _pT
 	) const override
 	{	return builder.CreateFAdd(
-			this->m_sChildren.at(0)->generateCodeW(_pRoot, context, builder, M, _pP, _pT),
-			this->m_sChildren.at(1)->generateCodeW(_pRoot, context, builder, M, _pP, _pT),
+			this->m_sChildren[0]->generateCodeW(_pRoot, context, builder, M, _pP, _pT),
+			this->m_sChildren[1]->generateCodeW(_pRoot, context, builder, M, _pP, _pT),
 			"plus"
 		);
 	}
 	virtual typename expression<BTHREADED>::ptr recreateFromChildren(typename expression<BTHREADED>::children _s, const factory<BTHREADED>&_rF) const override
-	{	return _rF.addition(_s.at(0), _s.at(1));
+	{	return _rF.addition(_s[0], _s[1]);
 	}
 	virtual std::size_t getWeight(void) const override
 	{	return 2;
@@ -337,11 +337,11 @@ struct subtraction:expression<BTHREADED>
 	}
 	virtual std::ostream &print(std::ostream&_r) const override
 	{	_r << "(";
-		this->m_sChildren.at(0)->print(_r) << "-";
-		return this->m_sChildren.at(1)->print(_r) << ")";
+		this->m_sChildren[0]->print(_r) << "-";
+		return this->m_sChildren[1]->print(_r) << ")";
 	}
 	virtual double evaluate(const double *const _p, const double*const _pT) const override
-	{	return this->m_sChildren.at(0)->evaluate(_p, _pT) - this->m_sChildren.at(1)->evaluate(_p, _pT);
+	{	return this->m_sChildren[0]->evaluate(_p, _pT) - this->m_sChildren[1]->evaluate(_p, _pT);
 	}
 	virtual llvm::Value* generateCode(
 		const expression<BTHREADED>*const _pRoot,
@@ -352,13 +352,13 @@ struct subtraction:expression<BTHREADED>
 		llvm::Value*const _pT
 	) const override
 	{	return builder.CreateFSub(
-			this->m_sChildren.at(0)->generateCodeW(_pRoot, context, builder, M, _pP, _pT),
-			this->m_sChildren.at(1)->generateCodeW(_pRoot, context, builder, M, _pP, _pT),
+			this->m_sChildren[0]->generateCodeW(_pRoot, context, builder, M, _pP, _pT),
+			this->m_sChildren[1]->generateCodeW(_pRoot, context, builder, M, _pP, _pT),
 			"plus"
 		);
 	}
 	virtual typename expression<BTHREADED>::ptr recreateFromChildren(typename expression<BTHREADED>::children _s, const factory<BTHREADED>&_rF) const override
-	{	return _rF.subtraction(_s.at(0), _s.at(1));
+	{	return _rF.subtraction(_s[0], _s[1]);
 	}
 	virtual std::size_t getWeight(void) const override
 	{	return 2;
@@ -374,10 +374,10 @@ struct unary:expression<BTHREADED>
 	}
 	virtual std::ostream &print(std::ostream&_r) const override
 	{	_r << AC << "(";
-		return this->m_sChildren.at(0)->print(_r) << ")";
+		return this->m_sChildren[0]->print(_r) << ")";
 	}
 	virtual double evaluate(const double *const _p, const double*const _pT) const override
-	{	return PMATH(this->m_sChildren.at(0)->evaluate(_p, _pT));
+	{	return PMATH(this->m_sChildren[0]->evaluate(_p, _pT));
 	}
 	virtual llvm::Value* generateCode(
 		const expression<BTHREADED>*const _pRoot,
@@ -391,11 +391,11 @@ struct unary:expression<BTHREADED>
 		using namespace llvm;
 		return builder.CreateCall(
 			Intrinsic::getDeclaration(M, EID, builder.getDoubleTy()),
-			this->m_sChildren.at(0)->generateCodeW(_pRoot, context, builder, M, _pP, _pT)
+			this->m_sChildren[0]->generateCodeW(_pRoot, context, builder, M, _pP, _pT)
 		);
 	}
 	virtual typename expression<BTHREADED>::ptr recreateFromChildren(typename expression<BTHREADED>::children _s, const factory<BTHREADED>&_rF) const override
-	{	return (_rF.*CREATE)(_s.at(0));
+	{	return (_rF.*CREATE)(_s[0]);
 	}
 	virtual std::size_t getWeight(void) const override
 	{	return 10;
@@ -411,10 +411,10 @@ struct unaryF:expression<BTHREADED>
 	}
 	virtual std::ostream &print(std::ostream&_r) const override
 	{	_r << AC << "(";
-		return this->m_sChildren.at(0)->print(_r) << ")";
+		return this->m_sChildren[0]->print(_r) << ")";
 	}
 	virtual double evaluate(const double *const _p, const double*const _pT) const override
-	{	return PMATH(this->m_sChildren.at(0)->evaluate(_p, _pT));
+	{	return PMATH(this->m_sChildren[0]->evaluate(_p, _pT));
 	}
 	virtual llvm::Value* generateCode(
 		const expression<BTHREADED>*const _pRoot,
@@ -439,12 +439,12 @@ struct unaryF:expression<BTHREADED>
 					false // Not variadic
 				)
 			),
-			{	this->m_sChildren.at(0)->generateCodeW(_pRoot, context, builder, M, _pP, _pT)
+			{	this->m_sChildren[0]->generateCodeW(_pRoot, context, builder, M, _pP, _pT)
 			}
 		);
 	}
 	virtual typename expression<BTHREADED>::ptr recreateFromChildren(typename expression<BTHREADED>::children _s, const factory<BTHREADED>&_rF) const override
-	{	return (_rF.*CREATE)(_s.at(0));
+	{	return (_rF.*CREATE)(_s[0]);
 	}
 	virtual std::size_t getWeight(void) const override
 	{	return 10;
@@ -460,10 +460,10 @@ struct negation:expression<BTHREADED>
 	}
 	virtual std::ostream &print(std::ostream&_r) const override
 	{	_r << "-(";
-		return this->m_sChildren.at(0)->print(_r) << ")";
+		return this->m_sChildren[0]->print(_r) << ")";
 	}
 	virtual double evaluate(const double *const _p, const double*const _pT) const override
-	{	return -this->m_sChildren.at(0)->evaluate(_p, _pT);
+	{	return -this->m_sChildren[0]->evaluate(_p, _pT);
 	}
 	virtual llvm::Value* generateCode(
 		const expression<BTHREADED>*const _pRoot,
@@ -478,11 +478,11 @@ struct negation:expression<BTHREADED>
 		llvm::Type* doubleType = Type::getDoubleTy(M->getContext());
 		return builder.CreateFSub(
 			ConstantFP::get(doubleType, 0.0),
-			this->m_sChildren.at(0)->generateCodeW(_pRoot, context, builder, M, _pP, _pT)
+			this->m_sChildren[0]->generateCodeW(_pRoot, context, builder, M, _pP, _pT)
 		);
 	}
 	virtual typename expression<BTHREADED>::ptr recreateFromChildren(typename expression<BTHREADED>::children _s, const factory<BTHREADED>&_rF) const override
-	{	return _rF.negation(_s.at(0));
+	{	return _rF.negation(_s[0]);
 	}
 	virtual std::size_t getWeight(void) const override
 	{	return 1;
@@ -707,14 +707,14 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 			/// rDep2T = {{1, 2}, {2}}
 			// rT2Dep = {{}, {0}, {1, 2}}
 			for (std::size_t i = 0; i < iVars; ++i)
-				_rC.m_p.get()[i] = rT2Dep.at(i).size();
+				_rC.m_p.get()[i] = rT2Dep[i].size();
 			//std::vector<std::pair<std::mutex, std::optional<std::future<void> > > > sFutures(iVars);
 			std::mutex sMutex;
 			std::condition_variable sEvent;
 			std::atomic<std::size_t> sChildCount = iVars;
 			const std::function<void(std::size_t)> sRunTemp = [&, this](const std::size_t i)
-			{	_rChildren.at(i) = std::get<0>(m_sChildren).at(i)->evaluate(_pParams, _rChildren.data());
-				for (auto iV : std::get<1>(m_sChildren).at(i))
+			{	_rChildren[i] = std::get<0>(m_sChildren)[i]->evaluate(_pParams, _rChildren.data());
+				for (auto iV : std::get<1>(m_sChildren)[i])
 					if (!--_rC.m_p[iV])
 						boost::asio::post(_rPool, std::bind(sRunTemp, iV));
 				if (!--sChildCount)
@@ -723,7 +723,7 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 				}
 			};
 			for (std::size_t i = 0; i < iVars; ++i)
-				if (rT2Dep.at(i).empty())
+				if (rT2Dep[i].empty())
 					boost::asio::post(_rPool, std::bind(sRunTemp, i));
 			if (sChildCount)
 			{	std::unique_lock<std::mutex> sLock(sMutex);
@@ -762,13 +762,13 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 			/// rDep2T = {{1, 2}, {2}}
 			// rT2Dep = {{}, {0}, {1, 2}}
 			for (std::size_t i = 0; i < iVars; ++i)
-				_rC.m_p.get()[i] = rT2Dep.at(i).size();
+				_rC.m_p.get()[i] = rT2Dep[i].size();
 			std::mutex sMutex;
 			std::condition_variable sEvent;
 			std::atomic<std::size_t> sChildCount = iVars;
 			const std::function<void(std::size_t)> sRunTemp = [&, this](const std::size_t i)
-			{	_rChildren.at(i) = std::get<0>(m_sChildren).at(i)->evaluateLLVM(_pParams, _rChildren.data());
-				for (auto iV : std::get<1>(m_sChildren).at(i))
+			{	_rChildren[i] = std::get<0>(m_sChildren)[i]->evaluateLLVM(_pParams, _rChildren.data());
+				for (auto iV : std::get<1>(m_sChildren)[i])
 					if (!--_rC.m_p[iV])
 						boost::asio::post(_rPool, std::bind(sRunTemp, iV));
 				if (!--sChildCount)
@@ -777,7 +777,7 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 				}
 			};
 			for (std::size_t i = 0; i < iVars; ++i)
-				if (rT2Dep.at(i).empty())
+				if (rT2Dep[i].empty())
 					boost::asio::post(_rPool, std::bind(sRunTemp, i));
 			if (sChildCount)
 			{	std::unique_lock<std::mutex> sLock(sMutex);
