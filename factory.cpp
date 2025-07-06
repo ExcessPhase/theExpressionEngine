@@ -689,40 +689,51 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 	{	const auto &[rChildren, rDep2T, rT2Dep] = m_sChildren;
 		const auto iVars = rChildren.size();
 		_rChildren.resize(iVars);
-		_rC.resize(iVars);
-		/// 0 -- no dep
-		/// 1 depends on 0
-		/// 2 depends on 0, 1
-		/// rDep2T = {{1, 2}, {2}}
-		// rT2Dep = {{}, {0}, {1, 2}}
-		for (std::size_t i = 0; i < iVars; ++i)
-			_rC.m_p.get()[i] = rT2Dep.at(i).size();
-		static boost::asio::thread_pool sPool(std::thread::hardware_concurrency());
-		//std::vector<std::pair<std::mutex, std::optional<std::future<void> > > > sFutures(iVars);
-		std::mutex sMutex;
-		std::condition_variable sEvent;
-		std::atomic<std::size_t> sChildCount = iVars;
-		const std::function<void(std::size_t)> sRunTemp = [&, this](const std::size_t i)
-		{	_rChildren.at(i) = std::get<0>(m_sChildren).at(i)->evaluate(_pParams, _rChildren.data());
-			for (auto iV : std::get<1>(m_sChildren).at(i))
-				if (!--_rC.m_p[iV])
-					boost::asio::post(sPool, std::bind(sRunTemp, iV));
-			if (!--sChildCount)
-			{	std::unique_lock<std::mutex> sLock(sMutex);
-				sEvent.notify_one();
-			}
-		};
-		for (std::size_t i = 0; i < iVars; ++i)
-			if (rT2Dep.at(i).empty())
-				boost::asio::post(sPool, std::bind(sRunTemp, i));
-		if (sChildCount)
-		{	std::unique_lock<std::mutex> sLock(sMutex);
-			sEvent.wait(
-				sLock,
-				[&](void)
-				{	return sChildCount == 0;
+		if constexpr (BTHREADED)
+			std::transform(
+				rChildren.begin(),
+				rChildren.end(),
+				_rChildren.begin(),
+				[&](const typename expression<BTHREADED>::ptr&_p)
+				{	return _p->evaluate(_pParams, _rChildren.data());
 				}
 			);
+		else
+		{	_rC.resize(iVars);
+			/// 0 -- no dep
+			/// 1 depends on 0
+			/// 2 depends on 0, 1
+			/// rDep2T = {{1, 2}, {2}}
+			// rT2Dep = {{}, {0}, {1, 2}}
+			for (std::size_t i = 0; i < iVars; ++i)
+				_rC.m_p.get()[i] = rT2Dep.at(i).size();
+			static boost::asio::thread_pool sPool(std::thread::hardware_concurrency());
+			//std::vector<std::pair<std::mutex, std::optional<std::future<void> > > > sFutures(iVars);
+			std::mutex sMutex;
+			std::condition_variable sEvent;
+			std::atomic<std::size_t> sChildCount = iVars;
+			const std::function<void(std::size_t)> sRunTemp = [&, this](const std::size_t i)
+			{	_rChildren.at(i) = std::get<0>(m_sChildren).at(i)->evaluate(_pParams, _rChildren.data());
+				for (auto iV : std::get<1>(m_sChildren).at(i))
+					if (!--_rC.m_p[iV])
+						boost::asio::post(sPool, std::bind(sRunTemp, iV));
+				if (!--sChildCount)
+				{	std::unique_lock<std::mutex> sLock(sMutex);
+					sEvent.notify_one();
+				}
+			};
+			for (std::size_t i = 0; i < iVars; ++i)
+				if (rT2Dep.at(i).empty())
+					boost::asio::post(sPool, std::bind(sRunTemp, i));
+			if (sChildCount)
+			{	std::unique_lock<std::mutex> sLock(sMutex);
+				sEvent.wait(
+					sLock,
+					[&](void)
+					{	return sChildCount == 0;
+					}
+				);
+			}
 		}
 	}
 	virtual void evaluateLLVM(
@@ -733,39 +744,50 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 	{	const auto &[rChildren, rDep2T, rT2Dep] = m_sChildren;
 		const auto iVars = rChildren.size();
 		_rChildren.resize(iVars);
-		_rC.resize(iVars);
-		/// 0 -- no dep
-		/// 1 depends on 0
-		/// 2 depends on 0, 1
-		/// rDep2T = {{1, 2}, {2}}
-		// rT2Dep = {{}, {0}, {1, 2}}
-		for (std::size_t i = 0; i < iVars; ++i)
-			_rC.m_p.get()[i] = rT2Dep.at(i).size();
-		static boost::asio::thread_pool sPool(std::thread::hardware_concurrency());
-		std::mutex sMutex;
-		std::condition_variable sEvent;
-		std::atomic<std::size_t> sChildCount = iVars;
-		const std::function<void(std::size_t)> sRunTemp = [&, this](const std::size_t i)
-		{	_rChildren.at(i) = std::get<0>(m_sChildren).at(i)->evaluateLLVM(_pParams, _rChildren.data());
-			for (auto iV : std::get<1>(m_sChildren).at(i))
-				if (!--_rC.m_p[iV])
-					boost::asio::post(sPool, std::bind(sRunTemp, iV));
-			if (!--sChildCount)
-			{	std::unique_lock<std::mutex> sLock(sMutex);
-				sEvent.notify_one();
-			}
-		};
-		for (std::size_t i = 0; i < iVars; ++i)
-			if (rT2Dep.at(i).empty())
-				boost::asio::post(sPool, std::bind(sRunTemp, i));
-		if (sChildCount)
-		{	std::unique_lock<std::mutex> sLock(sMutex);
-			sEvent.wait(
-				sLock,
-				[&](void)
-				{	return sChildCount == 0;
+		if constexpr (BTHREADED)
+			std::transform(
+				rChildren.begin(),
+				rChildren.end(),
+				_rChildren.begin(),
+				[&](const typename expression<BTHREADED>::ptr&_p)
+				{	return _p->evaluate(_pParams, _rChildren.data());
 				}
 			);
+		else
+		{	_rC.resize(iVars);
+			/// 0 -- no dep
+			/// 1 depends on 0
+			/// 2 depends on 0, 1
+			/// rDep2T = {{1, 2}, {2}}
+			// rT2Dep = {{}, {0}, {1, 2}}
+			for (std::size_t i = 0; i < iVars; ++i)
+				_rC.m_p.get()[i] = rT2Dep.at(i).size();
+			static boost::asio::thread_pool sPool(std::thread::hardware_concurrency());
+			std::mutex sMutex;
+			std::condition_variable sEvent;
+			std::atomic<std::size_t> sChildCount = iVars;
+			const std::function<void(std::size_t)> sRunTemp = [&, this](const std::size_t i)
+			{	_rChildren.at(i) = std::get<0>(m_sChildren).at(i)->evaluateLLVM(_pParams, _rChildren.data());
+				for (auto iV : std::get<1>(m_sChildren).at(i))
+					if (!--_rC.m_p[iV])
+						boost::asio::post(sPool, std::bind(sRunTemp, iV));
+				if (!--sChildCount)
+				{	std::unique_lock<std::mutex> sLock(sMutex);
+					sEvent.notify_one();
+				}
+			};
+			for (std::size_t i = 0; i < iVars; ++i)
+				if (rT2Dep.at(i).empty())
+					boost::asio::post(sPool, std::bind(sRunTemp, i));
+			if (sChildCount)
+			{	std::unique_lock<std::mutex> sLock(sMutex);
+				sEvent.wait(
+					sLock,
+					[&](void)
+					{	return sChildCount == 0;
+					}
+				);
+			}
 		}
 	}
 	virtual const typename expression<BTHREADED>::children &getChildren(void) const override
