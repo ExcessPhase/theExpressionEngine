@@ -681,24 +681,25 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 	}
 	virtual void evaluate(
 		std::vector<double>&_rChildren,
-		const double *const _pParams
+		const double *const _pParams,
+		typename expressionSet<BTHREADED>::atomicVec &_rC
 	) const override
 	{	const auto &[rChildren, rDep2T, rT2Dep] = m_sChildren;
 		const auto iVars = rChildren.size();
 		_rChildren.resize(iVars);
-		auto sCount(std::make_unique<std::atomic<std::size_t>[]>(iVars));
+		_rC.resize(iVars);
 		/// 0 -- no dep
 		/// 1 depends on 0
 		/// 2 depends on 0, 1
 		/// rDep2T = {{1, 2}, {2}}
 		// rT2Dep = {{}, {0}, {1, 2}}
 		for (std::size_t i = 0; i < iVars; ++i)
-			sCount.get()[i] = rT2Dep.at(i).size();
+			_rC.m_p.get()[i] = rT2Dep.at(i).size();
 		std::vector<std::pair<std::mutex, std::optional<std::future<void> > > > sFutures(iVars);
 		const std::function<void(std::size_t)> sRunTemp = [&, this](const std::size_t i)
 		{	_rChildren.at(i) = std::get<0>(m_sChildren).at(i)->evaluate(_pParams, _rChildren.data());
 			for (auto iV : std::get<1>(m_sChildren).at(i))
-				if (!--sCount[iV])
+				if (!--_rC.m_p[iV])
 				{	std::unique_lock<std::mutex> sLock(sFutures.at(iV).first);
 					sFutures.at(iV).second = std::async(
 						BTHREADED ? std::launch::async | std::launch::deferred : std::launch(),
@@ -733,24 +734,25 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 	}
 	virtual void evaluateLLVM(
 		std::vector<double>&_rChildren,
-		const double *const _pParams
+		const double *const _pParams,
+		typename expressionSet<BTHREADED>::atomicVec &_rC
 	) const override
 	{	const auto &[rChildren, rDep2T, rT2Dep] = m_sChildren;
 		const auto iVars = rChildren.size();
 		_rChildren.resize(iVars);
-		auto sCount(std::make_unique<std::atomic<std::size_t>[]>(iVars));
+		_rC.resize(iVars);
 		/// 0 -- no dep
 		/// 1 depends on 0
 		/// 2 depends on 0, 1
 		/// rDep2T = {{1, 2}, {2}}
 		// rT2Dep = {{}, {0}, {1, 2}}
 		for (std::size_t i = 0; i < iVars; ++i)
-			sCount.get()[i] = rT2Dep.at(i).size();
+			_rC.m_p.get()[i] = rT2Dep.at(i).size();
 		std::vector<std::pair<std::mutex, std::optional<std::future<void> > > > sFutures(iVars);
 		const std::function<void(std::size_t)> sRunTemp = [&, this](const std::size_t i)
 		{	_rChildren.at(i) = std::get<0>(m_sChildren).at(i)->evaluateLLVM(_pParams, _rChildren.data());
 			for (auto iV : std::get<1>(m_sChildren).at(i))
-				if (!--sCount[iV])
+				if (!--_rC.m_p[iV])
 				{	std::unique_lock<std::mutex> sLock(sFutures.at(iV).first);
 					sFutures.at(iV).second = std::async(
 						BTHREADED ? std::launch::async | std::launch::deferred : std::launch(),

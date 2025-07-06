@@ -92,12 +92,14 @@ BOOST_AUTO_TEST_CASE(zero_005)
 	BOOST_CHECK_CLOSE(s2->evaluateLLVM(&d, nullptr), d1, 0.001);
 	std::vector<double> sC;
 	const auto sES = pFactory->createExpressionSet({s2});
+	theExpressionEngine::expressionSet<true>::atomicVec sCount;
+	sCount.resize(sES->getChildren().size());
 	BOOST_CHECK(sES->getChildren().size() == 2);
 	BOOST_CHECK(sES->getTempSize() == 1);
 	BOOST_CHECK(sES->getChildren().at(1) == pFactory->multiplication(pFactory->variable(0), pFactory->variable(0)));
 	BOOST_CHECK(sES->getChildren().at(0) == s1);
-	sES->evaluate(sC, &d);
+	sES->evaluate(sC, &d, sCount);
 	BOOST_CHECK_CLOSE(sC.at(1), d1, 0.001);
-	sES->evaluateLLVM(sC, &d);
+	sES->evaluateLLVM(sC, &d, sCount);
 	BOOST_CHECK_CLOSE(sC.at(1), d1, 0.001);
 }

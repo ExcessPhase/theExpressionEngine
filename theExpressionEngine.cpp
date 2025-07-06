@@ -33,11 +33,12 @@ int main(int argc, char**argv)
 	std::vector<double> sX(1);
 	std::string sLine;
 	std::vector<double> sChildren;
+	expressionSet<true>::atomicVec sCount;
 	while (std::getline(std::cin, sLine))
 	{	if (sLine.empty())
 			continue;
 		sX[0] = std::stod(sLine.c_str());
-		sES->evaluateLLVM(sChildren, sX.data());
+		sES->evaluateLLVM(sChildren, sX.data(), sCount);
 		std::cout << sX[0] << "\t";
 		for (std::size_t i = sES->getTempSize(), iMax = sES->getChildren().size(); i < iMax; ++i)
 			std::cout << sChildren[i] << "\t";
