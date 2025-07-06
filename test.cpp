@@ -100,7 +100,37 @@ BOOST_AUTO_TEST_CASE(zero_005)
 	BOOST_CHECK(sES->getChildren().at(0) == s1);
 	boost::asio::thread_pool sPool(std::thread::hardware_concurrency());
 	sES->evaluate(sC, &d, sCount, sPool);
-	BOOST_CHECK_CLOSE(sC.at(1), d1, 0.001);
+	BOOST_CHECK_CLOSE(sC.at(sES->getTempSize()), d1, 0.001);
 	sES->evaluateLLVM(sC, &d, sCount, sPool);
-	BOOST_CHECK_CLOSE(sC.at(1), d1, 0.001);
+	BOOST_CHECK_CLOSE(sC.at(sES->getTempSize()), d1, 0.001);
+}
+BOOST_AUTO_TEST_CASE(zero_006)
+{	const auto pFactory = theExpressionEngine::factory<true>::getFactory();
+	const theExpressionEngine::factory<true>::name2int s = {{"x", pFactory->parameter(0)}};
+#define str(x) #x
+#define expand(x) str(x)
+#define expr(x) ((1+x)*(1-x)*(2+x)*(2-x)*(3+x)*(3-x))
+	const auto s1 = pFactory->parse(expand(expr(x)), s);
+	const auto s2 = pFactory->parse(expand(expr(x)) "*" expand(expr(x)), s);
+	const auto s3 = pFactory->parse(expand(expr(x)) "*" expand(expr(x)) "*" expand(expr(x)), s);
+	const double x = 1.1;
+	const auto d1 = expr(x);
+	const auto d2 = expr(x)*expr(x);
+	const auto d3 = expr(x)*expr(x)*expr(x);
+	BOOST_CHECK_CLOSE(s1->evaluate(&x, nullptr), d1, 0.001);
+	BOOST_CHECK_CLOSE(s2->evaluate(&x, nullptr), d2, 0.001);
+	BOOST_CHECK_CLOSE(s3->evaluate(&x, nullptr), d3, 0.001);
+	BOOST_CHECK_CLOSE(s1->evaluateLLVM(&x, nullptr), d1, 0.001);
+	BOOST_CHECK_CLOSE(s2->evaluateLLVM(&x, nullptr), d2, 0.001);
+	BOOST_CHECK_CLOSE(s3->evaluateLLVM(&x, nullptr), d3, 0.001);
+
+	std::vector<double> sC;
+	const auto sES = pFactory->createExpressionSet({s1, s2, s3});
+	theExpressionEngine::expressionSet<true>::atomicVec sCount;
+	sCount.resize(sES->getChildren().size());
+	boost::asio::thread_pool sPool(std::thread::hardware_concurrency());
+	sES->evaluate(sC, &x, sCount, sPool);
+	BOOST_CHECK_CLOSE(sC.at(sES->getTempSize() + 2), d3, 0.001);
+	sES->evaluateLLVM(sC, &x, sCount, sPool);
+	BOOST_CHECK_CLOSE(sC.at(sES->getTempSize() + 2), d3, 0.001);
 }
