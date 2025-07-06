@@ -98,8 +98,9 @@ BOOST_AUTO_TEST_CASE(zero_005)
 	BOOST_CHECK(sES->getTempSize() == 1);
 	BOOST_CHECK(sES->getChildren().at(1) == pFactory->multiplication(pFactory->variable(0), pFactory->variable(0)));
 	BOOST_CHECK(sES->getChildren().at(0) == s1);
-	sES->evaluate(sC, &d, sCount);
+	boost::asio::thread_pool sPool(std::thread::hardware_concurrency());
+	sES->evaluate(sC, &d, sCount, sPool);
 	BOOST_CHECK_CLOSE(sC.at(1), d1, 0.001);
-	sES->evaluateLLVM(sC, &d, sCount);
+	sES->evaluateLLVM(sC, &d, sCount, sPool);
 	BOOST_CHECK_CLOSE(sC.at(1), d1, 0.001);
 }

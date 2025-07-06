@@ -15,6 +15,7 @@
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/IRBuilder.h>
 #include <boost/intrusive_ptr.hpp>
+#include <boost/asio/thread_pool.hpp>
 //#include <llvm/IR/Module.h>
 //#include <llvm/IR/Constants.h>
 
@@ -135,12 +136,14 @@ struct expressionSet:std::enable_shared_from_this<const expressionSet<BTHREADED>
 	virtual void evaluate(
 		std::vector<double>&_rChildren,
 		const double *const _pParams,
-		atomicVec &_rC
+		atomicVec &_rC,
+		boost::asio::thread_pool &_rPool
 	) const = 0;
 	virtual void evaluateLLVM(
 		std::vector<double>&_rChildren,
 		const double *const _pParams,
-		atomicVec &_rC
+		atomicVec &_rC,
+		boost::asio::thread_pool &_rPool
 	) const = 0;
 	virtual const typename expression<BTHREADED>::children &getChildren(void) const = 0;
 	//virtual const typename expression<BTHREADED>::children &getTemps(void) const = 0;
