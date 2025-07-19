@@ -158,7 +158,7 @@ struct max:expression<BTHREADED>
 			// Call the tan function
 		Type* const doubleType = Type::getDoubleTy(context);
 		return builder.CreateCall(
-			Intrinsic::getDeclaration(M, Intrinsic::maxnum, {doubleType}),
+			Intrinsic::getOrInsertDeclaration(M, Intrinsic::maxnum, {doubleType}),
 			{	this->m_sChildren[0]->generateCodeW(_pRoot, context, builder, M, _pP, _pT),
 				this->m_sChildren[1]->generateCodeW(_pRoot, context, builder, M, _pP, _pT)
 			},
@@ -202,7 +202,7 @@ struct min:expression<BTHREADED>
 		// Call the tan function
 		Type* const doubleType = Type::getDoubleTy(context);
 		return builder.CreateCall(
-			Intrinsic::getDeclaration(M, Intrinsic::minnum, {doubleType}),
+			Intrinsic::getOrInsertDeclaration(M, Intrinsic::minnum, {doubleType}),
 			{	this->m_sChildren[0]->generateCodeW(_pRoot, context, builder, M, _pP, _pT),
 				this->m_sChildren[1]->generateCodeW(_pRoot, context, builder, M, _pP, _pT),
 			},
@@ -390,7 +390,7 @@ struct unary:expression<BTHREADED>
 	{	// Create the function prototype for std::sqrt
 		using namespace llvm;
 		return builder.CreateCall(
-			Intrinsic::getDeclaration(M, EID, builder.getDoubleTy()),
+			Intrinsic::getOrInsertDeclaration(M, EID, {Type::getDoubleTy(context)}),
 			this->m_sChildren[0]->generateCodeW(_pRoot, context, builder, M, _pP, _pT)
 		);
 	}

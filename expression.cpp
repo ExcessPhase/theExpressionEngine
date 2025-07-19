@@ -93,8 +93,8 @@ struct llvmData
 		IRBuilder<> Builder(Context);
 		FunctionType* FT = FunctionType::get(
 			Type::getDoubleTy(Context),
-			{	Type::getDoubleTy(Context)->getPointerTo(),
-				Type::getDoubleTy(Context)->getPointerTo()
+			{	PointerType::get(Type::getDoubleTy(Context), 0),
+				PointerType::get(Type::getDoubleTy(Context), 0)
 			},
 			false
 		);
