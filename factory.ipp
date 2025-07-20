@@ -609,7 +609,7 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 	const std::tuple<
 		children,
 		std::vector<std::vector<std::size_t> >,
-		std::vector<std::vector<std::size_t> >
+		std::vector<std::size_t>
 	> m_sChildren;
 	const std::size_t m_iTempSize;
 	static auto get(
@@ -649,7 +649,8 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 		}
 		for (const auto &p : _rChildren)
 			sTemp.push_back(p->replace(sMap, _rF));
-		std::vector<std::vector<std::size_t> > sDep2T, sT2Dep;
+		std::vector<std::vector<std::size_t> > sDep2T;
+		std::vector<std::size_t> sT2Dep;
 		sDep2T.resize(sTemp.size());
 		sT2Dep.resize(sTemp.size());
 		for (std::size_t i = 0; i < sTemp.size(); ++i)
@@ -662,7 +663,7 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 						return false;
 					if (const auto pV = dynamic_cast<const variable<BTHREADED>*>(_p))
 					{	sDep2T[pV->m_i].push_back(i);
-						sT2Dep[i].push_back(pV->m_i);
+						++sT2Dep[i];
 					}
 					return true;
 				}
@@ -707,7 +708,7 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 			/// rDep2T = {{1, 2}, {2}}
 			// rT2Dep = {{}, {0}, {1, 2}}
 			for (std::size_t i = 0; i < iVars; ++i)
-				_rC.m_p.get()[i] = rT2Dep[i].size();
+				_rC.m_p.get()[i] = rT2Dep[i];
 			//std::vector<std::pair<std::mutex, std::optional<std::future<void> > > > sFutures(iVars);
 			std::mutex sMutex;
 			std::condition_variable sEvent;
@@ -723,7 +724,7 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 				}
 			};
 			for (std::size_t i = 0; i < iVars; ++i)
-				if (rT2Dep[i].empty())
+				if (!rT2Dep[i])
 					boost::asio::post(_rPool, std::bind(sRunTemp, i));
 			if (sChildCount)
 			{	std::unique_lock<std::mutex> sLock(sMutex);
@@ -762,7 +763,7 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 			/// rDep2T = {{1, 2}, {2}}
 			// rT2Dep = {{}, {0}, {1, 2}}
 			for (std::size_t i = 0; i < iVars; ++i)
-				_rC.m_p.get()[i] = rT2Dep[i].size();
+				_rC.m_p.get()[i] = rT2Dep[i];
 			std::mutex sMutex;
 			std::condition_variable sEvent;
 			std::atomic<std::size_t> sChildCount = iVars;
@@ -777,7 +778,7 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 				}
 			};
 			for (std::size_t i = 0; i < iVars; ++i)
-				if (rT2Dep[i].empty())
+				if (!rT2Dep[i])
 					boost::asio::post(_rPool, std::bind(sRunTemp, i));
 			if (sChildCount)
 			{	std::unique_lock<std::mutex> sLock(sMutex);
