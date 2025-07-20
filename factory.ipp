@@ -433,7 +433,7 @@ struct unaryF:expression<BTHREADED>
 				AC,
 				FunctionType::get(
 					llvm::Type::getDoubleTy(context), // Return type: double
-					{	llvm::Type::getDoubleTy(context),
+					{	//llvm::Type::getDoubleTy(context),
 						llvm::Type::getDoubleTy(context)
 					}, // Argument type: double
 					false // Not variadic

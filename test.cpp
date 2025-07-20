@@ -28,6 +28,9 @@ BOOST_AUTO_TEST_CASE(name)\
 	BOOST_CHECK_CLOSE(pExpr->evaluate(nullptr, nullptr), std::sin(val), 0.001);\
 	BOOST_CHECK_CLOSE(pExpr->evaluateLLVM(nullptr, nullptr), std::sin(val), 0.001);\
 	BOOST_CHECK(pFactory->parse(#sin "(" "x" ")", s)->replace({{pFactory->parameter(0), pFactory->realConstant(val)}}, *pFactory) == pExpr);\
+	const double dX = val;\
+	BOOST_CHECK_CLOSE(pFactory->parse(#sin "(" "x" ")", s)->evaluateLLVM(&dX, nullptr), std::sin(val), 0.001);\
+	BOOST_CHECK_CLOSE(pFactory->parse(#sin "(" "x" ")", s)->evaluate(&dX, nullptr), std::sin(val), 0.001);\
 }
 __TEST__(sin, 1.0, expression_000)
 __TEST__(cos, 1.0, expression_001)
