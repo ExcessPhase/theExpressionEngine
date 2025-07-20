@@ -117,6 +117,9 @@ BOOST_AUTO_TEST_CASE(zero_006)
 	const auto d1 = expr(x);
 	const auto d2 = expr(x)*expr(x);
 	const auto d3 = expr(x)*expr(x)*expr(x);
+#undef str
+#undef expand
+#undef expr
 	BOOST_CHECK_CLOSE(s1->evaluate(&x, nullptr), d1, 0.001);
 	BOOST_CHECK_CLOSE(s2->evaluate(&x, nullptr), d2, 0.001);
 	BOOST_CHECK_CLOSE(s3->evaluate(&x, nullptr), d3, 0.001);
@@ -133,4 +136,10 @@ BOOST_AUTO_TEST_CASE(zero_006)
 	BOOST_CHECK_CLOSE(sC.at(sES->getTempSize() + 2), d3, 0.001);
 	sES->evaluateLLVM(sC, &x, sCount, sPool);
 	BOOST_CHECK_CLOSE(sC.at(sES->getTempSize() + 2), d3, 0.001);
+}
+BOOST_AUTO_TEST_CASE(zero_007)
+{	const auto pFactory = theExpressionEngine::factory<true>::getFactory();
+	const auto pX = pFactory->parameter(0);
+	using namespace theExpressionEngine;
+	BOOST_CHECK((pX + pX) == pFactory->addition(pX, pX));
 }

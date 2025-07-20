@@ -101,6 +101,7 @@ struct expression:dynamic_cast_interface<realConstant<BTHREADED> >, unique<expre
 	}
 	virtual std::ostream &print(std::ostream&) const = 0;
 	void initializeLLVM(void) const;
+	friend ptr operator+(const ptr&_r0, const ptr&_r1);
 	private:
 	mutable MUTEX m_sMutex;
 	mutable MAP m_sAttachedData;

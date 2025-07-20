@@ -931,4 +931,12 @@ const typename factory<BTHREADED>::ptr &factory<BTHREADED>::getFactory(void)
 {	static const typename factory<BTHREADED>::ptr s(std::make_shared<const factoryImpl<BTHREADED> >());
 	return s;
 }
+#if 0
+typename expression<false>::ptr operator+(const typename expression<false>::ptr&_r0, const typename expression<false>::ptr&_r1)
+{	return factory<false>::getFactory()->addition(_r0, _r1);
+}
+#endif
+typename expression<true>::ptr operator+(const typename expression<true>::ptr&_r0, const typename expression<true>::ptr&_r1)
+{	return factory<true>::getFactory()->addition(_r0, _r1);
+}
 }
