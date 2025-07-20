@@ -41,9 +41,13 @@ std::size_t hasId<T>::s_iNextId;
 #endif
 template<bool BTHREADED>
 struct llvmData;
+template<bool BTHREADED>
+struct expression;
 /// the base class of all expression types
 /// immutable
 /// no two with the same content are guaranteed to exist
+template<bool BTHREADED>
+typename expression<BTHREADED>::ptr operator+(const typename expression<BTHREADED>::ptr&_r0, const typename expression<BTHREADED>::ptr&_r1);
 template<bool BTHREADED>
 struct expression:dynamic_cast_interface<realConstant<BTHREADED> >, unique<expression<BTHREADED>, BTHREADED>//, hasId<expression>
 {	using typename unique<expression<BTHREADED>, BTHREADED>::MUTEX;
@@ -101,7 +105,8 @@ struct expression:dynamic_cast_interface<realConstant<BTHREADED> >, unique<expre
 	}
 	virtual std::ostream &print(std::ostream&) const = 0;
 	void initializeLLVM(void) const;
-	friend ptr operator+(const ptr&_r0, const ptr&_r1);
+	template<bool _BTHREADED>
+	friend typename expression<_BTHREADED>::ptr operator+(const typename expression<_BTHREADED>::ptr&_r0, const typename expression<_BTHREADED>::ptr&_r1);
 	private:
 	mutable MUTEX m_sMutex;
 	mutable MAP m_sAttachedData;

@@ -936,6 +936,10 @@ typename expression<false>::ptr operator+(const typename expression<false>::ptr&
 {	return factory<false>::getFactory()->addition(_r0, _r1);
 }
 #endif
+template<bool BTHREADED>
+typename expression<BTHREADED>::ptr operator+(const typename expression<BTHREADED>::ptr&_r0, const typename expression<BTHREADED>::ptr&_r1)
+{	return factory<BTHREADED>::getFactory()->addition(_r0, _r1);
+}
 typename expression<true>::ptr operator+(const typename expression<true>::ptr&_r0, const typename expression<true>::ptr&_r1)
 {	return factory<true>::getFactory()->addition(_r0, _r1);
 }
