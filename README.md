@@ -49,6 +49,10 @@ e.g.
 which prints the values of sin(0) and sin(1).
 
 ## News
+g++ can curiously only be used with cmake.
+Started implementing operators for domain specific language.
+But it seems operators need to be specialized.
+
 I used boost::asio::thread_pool and I allocated the atomic vector outside and passed both as parameters.
 The output vector of expressionSet::evaluate*() (first argument) contains first temporary values (expressionSet::getTempSize()) and only after the output of the vector of expressions.
 This is for optimization as the temporary values are used more than once.

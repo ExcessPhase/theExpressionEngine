@@ -158,4 +158,4 @@ struct expressionSet:std::enable_shared_from_this<const expressionSet<BTHREADED>
 template<bool BTHREADED>
 boost::intrusive_ptr<const expression<BTHREADED> > collapse(const expression<BTHREADED> &, const factory<BTHREADED>&);
 }
-#include "expression.cpp"
+#include "expression.ipp"

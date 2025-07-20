@@ -42,4 +42,4 @@ struct factory:std::enable_shared_from_this<const factory<BTHREADED> >
 	static const ptr &getFactory(void);
 };
 }
-#include "factory.cpp"
+#include "factory.ipp"
