@@ -20,6 +20,26 @@ struct LLVMSetup {
 };
 BOOST_GLOBAL_FIXTURE(LLVMSetup);
 
+#define __TEST2__(sin, val0, val1, name)\
+BOOST_AUTO_TEST_CASE(name)\
+{	const auto pFactory = theExpressionEngine::factory<true>::getFactory();\
+	const theExpressionEngine::factory<true>::name2int s = {{"x", pFactory->parameter(0)}, {"y", pFactory->parameter(1)}};\
+	const auto pExpr = pFactory->parse(#sin "(" #val0 "," #val1 ")", s);\
+	BOOST_CHECK_CLOSE(pExpr->evaluate(nullptr, nullptr), std::sin(val0, val1), 0.001);\
+	BOOST_CHECK_CLOSE(pExpr->evaluateLLVM(nullptr, nullptr), std::sin(val0, val1), 0.001);\
+	BOOST_CHECK(pFactory->parse(#sin "(" "x" "," "y" ")", s)->replace({{pFactory->parameter(0), pFactory->realConstant(val0)},{pFactory->parameter(1), pFactory->realConstant(val1)}}, *pFactory) == pExpr);\
+	const double adX[] = {val0, val1};\
+	BOOST_CHECK_CLOSE(pFactory->parse(#sin "(" "x" "," "y" ")", s)->evaluateLLVM(adX, nullptr), std::sin(val0, val1), 0.001);\
+	BOOST_CHECK_CLOSE(pFactory->parse(#sin "(" "x" "," "y" ")", s)->evaluate(adX, nullptr), std::sin(val0, val1), 0.001);\
+}
+__TEST2__(pow, 2.1, 3.1, expression_2_000)
+__TEST2__(atan2, 2.1, 3.1, expression_2_001)
+__TEST2__(hypot, 2.1, 3.1, expression_2_002)
+__TEST2__(fmod, 2.1, 1.1, expression_2_003)
+__TEST2__(max, 2.1, 1.1, expression_2_004)
+__TEST2__(min, 2.1, 1.1, expression_2_005)
+__TEST2__(max, 1.1, 2.1, expression_2_006)
+__TEST2__(min, 1.1, 2.1, expression_2_007)
 #define __TEST__(sin, val, name)\
 BOOST_AUTO_TEST_CASE(name)\
 {	const auto pFactory = theExpressionEngine::factory<true>::getFactory();\
