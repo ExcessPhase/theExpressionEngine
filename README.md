@@ -49,6 +49,9 @@ e.g.
 which prints the values of sin(0) and sin(1).
 
 ## News
+Fixed bug causing certain unary functions to throw when calling evaluateLLVM() on them.
+Added test for this.
+
 g++ can curiously only be used with cmake.
 Started implementing operators for domain specific language.
 But it seems operators need to be specialized.
