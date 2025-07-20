@@ -50,6 +50,7 @@ which prints the values of sin(0) and sin(1).
 
 ## philosophy
 It is not possible to create more than a single object of type expression with the same contents!
+Attempting to do so will return a pointer to the same object.
 The expression objects are only supposed to be used to create objects of type expressionSet.
 Creation of the latter involves optimization by replacing multiple occurences of the same object with temporaries.
 The first argument to expressionSet::evaluate*() is the vector for temporaries first and outputs second.
