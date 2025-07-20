@@ -48,6 +48,12 @@ e.g.
 	`echo -e "0\n1"|./theExpressionEngine.exe "sin(x)"`
 which prints the values of sin(0) and sin(1).
 
+## philosophy
+It is not possible to create more than a single object of type expression with the same contents!
+The expression objects are only supposed to be used to create objects of type expressionSet.
+Creation of the latter involves optimization by replacing multiple occurences of the same object with temporaries.
+The first argument to expressionSet::evaluate*() is the vector for temporaries first and outputs second.
+The outputs start with index expressionSet::getTempSize().
 ## News
 Fixed bug causing certain unary functions to throw when calling evaluateLLVM() on them.
 Added test for this.
