@@ -1,6 +1,13 @@
 cmake_minimum_required(VERSION 3.15)
 project(MyCompilerTools)
 
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(SANITIZER_FLAGS "-fsanitize=address -fsanitize=leak -fno-omit-frame-pointer -g")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SANITIZER_FLAGS}")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${SANITIZER_FLAGS}")
+endif()
+
+
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 17)
 
