@@ -153,8 +153,8 @@ void expression<BTHREADED>::initializeLLVM(void) const
 				m_sAttachedData.erase(this);
 			}
 		);
-		static std::recursive_mutex sMutex;
-		std::unique_lock<MUTEX> sLock(sMutex);
+		//static std::recursive_mutex sMutex;
+		//std::unique_lock<MUTEX> sLock(sMutex);
 		r = std::make_shared<const llvmData<BTHREADED> >(this);
 	}
 }
