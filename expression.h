@@ -126,9 +126,10 @@ struct expression:dynamic_cast_interface<realConstant<BTHREADED> >, unique<expre
 	//mutable llvm::Value *m_pValue = nullptr;
 };
 template<bool BTHREADED>
-struct expressionSet:std::enable_shared_from_this<const expressionSet<BTHREADED> >
+struct expressionSet:unique<expressionSet<BTHREADED>, BTHREADED>
 {	typedef std::vector<boost::intrusive_ptr<const expression<BTHREADED> > > children;
 	//virtual const children&getChildren(void) const = 0;
+	virtual ~expressionSet(void) = default;
 	struct atomicVec
 	{	std::unique_ptr<std::atomic<std::size_t>[]> m_p;
 		std::size_t m_iSize = 0;
@@ -139,6 +140,7 @@ struct expressionSet:std::enable_shared_from_this<const expressionSet<BTHREADED>
 			}
 		}
 	};
+	virtual bool operator<(const expressionSet<BTHREADED> &_r) const = 0;
 	virtual void evaluate(
 		std::vector<double>&_rChildren,
 		const double *const _pParams,
@@ -157,5 +159,9 @@ struct expressionSet:std::enable_shared_from_this<const expressionSet<BTHREADED>
 };
 template<bool BTHREADED>
 boost::intrusive_ptr<const expression<BTHREADED> > collapse(const expression<BTHREADED> &, const factory<BTHREADED>&);
+template<bool BTHREADED>
+boost::intrusive_ptr<const expressionSet<BTHREADED> > collapse(const expressionSet<BTHREADED> &_r, const factory<BTHREADED>&)
+{	return &_r;
+}
 }
 #include "expression.ipp"

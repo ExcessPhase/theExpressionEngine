@@ -612,6 +612,12 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 		std::vector<std::size_t>
 	> m_sChildren;
 	const std::size_t m_iTempSize;
+	auto getTie(void) const
+	{	return std::tie(m_sChildren, m_iTempSize);
+	}
+	virtual bool operator<(const expressionSet<BTHREADED> &_r) const override
+	{	return getTie() < dynamic_cast<const expressionSetImpl&>(_r).getTie();
+	}
 	static auto get(
 		const children& _rChildren,
 		const factory<BTHREADED>&_rF
@@ -797,6 +803,9 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 	virtual std::size_t getTempSize(void) const override
 	{	return m_iTempSize;
 	}
+	virtual void onDestroy(void) const
+	{
+	}
 };
 template<bool BTHREADED>
 struct factoryImpl:factory<BTHREADED>
@@ -891,8 +900,8 @@ struct factoryImpl:factory<BTHREADED>
 	{	return theExpressionEngine::expression<BTHREADED>::template create<theExpressionEngine::negation<BTHREADED> >(*this, _r);
 	}
 	virtual exprPtr parse(const char *const _r, const typename factory<BTHREADED>::name2int&_rP) const override;
-	virtual std::shared_ptr<const expressionSet<BTHREADED> > createExpressionSet(const std::vector<exprPtr>&_r) const override
-	{	return std::make_shared<const expressionSetImpl<BTHREADED> >(_r, *this);
+	virtual boost::intrusive_ptr<const expressionSet<BTHREADED> > createExpressionSet(const std::vector<exprPtr>&_r) const override
+	{	return expressionSet<BTHREADED>::template create<expressionSetImpl<BTHREADED> >(*this, _r, *this);
 	}
 };
 template<>
