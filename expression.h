@@ -29,16 +29,6 @@ struct factory;
 //struct type;
 //struct environment;
 //struct realConstant;
-#if 0
-template<typename>
-struct hasId
-{
-	static std::size_t s_iNextId;
-	const std::size_t m_iId = s_iNextId++;
-};
-template<typename T>
-std::size_t hasId<T>::s_iNextId;
-#endif
 template<bool BTHREADED>
 struct llvmData;
 template<bool BTHREADED>
@@ -47,12 +37,12 @@ struct expression;
 /// immutable
 /// no two with the same content are guaranteed to exist
 template<bool BTHREADED>
-typename expression<BTHREADED>::ptr operator+(const typename expression<BTHREADED>::ptr&_r0, const typename expression<BTHREADED>::ptr&_r1);
-template<bool BTHREADED>
 struct expression:dynamic_cast_interface<realConstant<BTHREADED> >, unique<expression<BTHREADED>, BTHREADED>//, hasId<expression>
 {	using typename unique<expression<BTHREADED>, BTHREADED>::MUTEX;
 	//using unique<expression<BTHREADED>, BTHREADED>::getMutex;
 	typedef boost::intrusive_ptr<const expression<BTHREADED> > ptr;
+	typedef factory<BTHREADED> FACTORY;
+	using is_expression_ptr_tag = std::true_type;
 	typedef std::vector<ptr> children;
 	enum enumAttachedData
 	{	eLLVMValuePtr,
@@ -105,8 +95,6 @@ struct expression:dynamic_cast_interface<realConstant<BTHREADED> >, unique<expre
 	}
 	virtual std::ostream &print(std::ostream&) const = 0;
 	void initializeLLVM(void) const;
-	template<bool _BTHREADED>
-	friend typename expression<_BTHREADED>::ptr operator+(const typename expression<_BTHREADED>::ptr&_r0, const typename expression<_BTHREADED>::ptr&_r1);
 	private:
 	mutable MUTEX m_sMutex;
 	mutable MAP m_sAttachedData;
@@ -163,5 +151,11 @@ template<bool BTHREADED>
 boost::intrusive_ptr<const expressionSet<BTHREADED> > collapse(const expressionSet<BTHREADED> &_r, const factory<BTHREADED>&)
 {	return &_r;
 }
+
+template<typename T, typename = void>
+struct is_expression_ptr : std::false_type {};
+template<typename T>
+struct is_expression_ptr<T, std::void_t<typename T::element_type::is_expression_ptr_tag>> : std::true_type {};
+
 }
 #include "expression.ipp"

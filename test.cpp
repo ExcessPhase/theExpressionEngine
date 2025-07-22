@@ -164,5 +164,9 @@ BOOST_AUTO_TEST_CASE(zero_007)
 {	const auto pFactory = theExpressionEngine::factory<true>::getFactory();
 	const auto pX = pFactory->parameter(0);
 	using namespace theExpressionEngine;
-	BOOST_CHECK((pX + pX) == pFactory->addition(pX, pX));
+	BOOST_CHECK(pX + pX == pFactory->addition(pX, pX));
+	BOOST_CHECK(pX - pX == pFactory->subtraction(pX, pX));
+	BOOST_CHECK(pX * pX == pFactory->multiplication(pX, pX));
+	BOOST_CHECK(pX / pX == pFactory->division(pX, pX));
+	BOOST_CHECK(sin(pX) == pFactory->sin(pX));
 }

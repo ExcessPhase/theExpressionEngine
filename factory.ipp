@@ -941,18 +941,44 @@ const typename factory<BTHREADED>::ptr &factory<BTHREADED>::getFactory(void)
 {	static const typename factory<BTHREADED>::ptr s(std::make_shared<const factoryImpl<BTHREADED> >());
 	return s;
 }
-#if 0
-typename expression<false>::ptr operator+(const typename expression<false>::ptr&_r0, const typename expression<false>::ptr&_r1)
-{	return factory<false>::getFactory()->addition(_r0, _r1);
+template<typename T>
+std::enable_if_t<
+	is_expression_ptr<T>::value,
+	T
+>
+operator+(const T&_r0, const T&_r1)
+{	return T::element_type::FACTORY::getFactory()->addition(_r0, _r1);
 }
-#endif
-#if 0
-template<bool BTHREADED>
-typename expression<BTHREADED>::ptr operator+(const typename expression<BTHREADED>::ptr&_r0, const typename expression<BTHREADED>::ptr&_r1)
-{	return factory<BTHREADED>::getFactory()->addition(_r0, _r1);
+template<typename T>
+std::enable_if_t<
+	is_expression_ptr<T>::value,
+	T
+>
+operator-(const T&_r0, const T&_r1)
+{	return T::element_type::FACTORY::getFactory()->subtraction(_r0, _r1);
 }
-#endif
-expression<true>::ptr operator+(const expression<true>::ptr&_r0, const expression<true>::ptr&_r1)
-{	return factory<true>::getFactory()->addition(_r0, _r1);
+template<typename T>
+std::enable_if_t<
+	is_expression_ptr<T>::value,
+	T
+>
+operator*(const T&_r0, const T&_r1)
+{	return T::element_type::FACTORY::getFactory()->multiplication(_r0, _r1);
+}
+template<typename T>
+std::enable_if_t<
+	is_expression_ptr<T>::value,
+	T
+>
+operator/(const T&_r0, const T&_r1)
+{	return T::element_type::FACTORY::getFactory()->division(_r0, _r1);
+}
+template<typename T>
+std::enable_if_t<
+	is_expression_ptr<T>::value,
+	T
+>
+sin(const T&_r)
+{	return T::element_type::FACTORY::getFactory()->sin(_r);
 }
 }
