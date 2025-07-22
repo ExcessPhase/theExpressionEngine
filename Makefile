@@ -4,9 +4,9 @@ endif
 
 all: theExpressionEngine.exe test.exe
 CXXFLAGS=-march=native -ffast-math -I $(BOOST_ROOT)/include $(shell llvm-config --cxxflags) -fexceptions -MMD -MP -std=c++17 -Wno-dangling-else -Wno-nan-infinity-disabled
-CXXFLAGS+=-O3 -DNDEBUG
-#CXXFLAGS+=-g -DDEBUG -O0 -fno-inline -fno-omit-frame-pointer
-#CXXFLAGS+=-fsanitize=thread
+#CXXFLAGS+=-O3 -DNDEBUG
+CXXFLAGS+=-g -DDEBUG -O0 -fno-inline -fno-omit-frame-pointer
+CXXFLAGS+=-fsanitize=thread
 CXX=clang++
 #CXX=g++-13
 LDFLAGS=$(shell llvm-config --ldflags --system-libs --libs core irreader bitreader bitwriter support executionengine target)

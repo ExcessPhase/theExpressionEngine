@@ -894,7 +894,10 @@ struct factoryImpl:factory<BTHREADED>
 		if (const auto p = _p1->getPtr(dummy<theExpressionEngine::realConstant<BTHREADED> >()); p && p->m_d == 1)
 			return _p0;
 		else
-		return theExpressionEngine::expression<BTHREADED>::template create<theExpressionEngine::division<BTHREADED> >(*this, _p0, _p1);
+		if (_p0 == _p1)
+			return realConstant(1.0);
+		else
+			return theExpressionEngine::expression<BTHREADED>::template create<theExpressionEngine::division<BTHREADED> >(*this, _p0, _p1);
 	}
 	virtual exprPtr negation(const exprPtr&_r) const override
 	{	return theExpressionEngine::expression<BTHREADED>::template create<theExpressionEngine::negation<BTHREADED> >(*this, _r);
