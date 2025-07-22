@@ -108,7 +108,7 @@ BOOST_AUTO_TEST_CASE(zero_005)
 {	const auto pFactory = theExpressionEngine::factory<true>::getFactory();
 	const theExpressionEngine::factory<true>::name2int s = {{"x", pFactory->parameter(0)}};
 	const auto s1 = pFactory->parse("1+x", s);
-	const auto s2 = pFactory->multiplication(s1, s1);
+	const auto s2 = s1*s1;
 	const double d = 1.1;
 	const auto d1 = (d + 1.0)*(d + 1.0);
 	BOOST_CHECK_CLOSE(s2->evaluate(&d, nullptr), d1, 0.001);
@@ -119,7 +119,7 @@ BOOST_AUTO_TEST_CASE(zero_005)
 	sCount.resize(sES->getChildren().size());
 	BOOST_CHECK(sES->getChildren().size() == 2);
 	BOOST_CHECK(sES->getTempSize() == 1);
-	BOOST_CHECK(sES->getChildren().at(1) == pFactory->multiplication(pFactory->variable(0), pFactory->variable(0)));
+	BOOST_CHECK(sES->getChildren().at(1) == pFactory->variable(0)*pFactory->variable(0));
 	BOOST_CHECK(sES->getChildren().at(0) == s1);
 	boost::asio::thread_pool sPool(std::thread::hardware_concurrency());
 	sES->evaluate(sC, &d, sCount, sPool);
