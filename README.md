@@ -56,6 +56,9 @@ Creation of the latter involves optimization by replacing multiple occurences of
 The first argument to expressionSet::evaluate*() is the vector for temporaries first and outputs second.
 The outputs start with index expressionSet::getTempSize().
 ## News
+The multithreaded version (BTHREADED=true) seems to be much slower than the singlethreaded one
+-- being mostly busy with locking/unlocking mutexes.
+
 Got DSL operators working using some tricks.
 
 Fixed bug causing certain unary functions to throw when calling evaluateLLVM() on them.
