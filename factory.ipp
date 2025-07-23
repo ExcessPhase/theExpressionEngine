@@ -944,6 +944,8 @@ const typename factory<BTHREADED>::ptr &factory<BTHREADED>::getFactory(void)
 {	static const typename factory<BTHREADED>::ptr s(std::make_shared<const factoryImpl<BTHREADED> >());
 	return s;
 }
+namespace operators
+{
 template<typename T>
 std::enable_if_t<
 	is_expression_ptr<T>::value,
@@ -976,12 +978,18 @@ std::enable_if_t<
 operator/(const T&_r0, const T&_r1)
 {	return T::element_type::FACTORY::getFactory()->division(_r0, _r1);
 }
-template<typename T>
-std::enable_if_t<
-	is_expression_ptr<T>::value,
-	T
->
-sin(const T&_r)
-{	return T::element_type::FACTORY::getFactory()->sin(_r);
+#define __MAKE_ENTRY__(sin)\
+template<typename T>\
+std::enable_if_t<\
+	is_expression_ptr<T>::value,\
+	T\
+>\
+sin(const T&_r)\
+{	return T::element_type::FACTORY::getFactory()->sin(_r);\
+}
+#define __MAKE_ENTRY2__(sin) __MAKE_ENTRY__(sin)
+#define __COMMA__
+#define __COMMA2__
+#include "unary.h"
 }
 }
