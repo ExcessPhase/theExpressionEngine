@@ -164,15 +164,18 @@ BOOST_AUTO_TEST_CASE(zero_006)
 BOOST_AUTO_TEST_CASE(zero_007)
 {	const auto pFactory = theExpressionEngine::factory<true>::getFactory();
 	const auto pX = pFactory->parameter(0);
+	const auto pY = pFactory->parameter(1);
 	//using namespace theExpressionEngine;
 	using namespace theExpressionEngine::operators;
-	BOOST_CHECK(pX + pX == pFactory->addition(pX, pX));
-	BOOST_CHECK(pX - pX == pFactory->subtraction(pX, pX));
-	BOOST_CHECK(pX * pX == pFactory->multiplication(pX, pX));
-	BOOST_CHECK(pX / pX == pFactory->division(pX, pX));
+	BOOST_CHECK(pX + pY == pFactory->addition(pX, pY));
+	BOOST_CHECK(pX - pY == pFactory->subtraction(pX, pY));
+	BOOST_CHECK(pX * pY == pFactory->multiplication(pX, pY));
+	BOOST_CHECK(pX / pY == pFactory->division(pX, pY));
 #define __MAKE_ENTRY__(sin) BOOST_CHECK(sin(pX) == pFactory->sin(pX));
 #define __MAKE_ENTRY2__(sin) __MAKE_ENTRY__(sin)
 #define __COMMA__
 #define __COMMA2__
 #include "unary.h"
+#define __MAKE_ENTRY__(pow) BOOST_CHECK(pow(pX, pY) == pFactory->pow(pX, pY));
+#include "binary.h"
 }

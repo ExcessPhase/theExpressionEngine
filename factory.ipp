@@ -832,22 +832,12 @@ struct factoryImpl:factory<BTHREADED>
 	{	return theExpressionEngine::expression<BTHREADED>::template create<theExpressionEngine::unary<BTHREADED, std::a, llvm::Intrinsic::a, s_ac_##a, &factory<BTHREADED>::a> >(*this, _p);\
 	}
 #include "unary.h"
-	virtual exprPtr pow(const exprPtr&_p0, const exprPtr&_p1) const override
-	{	static const char ac[] = "pow";
-		return theExpressionEngine::expression<BTHREADED>::template create<theExpressionEngine::binary<BTHREADED, ac, &std::pow, &factory<BTHREADED>::pow> >(*this, _p0, _p1);
+#define __MAKE_ENTRY__(pow)\
+	virtual exprPtr pow(const exprPtr&_p0, const exprPtr&_p1) const override\
+	{	static const char ac[] = #pow;\
+		return theExpressionEngine::expression<BTHREADED>::template create<theExpressionEngine::binary<BTHREADED, ac, &std::pow, &factory<BTHREADED>::pow> >(*this, _p0, _p1);\
 	}
-	virtual exprPtr fmod(const exprPtr&_p0, const exprPtr&_p1) const override
-	{	static const char ac[] = "fmod";
-		return theExpressionEngine::expression<BTHREADED>::template create<theExpressionEngine::binary<BTHREADED, ac, &std::fmod, &factory<BTHREADED>::fmod> >(*this, _p0, _p1);
-	}
-	virtual exprPtr hypot(const exprPtr&_p0, const exprPtr&_p1) const override
-	{	static const char ac[] = "hypot";
-		return theExpressionEngine::expression<BTHREADED>::template create<theExpressionEngine::binary<BTHREADED, ac, &std::hypot, &factory<BTHREADED>::hypot> >(*this, _p0, _p1);
-	}
-	virtual exprPtr atan2(const exprPtr&_p0, const exprPtr&_p1) const override
-	{	static const char ac[] = "atan2";
-		return theExpressionEngine::expression<BTHREADED>::template create<theExpressionEngine::binary<BTHREADED, ac, &std::atan2, &factory<BTHREADED>::atan2> >(*this, _p0, _p1);
-	}
+#include "binary.h"
 	virtual exprPtr max(const exprPtr&_p0, const exprPtr&_p1) const override
 	{	return theExpressionEngine::expression<BTHREADED>::template create<theExpressionEngine::max<BTHREADED> >(*this, _p0, _p1);
 	}
@@ -991,5 +981,15 @@ sin(const T&_r)\
 #define __COMMA__
 #define __COMMA2__
 #include "unary.h"
+#define __MAKE_ENTRY__(pow)\
+template<typename T>\
+std::enable_if_t<\
+	is_expression_ptr<T>::value,\
+	T\
+>\
+pow(const T&_r0, const T&_r1)\
+{	return T::element_type::FACTORY::getFactory()->pow(_r0, _r1);\
+}
+#include "binary.h"
 }
 }
