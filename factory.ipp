@@ -688,12 +688,13 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 		m_iTempSize(std::get<0>(m_sChildren).size() - _rChildren.size())
 	{
 	}
-	virtual void evaluate(
+	void run_evaluate(
+		double(expression<BTHREADED>::*EVALUATE)(const double *const, const double*const) const,
 		std::vector<double>&_rChildren,
 		const double *const _pParams,
 		typename expressionSet<BTHREADED>::atomicVec &_rC,
 		boost::asio::thread_pool &_rPool
-	) const override
+	) const
 	{	const auto &[rChildren, rDep2T, rT2Dep] = m_sChildren;
 		const auto iVars = rChildren.size();
 		_rChildren.resize(iVars);
@@ -703,7 +704,7 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 				rChildren.end(),
 				_rChildren.begin(),
 				[&](const typename expression<BTHREADED>::ptr&_p)
-				{	return _p->evaluate(_pParams, _rChildren.data());
+				{	return ((*_p).*EVALUATE)(_pParams, _rChildren.data());
 				}
 			);
 		else
@@ -720,7 +721,7 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 			std::condition_variable sEvent;
 			std::atomic<std::size_t> sChildCount = iVars;
 			const std::function<void(std::size_t)> sRunTemp = [&, this](const std::size_t i)
-			{	_rChildren[i] = std::get<0>(m_sChildren)[i]->evaluate(_pParams, _rChildren.data());
+			{	_rChildren[i] = ((*std::get<0>(m_sChildren)[i]).*EVALUATE)(_pParams, _rChildren.data());
 				for (auto iV : std::get<1>(m_sChildren)[i])
 					if (!--_rC.m_p[iV])
 						boost::asio::post(_rPool, std::bind(sRunTemp, iV));
@@ -743,59 +744,21 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 			}
 		}
 	}
+	virtual void evaluate(
+		std::vector<double>&_rChildren,
+		const double *const _pParams,
+		typename expressionSet<BTHREADED>::atomicVec &_rC,
+		boost::asio::thread_pool &_rPool
+	) const override
+	{	run_evaluate(&expression<BTHREADED>::evaluate, _rChildren, _pParams, _rC, _rPool);
+	}
 	virtual void evaluateLLVM(
 		std::vector<double>&_rChildren,
 		const double *const _pParams,
 		typename expressionSet<BTHREADED>::atomicVec &_rC,
 		boost::asio::thread_pool &_rPool
 	) const override
-	{	const auto &[rChildren, rDep2T, rT2Dep] = m_sChildren;
-		const auto iVars = rChildren.size();
-		_rChildren.resize(iVars);
-		if constexpr (!BTHREADED)
-			std::transform(
-				rChildren.begin(),
-				rChildren.end(),
-				_rChildren.begin(),
-				[&](const typename expression<BTHREADED>::ptr&_p)
-				{	return _p->evaluate(_pParams, _rChildren.data());
-				}
-			);
-		else
-		{	_rC.resize(iVars);
-			/// 0 -- no dep
-			/// 1 depends on 0
-			/// 2 depends on 0, 1
-			/// rDep2T = {{1, 2}, {2}}
-			// rT2Dep = {{}, {0}, {1, 2}}
-			for (std::size_t i = 0; i < iVars; ++i)
-				_rC.m_p.get()[i] = rT2Dep[i];
-			std::mutex sMutex;
-			std::condition_variable sEvent;
-			std::atomic<std::size_t> sChildCount = iVars;
-			const std::function<void(std::size_t)> sRunTemp = [&, this](const std::size_t i)
-			{	_rChildren[i] = std::get<0>(m_sChildren)[i]->evaluateLLVM(_pParams, _rChildren.data());
-				for (auto iV : std::get<1>(m_sChildren)[i])
-					if (!--_rC.m_p[iV])
-						boost::asio::post(_rPool, std::bind(sRunTemp, iV));
-				if (!--sChildCount)
-				{	std::unique_lock<std::mutex> sLock(sMutex);
-					sEvent.notify_one();
-				}
-			};
-			for (std::size_t i = 0; i < iVars; ++i)
-				if (!rT2Dep[i])
-					boost::asio::post(_rPool, std::bind(sRunTemp, i));
-			if (sChildCount)
-			{	std::unique_lock<std::mutex> sLock(sMutex);
-				sEvent.wait(
-					sLock,
-					[&](void)
-					{	return sChildCount == 0;
-					}
-				);
-			}
-		}
+	{	run_evaluate(&expression<BTHREADED>::evaluateLLVM, _rChildren, _pParams, _rC, _rPool);
 	}
 	virtual const typename expression<BTHREADED>::children &getChildren(void) const override
 	{	return std::get<0>(m_sChildren);
