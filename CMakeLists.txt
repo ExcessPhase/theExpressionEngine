@@ -21,7 +21,6 @@ message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 
 # Add LLVM include and definitions
-include_directories(${LLVM_INCLUDE_DIRS})
 add_definitions(${LLVM_DEFINITIONS})
 
 # Enable all LLVM components statically linked (optional: customize)
@@ -37,8 +36,8 @@ add_executable(test.exe ${SOURCE_TOOL_A})
 add_executable(theExpressionEngine.exe ${SOURCE_TOOL_B})
 
 # Link Boost and LLVM to both
-target_include_directories(test.exe PRIVATE ${Boost_INCLUDE_DIRS})
-target_include_directories(theExpressionEngine.exe PRIVATE ${Boost_INCLUDE_DIRS})
+target_include_directories(test.exe SYSTEM PRIVATE ${Boost_INCLUDE_DIRS} ${LLVM_INCLUDE_DIRS})
+target_include_directories(theExpressionEngine.exe SYSTEM PRIVATE ${Boost_INCLUDE_DIRS} ${LLVM_INCLUDE_DIRS})
 
 target_link_libraries(test.exe PRIVATE ${LLVM_LIBS})
 target_link_libraries(theExpressionEngine.exe PRIVATE ${LLVM_LIBS})
