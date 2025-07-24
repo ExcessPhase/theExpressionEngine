@@ -46,3 +46,6 @@ target_link_libraries(theExpressionEngine.exe PRIVATE ${LLVM_LIBS})
 # Enable ThreadSanitizer
 #target_compile_options(theExpressionEngine.exe PRIVATE -fsanitize=thread -g -O0 -fno-omit-frame-pointer -fno-inline)
 #target_link_options(theExpressionEngine.exe PRIVATE -fsanitize=thread)
+enable_testing()
+
+add_test(NAME BoostTest COMMAND ${CMAKE_BINARY_DIR}/test.exe)
