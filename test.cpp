@@ -2,7 +2,7 @@
 #include "expression.h"
 #define BOOST_TEST_MODULE mytests
 #include <boost/test/included/unit_test.hpp>
-#include "llvm/Support/TargetSelect.h"
+#include <llvm/Support/TargetSelect.h>
 
 void initializeLLVM() {
     llvm::InitializeNativeTarget();
