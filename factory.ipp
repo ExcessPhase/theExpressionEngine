@@ -622,32 +622,32 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 		const children& _rChildren,
 		const factory<BTHREADED>&_rF
 	)
-	{	const auto [sMap, sI2P] = [&](void)
-		{	std::set<
-				const expression<BTHREADED>*
-			> sSet;
-			typename expression<BTHREADED>::ptr2ptr sMap;
-			typename expression<BTHREADED>::children sI2P;
-			for (const auto &p : _rChildren)
-				p->DFS(
-					[&](const expression<BTHREADED>*const _p)
-					{	if (_p->m_sChildren.empty())
+	{	const auto sTemp = [&](void)
+		{	const auto [sMap, sI2P] = [&](void)
+			{	std::set<
+					const expression<BTHREADED>*
+				> sSet;
+				typename expression<BTHREADED>::ptr2ptr sMap;
+				typename expression<BTHREADED>::children sI2P;
+				for (const auto &p : _rChildren)
+					p->DFS(
+						[&](const expression<BTHREADED>*const _p)
+						{	if (_p->m_sChildren.empty())
+								return false;
+							const auto sInsert = sSet.emplace(_p);
+							if (sInsert.second)
+								return true;
+								/// we only get here, if _p was already found more than onoce
+							if (auto s = sMap.emplace(_p, nullptr); s.second)
+							{	s.first->second = _rF.variable(sMap.size() - 1);
+								sI2P.emplace_back(_p);
+							}
 							return false;
-						const auto sInsert = sSet.emplace(_p);
-						if (sInsert.second)
-							return true;
-							/// we only get here, if _p was already found more than onoce
-						if (auto s = sMap.emplace(_p, nullptr); s.second)
-						{	s.first->second = _rF.variable(sMap.size() - 1);
-							sI2P.emplace_back(_p);
 						}
-						return false;
-					}
-				);
-			return std::make_tuple(std::move(sMap), std::move(sI2P));
-		}();
-		const auto sTemp = [&](const typename expression<BTHREADED>::ptr2ptr&sMap, const typename expression<BTHREADED>::children &sI2P)
-		{	children sTemp;
+					);
+				return std::make_tuple(std::move(sMap), std::move(sI2P));
+			}();
+			children sTemp;
 			sTemp.reserve(sMap.size() + _rChildren.size());
 			{	auto sM = sMap;
 				for (const auto &p : sI2P)
@@ -664,7 +664,7 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 					/// replace all repeated expressions with variable objects
 				sTemp.push_back(p->replace(sMap, _rF));
 			return sTemp;
-		}(sMap, sI2P);
+		}();
 		const auto sT2Deps = [&](void)
 		{		/// expression index to number of dependencies
 			std::vector<std::set<std::size_t> > sT2Deps(sTemp.size());
