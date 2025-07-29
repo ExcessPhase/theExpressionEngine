@@ -622,27 +622,30 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 		const children& _rChildren,
 		const factory<BTHREADED>&_rF
 	)
-	{	std::set<
-			const expression<BTHREADED>*
-		> sSet;
-		typename expression<BTHREADED>::ptr2ptr sMap;
-		typename expression<BTHREADED>::children sI2P;
-		for (const auto &p : _rChildren)
-			p->DFS(
-				[&](const expression<BTHREADED>*const _p)
-				{	if (_p->m_sChildren.empty())
+	{	const auto [sMap, sI2P] = [&](void)
+		{	std::set<
+				const expression<BTHREADED>*
+			> sSet;
+			typename expression<BTHREADED>::ptr2ptr sMap;
+			typename expression<BTHREADED>::children sI2P;
+			for (const auto &p : _rChildren)
+				p->DFS(
+					[&](const expression<BTHREADED>*const _p)
+					{	if (_p->m_sChildren.empty())
+							return false;
+						const auto sInsert = sSet.emplace(_p);
+						if (sInsert.second)
+							return true;
+							/// we only get here, if _p was already found more than onoce
+						if (auto s = sMap.emplace(_p, nullptr); s.second)
+						{	s.first->second = _rF.variable(sMap.size() - 1);
+							sI2P.emplace_back(_p);
+						}
 						return false;
-					const auto sInsert = sSet.emplace(_p);
-					if (sInsert.second)
-						return true;
-						/// we only get here, if _p was already found more than onoce
-					if (auto s = sMap.emplace(_p, nullptr); s.second)
-					{	s.first->second = _rF.variable(sMap.size() - 1);
-						sI2P.emplace_back(_p);
 					}
-					return false;
-				}
-			);
+				);
+			return std::make_tuple(std::move(sMap), std::move(sI2P));
+		}();
 		children sTemp;
 		sTemp.reserve(sMap.size() + _rChildren.size());
 		{	auto sM = sMap;
