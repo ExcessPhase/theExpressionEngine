@@ -646,64 +646,73 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 				);
 			return std::make_tuple(std::move(sMap), std::move(sI2P));
 		}();
-		children sTemp;
-		sTemp.reserve(sMap.size() + _rChildren.size());
-		{	auto sM = sMap;
-			for (const auto &p : sI2P)
-			{	const auto pFind = sM.find(p);
-				const auto s = *pFind;
-				sM.erase(pFind);
-					/// replace all repeated expressions
-					/// except the current one
-				sTemp.push_back(p->replace(sM, _rF));
-				sM.insert(s);
-			}
-		}
-		for (const auto &p : _rChildren)
-				/// replace all repeated expressions with variable objects
-			sTemp.push_back(p->replace(sMap, _rF));
-			/// expression index to number of dependencies
-		std::vector<std::set<std::size_t> > sT2Deps(sTemp.size());
-		for (std::size_t i = 0; i < sTemp.size(); ++i)
-		{	std::set<
-				const expression<BTHREADED>*
-			> sSet;
-			sTemp[i]->DFS(
-				[&](const expression<BTHREADED>*const _p)
-				{	if (!sSet.insert(_p).second)
-						return false;
-					if (const auto pV = dynamic_cast<const variable<BTHREADED>*>(_p))
-						sT2Deps[i].insert(pV->m_i);
-					return true;
+		const auto sTemp = [&](const typename expression<BTHREADED>::ptr2ptr&sMap, const typename expression<BTHREADED>::children &sI2P)
+		{	children sTemp;
+			sTemp.reserve(sMap.size() + _rChildren.size());
+			{	auto sM = sMap;
+				for (const auto &p : sI2P)
+				{	const auto pFind = sM.find(p);
+					const auto s = *pFind;
+					sM.erase(pFind);
+						/// replace all repeated expressions
+						/// except the current one
+					sTemp.push_back(p->replace(sM, _rF));
+					sM.insert(s);
 				}
-			);
-		}
-		//std::for_each(sT2Deps.begin(), sT2Deps.end(), [](std::vector<std::size_t>&_r){_r.shrink_to_fit();});
-		std::set<std::size_t> sDep;
-		std::set<std::size_t> sLeft;
-		for (std::size_t i = 0; i < sT2Deps.size(); ++i)
-			sLeft.insert(i);
-		std::vector<std::vector<std::size_t> > sG2Set;
-		while (!sLeft.empty())
-		{	sG2Set.emplace_back();
-			for (const auto i : sLeft)
-				if (sT2Deps[i].size() <= sDep.size() && std::includes(
-					sDep.begin(),
-					sDep.end(),
-					sT2Deps[i].begin(),
-					sT2Deps[i].end()
-				))
-					sG2Set.back().push_back(i);
-			sG2Set.back().shrink_to_fit();
-			for (const auto i : sG2Set.back())
-			{	sLeft.erase(i);
-				sDep.insert(i);
 			}
-		}
-		sG2Set.shrink_to_fit();
+			for (const auto &p : _rChildren)
+					/// replace all repeated expressions with variable objects
+				sTemp.push_back(p->replace(sMap, _rF));
+			return sTemp;
+		}(sMap, sI2P);
+		const auto sT2Deps = [&](void)
+		{		/// expression index to number of dependencies
+			std::vector<std::set<std::size_t> > sT2Deps(sTemp.size());
+			for (std::size_t i = 0; i < sTemp.size(); ++i)
+			{	std::set<
+					const expression<BTHREADED>*
+				> sSet;
+				sTemp[i]->DFS(
+					[&](const expression<BTHREADED>*const _p)
+					{	if (!sSet.insert(_p).second)
+							return false;
+						if (const auto pV = dynamic_cast<const variable<BTHREADED>*>(_p))
+							sT2Deps[i].insert(pV->m_i);
+						return true;
+					}
+				);
+			}
+			return sT2Deps;
+		}();
+		//std::for_each(sT2Deps.begin(), sT2Deps.end(), [](std::vector<std::size_t>&_r){_r.shrink_to_fit();});
+		const auto sG2Set = [&](void)
+		{	std::set<std::size_t> sDep;
+			std::set<std::size_t> sLeft;
+			for (std::size_t i = 0; i < sT2Deps.size(); ++i)
+				sLeft.insert(i);
+			std::vector<std::vector<std::size_t> > sG2Set;
+			while (!sLeft.empty())
+			{	sG2Set.emplace_back();
+				for (const auto i : sLeft)
+					if (sT2Deps[i].size() <= sDep.size() && std::includes(
+						sDep.begin(),
+						sDep.end(),
+						sT2Deps[i].begin(),
+						sT2Deps[i].end()
+					))
+						sG2Set.back().push_back(i);
+				sG2Set.back().shrink_to_fit();
+				for (const auto i : sG2Set.back())
+				{	sLeft.erase(i);
+					sDep.insert(i);
+				}
+			}
+			sG2Set.shrink_to_fit();
+			return sG2Set;
+		}();
 		for (const auto &p : sTemp)
 			p->initializeLLVM();
-		return std::make_tuple(sTemp, sG2Set);
+		return std::make_tuple(std::move(sTemp), std::move(sG2Set));
 	}
 	expressionSetImpl(
 		const children& _rChildren,
