@@ -728,26 +728,14 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 			std::condition_variable sEvent;
 			std::atomic<std::size_t> sChildCount = iVars;
 			const std::function<void(std::size_t)> sRunTemp = [&, this](std::size_t _i)
-			{	while (true)
-				{	_rChildren[_i] = ((*std::get<0>(m_sChildren)[_i]).*EVALUATE)(_pParams, _rChildren.data());
-					std::optional<std::size_t> sNext;
-					for (auto iV : std::get<1>(m_sChildren)[_i])
-						if (!--_rC.m_p[iV])
-							if (sNext)
-								boost::asio::post(_rPool, std::bind(sRunTemp, iV));
-							else
-								sNext = iV;
-					if (!--sChildCount)
-					{	std::unique_lock<std::mutex> sLock(sMutex);
-						sEvent.notify_one();
-						assert(!sNext);
-						break;
-					}
-					else
-					if (sNext)
-						_i = *sNext;
-					else
-						break;
+			{	_rChildren[_i] = ((*std::get<0>(m_sChildren)[_i]).*EVALUATE)(_pParams, _rChildren.data());
+				for (auto iV : std::get<1>(m_sChildren)[_i])
+					if (!--_rC.m_p[iV])
+						boost::asio::post(_rPool, std::bind(sRunTemp, iV));
+				if (!--sChildCount)
+				{	std::unique_lock<std::mutex> sLock(sMutex);
+					sEvent.notify_one();
+					assert(!sNext);
 				}
 			};
 			for (const auto i : rZero)
