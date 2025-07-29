@@ -116,16 +116,13 @@ BOOST_AUTO_TEST_CASE(zero_005)
 	BOOST_CHECK_CLOSE(s2->evaluateLLVM(&d, nullptr), d1, 0.001);
 	std::vector<double> sC;
 	const auto sES = pFactory->createExpressionSet({s2});
-	theExpressionEngine::expressionSet<true>::atomicVec sCount;
-	sCount.resize(sES->getChildren().size());
 	BOOST_CHECK(sES->getChildren().size() == 2);
 	BOOST_CHECK(sES->getTempSize() == 1);
 	BOOST_CHECK(sES->getChildren().at(1) == pFactory->variable(0)*pFactory->variable(0));
 	BOOST_CHECK(sES->getChildren().at(0) == s1);
-	boost::asio::thread_pool sPool(std::thread::hardware_concurrency());
-	sES->evaluate(sC, &d, sCount, sPool);
+	sES->evaluate(sC, &d);
 	BOOST_CHECK_CLOSE(sC.at(sES->getTempSize()), d1, 0.001);
-	sES->evaluateLLVM(sC, &d, sCount, sPool);
+	sES->evaluateLLVM(sC, &d);
 	BOOST_CHECK_CLOSE(sC.at(sES->getTempSize()), d1, 0.001);
 }
 BOOST_AUTO_TEST_CASE(zero_006)
@@ -153,12 +150,9 @@ BOOST_AUTO_TEST_CASE(zero_006)
 
 	std::vector<double> sC;
 	const auto sES = pFactory->createExpressionSet({s1, s2, s3});
-	theExpressionEngine::expressionSet<true>::atomicVec sCount;
-	sCount.resize(sES->getChildren().size());
-	boost::asio::thread_pool sPool(std::thread::hardware_concurrency());
-	sES->evaluate(sC, &x, sCount, sPool);
+	sES->evaluate(sC, &x);
 	BOOST_CHECK_CLOSE(sC.at(sES->getTempSize() + 2), d3, 0.001);
-	sES->evaluateLLVM(sC, &x, sCount, sPool);
+	sES->evaluateLLVM(sC, &x);
 	BOOST_CHECK_CLOSE(sC.at(sES->getTempSize() + 2), d3, 0.001);
 }
 BOOST_AUTO_TEST_CASE(zero_007)

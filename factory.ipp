@@ -713,9 +713,9 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 	template<double(expression<BTHREADED>::*EVALUATE)(const double *const, const double*const) const>
 	void run_evaluate(
 		std::vector<double>&_rChildren,
-		const double *const _pParams,
-		typename expressionSet<BTHREADED>::atomicVec &_rC,
-		boost::asio::thread_pool &_rPool
+		const double *const _pParams//,
+		//typename expressionSet<BTHREADED>::atomicVec &_rC,
+		//boost::asio::thread_pool &_rPool
 	) const
 	{	const auto &[rChildren, rG2Set] = m_sChildren;
 		const auto iVars = rChildren.size();
@@ -742,19 +742,19 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 	}
 	virtual void evaluate(
 		std::vector<double>&_rChildren,
-		const double *const _pParams,
-		typename expressionSet<BTHREADED>::atomicVec &_rC,
-		boost::asio::thread_pool &_rPool
+		const double *const _pParams//,
+		//typename expressionSet<BTHREADED>::atomicVec &_rC,
+		//boost::asio::thread_pool &_rPool
 	) const override
-	{	run_evaluate<&expression<BTHREADED>::evaluate>(_rChildren, _pParams, _rC, _rPool);
+	{	run_evaluate<&expression<BTHREADED>::evaluate>(_rChildren, _pParams);
 	}
 	virtual void evaluateLLVM(
 		std::vector<double>&_rChildren,
-		const double *const _pParams,
-		typename expressionSet<BTHREADED>::atomicVec &_rC,
-		boost::asio::thread_pool &_rPool
+		const double *const _pParams//,
+		//typename expressionSet<BTHREADED>::atomicVec &_rC,
+		//boost::asio::thread_pool &_rPool
 	) const override
-	{	run_evaluate<&expression<BTHREADED>::evaluateLLVM>(_rChildren, _pParams, _rC, _rPool);
+	{	run_evaluate<&expression<BTHREADED>::evaluateLLVM>(_rChildren, _pParams);
 	}
 	virtual const typename expression<BTHREADED>::children &getChildren(void) const override
 	{	return std::get<0>(m_sChildren);

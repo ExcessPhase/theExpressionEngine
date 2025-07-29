@@ -34,13 +34,11 @@ int main(int argc, char**argv)
 	std::vector<double> sX(1);
 	std::string sLine;
 	std::vector<double> sChildren;
-	expressionSet<BTHREADED>::atomicVec sCount;
-	boost::asio::thread_pool sPool(std::thread::hardware_concurrency());
 	while (std::getline(std::cin, sLine))
 	{	if (sLine.empty())
 			continue;
 		sX[0] = std::stod(sLine.c_str());
-		sES->evaluateLLVM(sChildren, sX.data(), sCount, sPool);
+		sES->evaluateLLVM(sChildren, sX.data());
 		std::cout << sX[0] << "\t";
 		for (std::size_t i = sES->getTempSize(), iMax = sES->getChildren().size(); i < iMax; ++i)
 			std::cout << sChildren[i] << "\t";
