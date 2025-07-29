@@ -7,7 +7,7 @@ CXXFLAGS=-march=native -ffast-math -I $(BOOST_ROOT)/include $(shell llvm-config 
 CXXFLAGS+=-O3 -DNDEBUG
 #CXXFLAGS+=-g -DDEBUG -O0 -fno-inline -fno-omit-frame-pointer
 #CXXFLAGS+=-fsanitize=thread
-CXX=clang++
+CXX=clang++-20
 #CXX=g++-13
 LDFLAGS=$(shell llvm-config --ldflags --system-libs --libs core irreader bitreader bitwriter support executionengine target)
 
