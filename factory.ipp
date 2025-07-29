@@ -682,7 +682,7 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 			sLeft.insert(i);
 		std::vector<std::vector<std::size_t> > sG2Set;
 		while (!sLeft.empty())
-		{	sG2Set.push_back({});
+		{	sG2Set.emplace_back();
 			for (const auto i : sLeft)
 				if (sT2Deps[i].size() <= sDep.size() && std::includes(
 					sDep.begin(),
@@ -718,8 +718,7 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 		//boost::asio::thread_pool &_rPool
 	) const
 	{	const auto &[rChildren, rG2Set] = m_sChildren;
-		const auto iVars = rChildren.size();
-		_rChildren.resize(iVars);
+		_rChildren.resize(rChildren.size());
 		if constexpr (!BTHREADED)
 			std::transform(
 				rChildren.begin(),

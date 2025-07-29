@@ -56,8 +56,10 @@ Creation of the latter involves optimization by replacing multiple occurences of
 The first argument to expressionSet::evaluate*() is the vector for temporaries first and outputs second.
 The outputs start with index expressionSet::getTempSize().
 ## News
-The multithreaded version (BTHREADED=true) seems to be much slower than the singlethreaded one
--- being mostly busy with locking/unlocking mutexes.
+I changed the evaluate*() methods of expressionSet.
+They don't require a threadPool argument anymore and neither an atomic counter.
+The result is that the multithreaded version is now nearly as fast as the single threaded one.
+The idea is to partition the expressions into groups of identical dependencies and use parallel for_each() for every group.
 
 Got DSL operators working using some tricks.
 
