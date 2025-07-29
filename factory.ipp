@@ -22,7 +22,8 @@
 #include <thread>
 #include <functional>
 #include <mutex>
-#include <future>
+#include <algorithm>
+#include <execution>
 #include <boost/asio/thread_pool.hpp>
 #include <boost/asio/post.hpp>
 
@@ -610,7 +611,8 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 		children,
 		std::vector<std::vector<std::size_t> >,
 		std::vector<std::size_t>,
-		std::vector<std::size_t>
+		std::vector<std::size_t>,
+		std::vector<std::set<std::size_t> >
 	> m_sChildren;
 	const std::size_t m_iTempSize;
 	auto getTie(void) const
@@ -636,6 +638,7 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 					const auto sInsert = sSet.emplace(_p);
 					if (sInsert.second)
 						return true;
+						/// we only get here, if _p was already found more than onoce
 					if (auto s = sMap.emplace(_p, nullptr); s.second)
 					{	s.first->second = _rF.variable(sMap.size() - 1);
 						sI2P.emplace_back(_p);
@@ -650,16 +653,20 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 			{	const auto pFind = sM.find(p);
 				const auto s = *pFind;
 				sM.erase(pFind);
+					/// replace all repeated expressions
+					/// except the current one
 				sTemp.push_back(p->replace(sM, _rF));
 				sM.insert(s);
 			}
 		}
 		for (const auto &p : _rChildren)
+				/// replace all repeated expressions with variable objects
 			sTemp.push_back(p->replace(sMap, _rF));
-		std::vector<std::vector<std::size_t> > sDep2T;
-		std::vector<std::size_t> sT2Dep;
-		sDep2T.resize(sTemp.size());
-		sT2Dep.resize(sTemp.size());
+			/// dependency to expression indicies
+		std::vector<std::vector<std::size_t> > sDep2T(sTemp.size());
+			/// expression index to number of dependencies
+		std::vector<std::size_t> sT2Dep(sTemp.size());
+		std::vector<std::set<std::size_t> > sT2Deps(sTemp.size());
 		for (std::size_t i = 0; i < sTemp.size(); ++i)
 		{	std::set<
 				const expression<BTHREADED>*
@@ -671,12 +678,35 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 					if (const auto pV = dynamic_cast<const variable<BTHREADED>*>(_p))
 					{	sDep2T[pV->m_i].push_back(i);
 						++sT2Dep[i];
+						sT2Deps[i].insert(pV->m_i);
 					}
 					return true;
 				}
 			);
 		}
 		std::for_each(sDep2T.begin(), sDep2T.end(), [](std::vector<std::size_t>&_r){_r.shrink_to_fit();});
+		//std::for_each(sT2Deps.begin(), sT2Deps.end(), [](std::vector<std::size_t>&_r){_r.shrink_to_fit();});
+		std::set<std::size_t> sDep;
+		std::set<std::size_t> sLeft;
+		for (std::size_t i = 0; i < sT2Deps.size(); ++i)
+			sLeft.insert(i);
+		std::vector<std::set<std::size_t> > sG2Set;
+		while (!sLeft.empty())
+		{	sG2Set.push_back({});
+			for (const auto i : sLeft)
+				if (sT2Deps[i].size() <= sDep.size() && std::includes(
+					sDep.begin(),
+					sDep.end(), 
+					sT2Deps[i].begin(),
+					sT2Deps[i].end()
+				))
+					sG2Set.back().insert(i);
+			for (const auto i : sG2Set.back())
+			{	sLeft.erase(i);
+				sDep.insert(i);
+			}
+		}
+		sG2Set.shrink_to_fit();
 		for (const auto &p : sTemp)
 			p->initializeLLVM();
 		std::vector<std::size_t> sZero;
@@ -685,7 +715,7 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 			if (!sT2Dep[i])
 				sZero.push_back(i);
 		sZero.shrink_to_fit();
-		return std::make_tuple(sTemp, sDep2T, sT2Dep, sZero);
+		return std::make_tuple(sTemp, sDep2T, sT2Dep, sZero, sG2Set);
 	}
 	expressionSetImpl(
 		const children& _rChildren,
@@ -702,7 +732,7 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 		typename expressionSet<BTHREADED>::atomicVec &_rC,
 		boost::asio::thread_pool &_rPool
 	) const
-	{	const auto &[rChildren, rDep2T, rT2Dep, rZero] = m_sChildren;
+	{	const auto &[rChildren, rDep2T, rT2Dep, rZero, rG2Set] = m_sChildren;
 		const auto iVars = rChildren.size();
 		_rChildren.resize(iVars);
 		if constexpr (!BTHREADED)
@@ -715,6 +745,18 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 				}
 			);
 		else
+#if 1
+		{	for (const auto &r : rG2Set)
+				std::for_each(
+					std::execution::par,
+					r.begin(),
+					r.end(),
+					[&](const std::size_t _i)
+					{	_rChildren[_i] = ((*std::get<0>(m_sChildren)[_i]).*EVALUATE)(_pParams, _rChildren.data());
+					}
+				);
+		}
+#else
 		{	_rC.resize(iVars);
 			/// 0 -- no dep
 			/// 1 depends on 0
@@ -750,6 +792,7 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 				);
 			}
 		}
+#endif
 	}
 	virtual void evaluate(
 		std::vector<double>&_rChildren,
