@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.15)
 project(MyCompilerTools)
+cmake_policy(SET CMP0144 NEW)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     #set(SANITIZER_FLAGS "-fsanitize=address -fsanitize=leak -fno-omit-frame-pointer -g")
@@ -16,7 +17,7 @@ set(CMAKE_CXX_STANDARD 17)
 find_package(Boost REQUIRED)
 
 # Find LLVM
-find_package(LLVM REQUIRED CONFIG)
+find_package(LLVM 20.1.0 REQUIRED CONFIG)
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 
@@ -41,6 +42,9 @@ target_include_directories(theExpressionEngine.exe SYSTEM PRIVATE ${Boost_INCLUD
 
 target_link_libraries(test.exe PRIVATE ${LLVM_LIBS})
 target_link_libraries(theExpressionEngine.exe PRIVATE ${LLVM_LIBS})
+target_compile_options(test.exe PRIVATE -Wno-stringop-overflow)
+target_compile_options(theExpressionEngine.exe PRIVATE -Wno-stringop-overflow)
+
 
 # Enable ThreadSanitizer
 #target_compile_options(theExpressionEngine.exe PRIVATE -fsanitize=thread -g -O0 -fno-omit-frame-pointer -fno-inline)
