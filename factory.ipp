@@ -609,10 +609,7 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 	typedef typename expression<BTHREADED>::children children;
 	const std::tuple<
 		children,
-		std::vector<std::vector<std::size_t> >,
-		std::vector<std::size_t>,
-		std::vector<std::size_t>,
-		std::vector<std::set<std::size_t> >
+		std::vector<std::vector<std::size_t> >
 	> m_sChildren;
 	const std::size_t m_iTempSize;
 	auto getTie(void) const
@@ -662,10 +659,7 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 		for (const auto &p : _rChildren)
 				/// replace all repeated expressions with variable objects
 			sTemp.push_back(p->replace(sMap, _rF));
-			/// dependency to expression indicies
-		std::vector<std::vector<std::size_t> > sDep2T(sTemp.size());
 			/// expression index to number of dependencies
-		std::vector<std::size_t> sT2Dep(sTemp.size());
 		std::vector<std::set<std::size_t> > sT2Deps(sTemp.size());
 		for (std::size_t i = 0; i < sTemp.size(); ++i)
 		{	std::set<
@@ -676,31 +670,28 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 				{	if (!sSet.insert(_p).second)
 						return false;
 					if (const auto pV = dynamic_cast<const variable<BTHREADED>*>(_p))
-					{	sDep2T[pV->m_i].push_back(i);
-						++sT2Dep[i];
 						sT2Deps[i].insert(pV->m_i);
-					}
 					return true;
 				}
 			);
 		}
-		std::for_each(sDep2T.begin(), sDep2T.end(), [](std::vector<std::size_t>&_r){_r.shrink_to_fit();});
 		//std::for_each(sT2Deps.begin(), sT2Deps.end(), [](std::vector<std::size_t>&_r){_r.shrink_to_fit();});
 		std::set<std::size_t> sDep;
 		std::set<std::size_t> sLeft;
 		for (std::size_t i = 0; i < sT2Deps.size(); ++i)
 			sLeft.insert(i);
-		std::vector<std::set<std::size_t> > sG2Set;
+		std::vector<std::vector<std::size_t> > sG2Set;
 		while (!sLeft.empty())
 		{	sG2Set.push_back({});
 			for (const auto i : sLeft)
 				if (sT2Deps[i].size() <= sDep.size() && std::includes(
 					sDep.begin(),
-					sDep.end(), 
+					sDep.end(),
 					sT2Deps[i].begin(),
 					sT2Deps[i].end()
 				))
-					sG2Set.back().insert(i);
+					sG2Set.back().push_back(i);
+			sG2Set.back().shrink_to_fit();
 			for (const auto i : sG2Set.back())
 			{	sLeft.erase(i);
 				sDep.insert(i);
@@ -709,13 +700,7 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 		sG2Set.shrink_to_fit();
 		for (const auto &p : sTemp)
 			p->initializeLLVM();
-		std::vector<std::size_t> sZero;
-		sZero.reserve(sT2Dep.size());
-		for (std::size_t i = 0; i < sT2Dep.size(); ++i)
-			if (!sT2Dep[i])
-				sZero.push_back(i);
-		sZero.shrink_to_fit();
-		return std::make_tuple(sTemp, sDep2T, sT2Dep, sZero, sG2Set);
+		return std::make_tuple(sTemp, sG2Set);
 	}
 	expressionSetImpl(
 		const children& _rChildren,
@@ -732,7 +717,7 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 		typename expressionSet<BTHREADED>::atomicVec &_rC,
 		boost::asio::thread_pool &_rPool
 	) const
-	{	const auto &[rChildren, rDep2T, rT2Dep, rZero, rG2Set] = m_sChildren;
+	{	const auto &[rChildren, rG2Set] = m_sChildren;
 		const auto iVars = rChildren.size();
 		_rChildren.resize(iVars);
 		if constexpr (!BTHREADED)
@@ -745,8 +730,7 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 				}
 			);
 		else
-#if 1
-		{	for (const auto &r : rG2Set)
+			for (const auto &r : rG2Set)
 				std::for_each(
 					std::execution::par,
 					r.begin(),
@@ -755,44 +739,6 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 					{	_rChildren[_i] = ((*std::get<0>(m_sChildren)[_i]).*EVALUATE)(_pParams, _rChildren.data());
 					}
 				);
-		}
-#else
-		{	_rC.resize(iVars);
-			/// 0 -- no dep
-			/// 1 depends on 0
-			/// 2 depends on 0, 1
-			/// rDep2T = {{1, 2}, {2}}
-			// rT2Dep = {{}, {0}, {1, 2}}
-			for (std::size_t i = 0; i < iVars; ++i)
-				_rC.m_p.get()[i] = rT2Dep[i];
-			//std::vector<std::pair<std::mutex, std::optional<std::future<void> > > > sFutures(iVars);
-			std::mutex sMutex;
-			std::condition_variable sEvent;
-			std::atomic<std::size_t> sChildCount = iVars;
-			const std::function<void(std::size_t)> sRunTemp = [&, this](std::size_t _i)
-			{	_rChildren[_i] = ((*std::get<0>(m_sChildren)[_i]).*EVALUATE)(_pParams, _rChildren.data());
-				for (auto iV : std::get<1>(m_sChildren)[_i])
-					if (!--_rC.m_p[iV])
-						boost::asio::post(_rPool, std::bind(sRunTemp, iV));
-				if (!--sChildCount)
-				{	std::unique_lock<std::mutex> sLock(sMutex);
-					sEvent.notify_one();
-					assert(!sNext);
-				}
-			};
-			for (const auto i : rZero)
-				boost::asio::post(_rPool, std::bind(sRunTemp, i));
-			if (sChildCount)
-			{	std::unique_lock<std::mutex> sLock(sMutex);
-				sEvent.wait(
-					sLock,
-					[&](void)
-					{	return sChildCount == 0;
-					}
-				);
-			}
-		}
-#endif
 	}
 	virtual void evaluate(
 		std::vector<double>&_rChildren,
