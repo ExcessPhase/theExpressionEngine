@@ -607,21 +607,176 @@ template<bool BTHREADED>
 struct expressionSetImpl:expressionSet<BTHREADED>
 {
 	typedef typename expression<BTHREADED>::children children;
-	const std::tuple<
+	typedef std::tuple<
 		children,
-		std::vector<std::vector<std::size_t> >
-	> m_sChildren;
-	const std::size_t m_iTempSize;
-	auto getTie(void) const
-	{	return std::tie(m_sChildren, m_iTempSize);
-	}
+		std::vector<std::vector<std::size_t> >,
+		std::vector<std::size_t>
+	> TUPLE;
+	const TUPLE m_sChildren;
 	virtual bool operator<(const expressionSet<BTHREADED> &_r) const override
-	{	return getTie() < dynamic_cast<const expressionSetImpl&>(_r).getTie();
+	{	return m_sChildren < dynamic_cast<const expressionSetImpl&>(_r).m_sChildren;
+	}
+	virtual const std::vector<std::size_t> &getOrder(void) const override
+	{	return std::get<2>(m_sChildren);
 	}
 	static auto get(
 		const children& _rChildren,
 		const factory<BTHREADED>&_rF
 	)
+#if 1
+	{	typedef std::set<const expression<BTHREADED>*> ESET;
+			/// expressions used more than once
+			/// all expressions
+		const auto sSetRepeated = [&](void)
+		{	ESET sSetAll, sSetRepeated;
+			for (const auto &p : _rChildren)
+				p->DFS(
+					[&](const expression<BTHREADED>*const _p)
+					{	if (_p->m_sChildren.empty())
+							return false;
+						if (sSetAll.emplace(_p).second)
+							return true;
+						sSetRepeated.emplace(_p);
+						return false;
+					}
+				);
+			return sSetRepeated;
+		}();
+#if 0
+		for (const auto p : sSetRepeated)
+		{	std::cerr << "repeated=";
+			p->print(std::cerr) << std::endl;
+		}
+#endif
+		const auto sExpr2Deps = [&](void)
+		{	std::map<
+				const expression<BTHREADED>*,
+				ESET
+			> sExpr2Deps;
+			auto sLeft = sSetRepeated;
+			for (const auto &p : _rChildren)
+				sLeft.insert(p.get());
+			for (const auto p : sLeft)
+			{	auto &rDeps = sExpr2Deps[p];
+				ESET sSet;
+				p->DFS(
+					[&](const expression<BTHREADED>*const _p)
+					{	if (_p->m_sChildren.empty())
+							return false;
+						if (!sSet.emplace(_p).second)
+							return false;
+						if (sSetRepeated.count(_p) && _p != p)
+							rDeps.emplace(_p);
+						return true;
+					}
+				);
+			}
+			return sExpr2Deps;
+		}();
+#if 0
+		for (const auto &r : sExpr2Deps)
+		{	std::cerr << "dep_first=";
+			r.first->print(std::cerr) << std::endl;
+			for (const auto p : r.second)
+			{	std::cerr << "dep_second=";
+				p->print(std::cerr) << std::endl;
+			}
+		}
+#endif
+		const auto sG2Set = [&](void)
+		{	ESET sDep;
+			auto sLeft = sSetRepeated;
+			for (const auto &p : _rChildren)
+				sLeft.insert(p.get());
+			std::map<ESET, ESET> sG2Set;
+			while (!sLeft.empty())
+			{	auto &r = sG2Set[sDep];
+				for (const auto p : sLeft)
+				{	auto &rC = sExpr2Deps.at(p);
+					if (rC.size() <= sDep.size() && std::includes(
+						sDep.begin(),
+						sDep.end(),
+						rC.begin(),
+						rC.end()
+					))
+						r.insert(p);
+				}
+				for (const auto p : r)
+				{	sLeft.erase(p);
+					sDep.insert(p);
+				}
+			}
+			return sG2Set;
+		}();
+#if 0
+		for (const auto &r : sG2Set)
+		{	for (const auto p : r.first)
+			{	std::cerr << "sG2Set.first=";
+				p->print(std::cerr) << std::endl;
+			}
+			for (const auto p : r.second)
+			{	std::cerr << "sG2Set.second=";
+				p->print(std::cerr) << std::endl;
+			}
+		}
+#endif
+		std::map<const expression<BTHREADED>*, std::size_t> sExpr2Id;
+		children sChildren;
+		ESET sSet;
+		std::vector<std::vector<std::size_t> > sGroups;
+		auto sLeft = sSetRepeated;
+		for (const auto &p : _rChildren)
+			sLeft.insert(p.get());
+		while (!sLeft.empty())
+		{	auto &r = sG2Set.at(sSet);
+			sGroups.emplace_back();
+			for (const auto p : r)
+			{	const auto sInsert = sExpr2Id.emplace(p, sExpr2Id.size());
+				sLeft.erase(p);
+				sSet.insert(p);
+				sGroups.back().push_back(sInsert.first->second);
+				sChildren.push_back(p);
+			}
+		}
+#if 0
+		for (std::size_t iG = 0; iG < sGroups.size(); ++iG)
+		{	const auto &rG = sGroups.at(iG);
+			std::cerr << "sGroups(" << iG << ")" << std::endl;
+			for (const auto i : rG)
+			{	std::cerr << "expr=";
+				sChildren.at(i)->print(std::cerr) << std::endl;
+			}
+		}
+#endif
+		std::vector<std::size_t> sOrder(_rChildren.size());
+		for (std::size_t i = 0; i < _rChildren.size(); ++i)
+			sOrder[i] = sExpr2Id.at(_rChildren[i].get());
+#if 0
+		for (const auto i : sOrder)
+			std::cerr << "order=" << i << std::endl;
+#endif
+		typename expression<BTHREADED>::ptr2ptr sMap;
+		for (const auto p : sSetRepeated)
+			sMap[p] = _rF.variable(sExpr2Id.at(p));
+		for (auto &p : sChildren)
+			if (sSetRepeated.count(p.get()))
+			{	auto pF = sMap.find(p);
+				auto pR = pF->second;
+				sMap.erase(pF);
+				p = p->replace(sMap, _rF);
+				sMap[p] = pR;
+			}
+			else
+				p = p->replace(sMap, _rF);
+#if 0
+		for (auto &p : sChildren)
+		{	std::cerr << "children=";
+			p->print(std::cerr) << std::endl;
+		}
+#endif
+		return TUPLE(std::move(sChildren), std::move(sGroups), std::move(sOrder));
+	}
+#else
 	{	const auto sTemp = [&](void)
 		{	const auto [sMap, sI2P] = [&](void)
 			{	std::set<
@@ -714,12 +869,12 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 			p->initializeLLVM();
 		return std::make_tuple(std::move(sTemp), std::move(sG2Set));
 	}
+#endif
 	expressionSetImpl(
 		const children& _rChildren,
 		const factory<BTHREADED>&_rF
 	)
-		:m_sChildren(get(_rChildren, _rF)),
-		m_iTempSize(std::get<0>(m_sChildren).size() - _rChildren.size())
+		:m_sChildren(get(_rChildren, _rF))
 	{
 	}
 	template<double(expression<BTHREADED>::*EVALUATE)(const double *const, const double*const) const>
@@ -729,7 +884,7 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 		//typename expressionSet<BTHREADED>::atomicVec &_rC,
 		//boost::asio::thread_pool &_rPool
 	) const
-	{	const auto &[rChildren, rG2Set] = m_sChildren;
+	{	const auto &[rChildren, rG2Set, rOrder] = m_sChildren;
 		_rChildren.resize(rChildren.size());
 		if constexpr (!BTHREADED)
 			std::transform(
@@ -769,9 +924,6 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 	}
 	virtual const typename expression<BTHREADED>::children &getChildren(void) const override
 	{	return std::get<0>(m_sChildren);
-	}
-	virtual std::size_t getTempSize(void) const override
-	{	return m_iTempSize;
 	}
 	virtual void onDestroy(void) const
 	{

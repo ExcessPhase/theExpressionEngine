@@ -5,6 +5,7 @@
             "label": "Run Executable",
             "type": "shell",
             "command": "./theExpressionEngine.exe",
+            "args": ["1+sin(x)"],
             "group": {
                 "kind": "build",
                 "isDefault": true
@@ -15,7 +16,7 @@
             "label": "Build with Make",
             "type": "shell",
             "command": "make",
-            "args": ["-j8"],
+            "args": ["-j8", "theExpressionEngine.exe"],
             "group": {
                 "kind": "build",
                 "isDefault": true

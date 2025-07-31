@@ -117,13 +117,12 @@ BOOST_AUTO_TEST_CASE(zero_005)
 	std::vector<double> sC;
 	const auto sES = pFactory->createExpressionSet({s2});
 	BOOST_CHECK(sES->getChildren().size() == 2);
-	BOOST_CHECK(sES->getTempSize() == 1);
 	BOOST_CHECK(sES->getChildren().at(1) == pFactory->variable(0)*pFactory->variable(0));
 	BOOST_CHECK(sES->getChildren().at(0) == s1);
 	sES->evaluate(sC, &d);
-	BOOST_CHECK_CLOSE(sC.at(sES->getTempSize()), d1, 0.001);
+	BOOST_CHECK_CLOSE(sC.at(sES->getOrder().at(1)), d1, 0.001);
 	sES->evaluateLLVM(sC, &d);
-	BOOST_CHECK_CLOSE(sC.at(sES->getTempSize()), d1, 0.001);
+	BOOST_CHECK_CLOSE(sC.at(sES->getOrder().at(1)), d1, 0.001);
 }
 BOOST_AUTO_TEST_CASE(zero_006)
 {	const auto pFactory = theExpressionEngine::factory<true>::getFactory();
@@ -151,9 +150,9 @@ BOOST_AUTO_TEST_CASE(zero_006)
 	std::vector<double> sC;
 	const auto sES = pFactory->createExpressionSet({s1, s2, s3});
 	sES->evaluate(sC, &x);
-	BOOST_CHECK_CLOSE(sC.at(sES->getTempSize() + 2), d3, 0.001);
+	BOOST_CHECK_CLOSE(sC.at(sES->getOrder().at(2)), d3, 0.001);
 	sES->evaluateLLVM(sC, &x);
-	BOOST_CHECK_CLOSE(sC.at(sES->getTempSize() + 2), d3, 0.001);
+	BOOST_CHECK_CLOSE(sC.at(sES->getOrder().at(2)), d3, 0.001);
 }
 BOOST_AUTO_TEST_CASE(zero_007)
 {	const auto pFactory = theExpressionEngine::factory<true>::getFactory();

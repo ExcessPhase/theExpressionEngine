@@ -31,6 +31,7 @@ int main(int argc, char**argv)
 	for (auto p = argv + 1; *p; ++p)
 		sE.push_back(pFactory->parse(*p, {{"x", pFactory->parameter(0)}}));
 	const auto sES = pFactory->createExpressionSet(sE);
+	const auto &rOrder = sES->getOrder();
 	std::vector<double> sX(1);
 	std::string sLine;
 	std::vector<double> sChildren;
@@ -40,8 +41,8 @@ int main(int argc, char**argv)
 		sX[0] = std::stod(sLine.c_str());
 		sES->evaluateLLVM(sChildren, sX.data());
 		std::cout << sX[0] << "\t";
-		for (std::size_t i = sES->getTempSize(), iMax = sES->getChildren().size(); i < iMax; ++i)
-			std::cout << sChildren[i] << "\t";
+		for (std::size_t i = 0, iMax = sE.size(); i < iMax; ++i)
+			std::cout << sChildren[rOrder[i]] << "\t";
 		std::cout << std::endl;
 	}
 	return 0;

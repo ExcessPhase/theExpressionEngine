@@ -128,7 +128,8 @@ struct expressionSet:unique<expressionSet<BTHREADED>, BTHREADED>
 	) const = 0;
 	virtual const typename expression<BTHREADED>::children &getChildren(void) const = 0;
 	//virtual const typename expression<BTHREADED>::children &getTemps(void) const = 0;
-	virtual std::size_t getTempSize(void) const = 0;
+	//virtual std::size_t getTempSize(void) const = 0;
+	virtual const std::vector<std::size_t> &getOrder(void) const = 0;
 };
 template<bool BTHREADED>
 boost::intrusive_ptr<const expression<BTHREADED> > collapse(const expression<BTHREADED> &, const factory<BTHREADED>&);

@@ -3,7 +3,7 @@
 	"configurations": [
 	    {
 		"name": "(gdb) Launch",
-		"type": "cppdbg",
+		"type": "gdb",
 		"request": "launch",
 		"program": "${workspaceFolder}/theExpressionEngine.exe",
 		"args": ["sqrt(1.2/3.1)"],
