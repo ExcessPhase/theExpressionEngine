@@ -623,7 +623,6 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 		const children& _rChildren,
 		const factory<BTHREADED>&_rF
 	)
-#if 1
 	{	typedef std::set<const expression<BTHREADED>*> ESET;
 			/// expressions used more than once
 			/// all expressions
@@ -642,12 +641,6 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 				);
 			return sSetRepeated;
 		}();
-#if 0
-		for (const auto p : sSetRepeated)
-		{	std::cerr << "repeated=";
-			p->print(std::cerr) << std::endl;
-		}
-#endif
 		const auto sExpr2Deps = [&](void)
 		{	std::map<
 				const expression<BTHREADED>*,
@@ -673,16 +666,6 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 			}
 			return sExpr2Deps;
 		}();
-#if 0
-		for (const auto &r : sExpr2Deps)
-		{	std::cerr << "dep_first=";
-			r.first->print(std::cerr) << std::endl;
-			for (const auto p : r.second)
-			{	std::cerr << "dep_second=";
-				p->print(std::cerr) << std::endl;
-			}
-		}
-#endif
 		const auto sG2Set = [&](void)
 		{	ESET sDep;
 			auto sLeft = sSetRepeated;
@@ -708,18 +691,6 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 			}
 			return sG2Set;
 		}();
-#if 0
-		for (const auto &r : sG2Set)
-		{	for (const auto p : r.first)
-			{	std::cerr << "sG2Set.first=";
-				p->print(std::cerr) << std::endl;
-			}
-			for (const auto p : r.second)
-			{	std::cerr << "sG2Set.second=";
-				p->print(std::cerr) << std::endl;
-			}
-		}
-#endif
 		std::map<const expression<BTHREADED>*, std::size_t> sExpr2Id;
 		children sChildren;
 		ESET sSet;
@@ -730,6 +701,7 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 		while (!sLeft.empty())
 		{	auto &r = sG2Set.at(sSet);
 			sGroups.emplace_back();
+			sGroups.back().reserve(r.size());
 			for (const auto p : r)
 			{	const auto sInsert = sExpr2Id.emplace(p, sExpr2Id.size());
 				sLeft.erase(p);
@@ -738,23 +710,10 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 				sChildren.push_back(p);
 			}
 		}
-#if 0
-		for (std::size_t iG = 0; iG < sGroups.size(); ++iG)
-		{	const auto &rG = sGroups.at(iG);
-			std::cerr << "sGroups(" << iG << ")" << std::endl;
-			for (const auto i : rG)
-			{	std::cerr << "expr=";
-				sChildren.at(i)->print(std::cerr) << std::endl;
-			}
-		}
-#endif
+		sChildren.shrink_to_fit();
 		std::vector<std::size_t> sOrder(_rChildren.size());
 		for (std::size_t i = 0; i < _rChildren.size(); ++i)
 			sOrder[i] = sExpr2Id.at(_rChildren[i].get());
-#if 0
-		for (const auto i : sOrder)
-			std::cerr << "order=" << i << std::endl;
-#endif
 		typename expression<BTHREADED>::ptr2ptr sMap;
 		for (const auto p : sSetRepeated)
 			sMap[p] = _rF.variable(sExpr2Id.at(p));
@@ -768,108 +727,8 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 			}
 			else
 				p = p->replace(sMap, _rF);
-#if 0
-		for (auto &p : sChildren)
-		{	std::cerr << "children=";
-			p->print(std::cerr) << std::endl;
-		}
-#endif
 		return TUPLE(std::move(sChildren), std::move(sGroups), std::move(sOrder));
 	}
-#else
-	{	const auto sTemp = [&](void)
-		{	const auto [sMap, sI2P] = [&](void)
-			{	std::set<
-					const expression<BTHREADED>*
-				> sSet;
-				typename expression<BTHREADED>::ptr2ptr sMap;
-				typename expression<BTHREADED>::children sI2P;
-				for (const auto &p : _rChildren)
-					p->DFS(
-						[&](const expression<BTHREADED>*const _p)
-						{	if (_p->m_sChildren.empty())
-								return false;
-							const auto sInsert = sSet.emplace(_p);
-							if (sInsert.second)
-								return true;
-								/// we only get here, if _p was already found more than onoce
-							if (auto s = sMap.emplace(_p, nullptr); s.second)
-							{	s.first->second = _rF.variable(sMap.size() - 1);
-								sI2P.emplace_back(_p);
-							}
-							return false;
-						}
-					);
-				return std::make_tuple(std::move(sMap), std::move(sI2P));
-			}();
-			children sTemp;
-			sTemp.reserve(sMap.size() + _rChildren.size());
-			{	auto sM = sMap;
-				for (const auto &p : sI2P)
-				{	const auto pFind = sM.find(p);
-					const auto s = *pFind;
-					sM.erase(pFind);
-						/// replace all repeated expressions
-						/// except the current one
-					sTemp.push_back(p->replace(sM, _rF));
-					sM.insert(s);
-				}
-			}
-			for (const auto &p : _rChildren)
-					/// replace all repeated expressions with variable objects
-				sTemp.push_back(p->replace(sMap, _rF));
-			return sTemp;
-		}();
-		const auto sT2Deps = [&](void)
-		{		/// expression index to number of dependencies
-			std::vector<std::set<std::size_t> > sT2Deps(sTemp.size());
-			for (std::size_t i = 0; i < sTemp.size(); ++i)
-			{	std::set<
-					const expression<BTHREADED>*
-				> sSet;
-				sTemp[i]->DFS(
-					[&](const expression<BTHREADED>*const _p)
-					{	if (!sSet.insert(_p).second)
-							return false;
-						if (const auto pV = dynamic_cast<const variable<BTHREADED>*>(_p))
-							sT2Deps[i].insert(pV->m_i);
-						return true;
-					}
-				);
-			}
-			return sT2Deps;
-		}();
-		//std::for_each(sT2Deps.begin(), sT2Deps.end(), [](std::vector<std::size_t>&_r){_r.shrink_to_fit();});
-		const auto sG2Set = [&](void)
-		{	std::set<std::size_t> sDep;
-			std::set<std::size_t> sLeft;
-			for (std::size_t i = 0; i < sT2Deps.size(); ++i)
-				sLeft.insert(i);
-			std::vector<std::vector<std::size_t> > sG2Set;
-			while (!sLeft.empty())
-			{	sG2Set.emplace_back();
-				for (const auto i : sLeft)
-					if (sT2Deps[i].size() <= sDep.size() && std::includes(
-						sDep.begin(),
-						sDep.end(),
-						sT2Deps[i].begin(),
-						sT2Deps[i].end()
-					))
-						sG2Set.back().push_back(i);
-				sG2Set.back().shrink_to_fit();
-				for (const auto i : sG2Set.back())
-				{	sLeft.erase(i);
-					sDep.insert(i);
-				}
-			}
-			sG2Set.shrink_to_fit();
-			return sG2Set;
-		}();
-		for (const auto &p : sTemp)
-			p->initializeLLVM();
-		return std::make_tuple(std::move(sTemp), std::move(sG2Set));
-	}
-#endif
 	expressionSetImpl(
 		const children& _rChildren,
 		const factory<BTHREADED>&_rF
@@ -902,7 +761,7 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 					r.begin(),
 					r.end(),
 					[&](const std::size_t _i)
-					{	_rChildren[_i] = ((*std::get<0>(m_sChildren)[_i]).*EVALUATE)(_pParams, _rChildren.data());
+					{	_rChildren[_i] = ((*rChildren[_i]).*EVALUATE)(_pParams, _rChildren.data());
 					}
 				);
 	}
