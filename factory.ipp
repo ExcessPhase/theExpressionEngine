@@ -711,6 +711,7 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 			}
 		}
 		sChildren.shrink_to_fit();
+		sGroups.shrink_to_fit();
 		std::vector<std::size_t> sOrder(_rChildren.size());
 		for (std::size_t i = 0; i < _rChildren.size(); ++i)
 			sOrder[i] = sExpr2Id.at(_rChildren[i].get());
