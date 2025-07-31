@@ -2,6 +2,7 @@
 #include <memory>
 #include <vector>
 #include <map>
+#include <unordered_map>
 #include <any>
 #include <array>
 #include <list>
@@ -49,7 +50,7 @@ struct expression:dynamic_cast_interface<realConstant<BTHREADED> >, unique<expre
 		__NUMBER_OF_DATA__
 	};
 	typedef std::array<std::any, __NUMBER_OF_DATA__> ARRAY;
-	typedef std::map<const expression<BTHREADED> *, ARRAY> MAP;
+	typedef std::unordered_map<const expression<BTHREADED> *, ARRAY> MAP;
 	const children m_sChildren;
 	expression(
 		children&&_rChildren = {}

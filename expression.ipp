@@ -144,8 +144,8 @@ struct llvmData
 };
 template<bool BTHREADED>
 void expression<BTHREADED>::initializeLLVM(void) const
-{	const auto sInsert = m_sAttachedData.emplace(this, ARRAY());
-	std::any &r = sInsert.first->second[eLLVMdata];
+{	std::unique_lock<MUTEX> sLock(m_sMutex);
+	const auto sInsert = m_sAttachedData.emplace(this, ARRAY());
 	if (sInsert.second)
 	{	addOnDestroy(
 			[this](void)
@@ -153,18 +153,16 @@ void expression<BTHREADED>::initializeLLVM(void) const
 				m_sAttachedData.erase(this);
 			}
 		);
-		//static std::recursive_mutex sMutex;
-		//std::unique_lock<MUTEX> sLock(sMutex);
-		r = std::make_shared<const llvmData<BTHREADED> >(this);
+		sInsert.first->second[eLLVMdata] = std::make_shared<const llvmData<BTHREADED> >(this);
 	}
 }
 template<bool BTHREADED>
 double expression<BTHREADED>::evaluateLLVM(const double *const _p, const double *const _pT) const
 {	std::unique_lock<MUTEX> sLock(m_sMutex);
 	initializeLLVM();
-	auto &r = m_sAttachedData.at(this)[eLLVMdata];
+	auto &p = std::any_cast<const std::shared_ptr<const llvmData<BTHREADED> >&>(m_sAttachedData.at(this).at(eLLVMdata));
 	sLock.unlock();
-	return std::any_cast<const std::shared_ptr<const llvmData<BTHREADED> >&>(r)->jitFunction(_p, _pT);
+	return p->jitFunction(_p, _pT);
 }
 template<bool BTHREADED>
 typename expression<BTHREADED>::ptr expression<BTHREADED>::replace(const ptr2ptr&_r, const factory<BTHREADED>&_rF) const
