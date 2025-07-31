@@ -56,6 +56,9 @@ Creation of the latter involves optimization by replacing multiple occurences of
 The first argument to expressionSet::evaluate*() is the vector for temporaries first and outputs second.
 The outputs start with index expressionSet::getTempSize().
 ## News
+I changed writing into the result vector. Writing is now done in order starting from index 0. This improves cache behavior.
+Reading results needs now be done using an offset table.
+
 I changed the evaluate*() methods of expressionSet.
 They don't require a threadPool argument anymore and neither an atomic counter.
 The result is that the multithreaded version is now nearly as fast as the single threaded one.
