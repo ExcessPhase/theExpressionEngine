@@ -120,9 +120,9 @@ BOOST_AUTO_TEST_CASE(zero_005)
 	BOOST_CHECK(sES->getChildren().at(1) == pFactory->variable(0)*pFactory->variable(0));
 	BOOST_CHECK(sES->getChildren().at(0) == s1);
 	sES->evaluate(sC, &d);
-	BOOST_CHECK_CLOSE(sC.at(sES->getOrder().at(1)), d1, 0.001);
+	BOOST_CHECK_CLOSE(sC.at(sES->getOrder().at(0)), d1, 0.001);
 	sES->evaluateLLVM(sC, &d);
-	BOOST_CHECK_CLOSE(sC.at(sES->getOrder().at(1)), d1, 0.001);
+	BOOST_CHECK_CLOSE(sC.at(sES->getOrder().at(0)), d1, 0.001);
 }
 BOOST_AUTO_TEST_CASE(zero_006)
 {	const auto pFactory = theExpressionEngine::factory<true>::getFactory();
