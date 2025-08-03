@@ -33,13 +33,15 @@ int main(int argc, char**argv)
 	const auto sES = pFactory->createExpressionSet(sE);
 	const auto &rOrder = sES->getOrder();
 	std::vector<double> sX(1);
+	std::vector<int> sXI;
 	std::string sLine;
 	std::vector<double> sChildren;
+	std::vector<int> sChildrenI;
 	while (std::getline(std::cin, sLine))
 	{	if (sLine.empty())
 			continue;
 		sX[0] = std::stod(sLine.c_str());
-		sES->evaluateLLVM(sChildren, sX.data());
+		sES->evaluateLLVM(sChildren, sChildrenI, sX.data(), sXI.data());
 		std::cout << sX[0] << "\t";
 		for (std::size_t i = 0, iMax = sE.size(); i < iMax; ++i)
 			std::cout << sChildren[rOrder[i]] << "\t";

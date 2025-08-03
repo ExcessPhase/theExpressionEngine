@@ -26,9 +26,11 @@ boost::intrusive_ptr<const expression<BTHREADED> > collapse(const expression<BTH
 }
 template<bool BTHREADED>
 expression<BTHREADED>::expression(
-	children&&_rChildren
+	children&&_rChildren,
+	const enumType _e
 )
-	:m_sChildren(std::move(_rChildren))
+	:m_sChildren(std::move(_rChildren)),
+	m_eType(_e)
 {
 }
 template<bool BTHREADED>
@@ -83,7 +85,7 @@ struct llvmData
 	LLVMContext Context;
 	std::unique_ptr<Module> M;// = std::make_unique<Module>("top", Context);
 	std::unique_ptr<ExecutionEngine> EE;// = std::unique_ptr<ExecutionEngine>(EngineBuilder(std::move(M)).setErrorStr(&ErrStr).setEngineKind(EngineKind::JIT).create());
-	using JITFunctionType = double(*)(const double*, const double*);
+	using JITFunctionType = double(*)(const double*, const int*, const double*, const int*);
 	JITFunctionType jitFunction;// = reinterpret_cast<JITFunctionType>(funcAddress);
 	explicit llvmData(const expression<BTHREADED> *const _p)
 		:Context(),
@@ -94,7 +96,9 @@ struct llvmData
 		FunctionType* FT = FunctionType::get(
 			Type::getDoubleTy(Context),
 			{	PointerType::get(Type::getDoubleTy(Context), 0),
-				PointerType::get(Type::getDoubleTy(Context), 0)
+				PointerType::get(Type::getInt32Ty(Context), 0),
+				PointerType::get(Type::getDoubleTy(Context), 0),
+				PointerType::get(Type::getInt32Ty(Context), 0)
 			},
 			false
 		);
@@ -103,10 +107,12 @@ struct llvmData
 		Builder.SetInsertPoint(BB);
 
 		Function::arg_iterator args = GetValueFunc->arg_begin();
-		Value* doublePtrArg0 = &(*args++);
-		Value* doublePtrArg1 = &(*args);
+		Value* const doublePtrArg0 = &(*args++);
+		Value* const intPtrArg1 = &(*args++);
+		Value* const doublePtrArg2 = &(*args++);
+		Value* const intPtrArg3 = &(*args);
 		// Create a constant double value
-		Value* const ConstantVal = _p->generateCodeW(_p, Context, Builder, M.get(), doublePtrArg0, doublePtrArg1);//ConstantFP::get(Context, APFloat(3.14));
+		Value* const ConstantVal = _p->generateCodeW(_p, Context, Builder, M.get(), doublePtrArg0, intPtrArg1, doublePtrArg2, intPtrArg3);//ConstantFP::get(Context, APFloat(3.14));
 
 		// Return the constant value
 		Builder.CreateRet(ConstantVal);
@@ -137,6 +143,7 @@ struct llvmData
 			throw std::runtime_error("Failed to get function address for 'getValue'");
 		}
 
+
 		// Cast the function address to a function pointer with the correct signature
 		//using JITFunctionType = double(*)(const double*, const double*);
 		jitFunction = reinterpret_cast<JITFunctionType>(funcAddress);
@@ -157,12 +164,16 @@ void expression<BTHREADED>::initializeLLVM(void) const
 	}
 }
 template<bool BTHREADED>
-double expression<BTHREADED>::evaluateLLVM(const double *const _p, const double *const _pT) const
+int expression<BTHREADED>::evaluateInt(const double *const, const int*const, const double*const, const int*const) const
+{	throw std::logic_error("not an integer expression!");
+}
+template<bool BTHREADED>
+double expression<BTHREADED>::evaluateLLVM(const double *const _p, const int*const _pI, const double *const _pT, const int*const _pTI) const
 {	std::unique_lock<MUTEX> sLock(m_sMutex);
 	initializeLLVM();
 	auto &p = std::any_cast<const std::shared_ptr<const llvmData<BTHREADED> >&>(m_sAttachedData.at(this).at(eLLVMdata));
 	sLock.unlock();
-	return p->jitFunction(_p, _pT);
+	return p->jitFunction(_p, _pI, _pT, _pTI);
 }
 template<bool BTHREADED>
 typename expression<BTHREADED>::ptr expression<BTHREADED>::replace(const ptr2ptr&_r, const factory<BTHREADED>&_rF) const
@@ -232,7 +243,9 @@ llvm::Value *expression<BTHREADED>::generateCodeW(
 	llvm::IRBuilder<>& builder,
 	llvm::Module *const M,
 	llvm::Value*const _pP,
-	llvm::Value*const _pT
+	llvm::Value*const _pIP,
+	llvm::Value*const _pT,
+	llvm::Value*const _pIT
 ) const
 {	std::unique_lock<MUTEX> sLock(m_sMutex);
 	const auto sInsert = m_sAttachedData.emplace(_pRoot, ARRAY());
@@ -251,7 +264,9 @@ llvm::Value *expression<BTHREADED>::generateCodeW(
 			builder,
 			M,
 			_pP,
-			_pT
+			_pIP,
+			_pT,
+			_pIT
 		);
 	return std::any_cast<llvm::Value*>(rAny);
 }

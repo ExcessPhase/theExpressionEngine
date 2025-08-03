@@ -4,9 +4,12 @@ cmake_policy(SET CMP0144 NEW)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     #set(SANITIZER_FLAGS "-fsanitize=address -fsanitize=leak -fno-omit-frame-pointer -g")
-    set(SANITIZER_FLAGS "-fsanitize=thread -fno-omit-frame-pointer -g")
+    set(SANITIZER_FLAGS "-fsanitize=address -fno-omit-frame-pointer -g")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SANITIZER_FLAGS}")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${SANITIZER_FLAGS}")
+elseif()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=native -DNDEBUG -ffast-math -lto")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -march=native -DNDEBUG -ffast-math -lto")
 endif()
 
 

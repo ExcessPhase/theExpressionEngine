@@ -49,11 +49,17 @@ struct expression:dynamic_cast_interface<realConstant<BTHREADED> >, unique<expre
 		eLLVMdata,
 		__NUMBER_OF_DATA__
 	};
+	enum enumType
+	{	eFloatingPoint,
+		eInteger
+	};
+	const enumType m_eType;
 	typedef std::array<std::any, __NUMBER_OF_DATA__> ARRAY;
 	typedef std::unordered_map<const expression<BTHREADED> *, ARRAY> MAP;
 	const children m_sChildren;
 	expression(
-		children&&_rChildren = {}
+		children&&_rChildren = {},
+		const enumType _eType = eFloatingPoint
 	);
 	virtual ~expression(void) = default;
 	expression(const expression&) = delete;
@@ -66,15 +72,19 @@ struct expression:dynamic_cast_interface<realConstant<BTHREADED> >, unique<expre
 		/// this is to be implemented for all derived classes containing data
 		/// the type of the LHS and RHS is guaranteed to be identical
 	virtual bool isSmaller(const expression<BTHREADED> &) const;
-	virtual double evaluate(const double *const, const double*const) const = 0;
-	double evaluateLLVM(const double *const, const double *const) const;
+	virtual int evaluateInt(const double *const, const int*const, const double*const, const int*const) const;
+	virtual double evaluate(const double *const, const int*const, const double*const, const int*const) const = 0;
+	double evaluateLLVM(const double *const, const int*const, const double *const, const int*const) const;
+	int evaluateIntLLVM(const double *const, const int*const, const double *const, const int*const) const;
 	llvm::Value *generateCodeW(
 		const expression<BTHREADED>  *const _pRoot,
 		llvm::LLVMContext& context,
 		llvm::IRBuilder<>& builder,
 		llvm::Module *const M,
 		llvm::Value*const _pP,
-		llvm::Value*const _pT
+		llvm::Value*const _pIP,
+		llvm::Value*const _pT,
+		llvm::Value*const _pIT
 	) const;
 	virtual void onDestroy(void) const;
 	ptr collapse(const factory<BTHREADED>&_rF) const;
@@ -104,7 +114,9 @@ struct expression:dynamic_cast_interface<realConstant<BTHREADED> >, unique<expre
 		llvm::IRBuilder<>& builder,
 		llvm::Module *const M,
 		llvm::Value*const _pP,
-		llvm::Value*const _pT
+		llvm::Value*const _pIP,
+		llvm::Value*const _pT,
+		llvm::Value*const _pIT
 	) const = 0;
 	typedef std::function<void(void)> onDestroyFunctor;
 	mutable std::list<onDestroyFunctor> m_sOnDestroyList;
@@ -121,11 +133,15 @@ struct expressionSet:unique<expressionSet<BTHREADED>, BTHREADED>
 	virtual bool operator<(const expressionSet<BTHREADED> &_r) const = 0;
 	virtual void evaluate(
 		std::vector<double>&_rChildren,
-		const double *const _pParams
+		std::vector<int>&_rIntChildren,
+		const double *const _pParams,
+		const int *const _pIntParams
 	) const = 0;
 	virtual void evaluateLLVM(
 		std::vector<double>&_rChildren,
-		const double *const _pParams
+		std::vector<int>&_rIntChildren,
+		const double *const _pParams,
+		const int *const _pIntParams
 	) const = 0;
 	virtual const typename expression<BTHREADED>::children &getChildren(void) const = 0;
 	//virtual const typename expression<BTHREADED>::children &getTemps(void) const = 0;
