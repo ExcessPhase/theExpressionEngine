@@ -630,6 +630,105 @@ struct parameter:expression<BTHREADED>
 	}
 };
 template<bool BTHREADED>
+struct less:expression<BTHREADED>
+{
+	typedef typename expression<BTHREADED>::ptr ptr;
+	less(const ptr&_p0, const ptr&_p1)
+		:expression<BTHREADED>({_p0, _p1}, expression<BTHREADED>::eInteger)
+	{
+	}
+	virtual std::ostream &print(std::ostream&_r) const override
+	{	_r << "(";
+		this->m_sChildren[0]->print(_r);
+		_r << "<";
+		this->m_sChildren[1]->print(_r);
+		return _r << ")";
+	}
+	virtual double evaluate(const double *const _p, const int *const _pI, const double*const _pT, const int*const _pIT) const override
+	{	throw std::logic_error("not a floating point operation!");
+		return 0.0;
+	}
+	virtual int evaluateInt(const double *const _p, const int *const _pI, const double*const _pT, const int*const _pIT) const override
+	{	switch (this->m_sChildren[0]->m_eType)
+		{	case expression<BTHREADED>::eFloatingPoint:
+				switch (this->m_sChildren[0]->m_eType)
+				{	case expression<BTHREADED>::eFloatingPoint:
+						return this->m_sChildren[0]->evaluate(_p, _pI, _pT, _pIT) < this->m_sChildren[1]->evaluate(_p, _pI, _pT, _pIT);
+					case expression<BTHREADED>::eInteger:
+						return this->m_sChildren[0]->evaluate(_p, _pI, _pT, _pIT) < this->m_sChildren[1]->evaluateInt(_p, _pI, _pT, _pIT);
+				}
+			case expression<BTHREADED>::eInteger:
+				switch (this->m_sChildren[0]->m_eType)
+				{	case expression<BTHREADED>::eFloatingPoint:
+						return this->m_sChildren[0]->evaluateInt(_p, _pI, _pT, _pIT) < this->m_sChildren[1]->evaluate(_p, _pI, _pT, _pIT);
+					case expression<BTHREADED>::eInteger:
+						return this->m_sChildren[0]->evaluateInt(_p, _pI, _pT, _pIT) < this->m_sChildren[1]->evaluateInt(_p, _pI, _pT, _pIT);
+				}
+		}
+		std::abort();
+		return 0;
+	}
+	virtual llvm::Value* generateCode(
+		const expression<BTHREADED>*const _pRoot,
+		llvm::LLVMContext& context,
+		llvm::IRBuilder<>& builder,
+		llvm::Module *const M,
+		llvm::Value*const _pP,
+		llvm::Value*const _pIP,
+		llvm::Value*const _pT,
+		llvm::Value*const _pIT
+	) const override
+	{	switch (this->m_sChildren[0]->m_eType)
+		{	case expression<BTHREADED>::eFloatingPoint:
+				switch (this->m_sChildren[0]->m_eType)
+				{	case expression<BTHREADED>::eFloatingPoint:
+						return builder.CreateFCmpOLT(
+							this->m_sChildren[0]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+							this->m_sChildren[1]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+							"isLess"
+						);
+					case expression<BTHREADED>::eInteger:
+						return builder.CreateFCmpOLT(
+							this->m_sChildren[0]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+							builder.CreateSIToFP(
+								this->m_sChildren[1]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+								builder.getDoubleTy(),
+								"intToDouble"
+							),
+							"isLess"
+						);
+				}
+			case expression<BTHREADED>::eInteger:
+				switch (this->m_sChildren[0]->m_eType)
+				{	case expression<BTHREADED>::eFloatingPoint:
+						return builder.CreateFCmpOLT(
+							builder.CreateSIToFP(
+								this->m_sChildren[0]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+								builder.getDoubleTy(),
+								"intToDouble"
+							),
+							this->m_sChildren[1]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+							"isLess"
+						);
+					case expression<BTHREADED>::eInteger:
+						return builder.CreateICmpSLT(
+							this->m_sChildren[0]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+							this->m_sChildren[1]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+							"isLess"
+						);
+				}
+		}
+		std::abort();
+		return nullptr;
+	}
+	virtual typename expression<BTHREADED>::ptr recreateFromChildren(typename expression<BTHREADED>::children _s, const factory<BTHREADED>&_rF) const override
+	{	return _rF.less(_s[0], _s[1]);
+	}
+	virtual std::size_t getWeight(void) const override
+	{	return 1;
+	}
+};
+template<bool BTHREADED>
 struct expressionSetImpl:expressionSet<BTHREADED>
 {
 	typedef typename expression<BTHREADED>::children children;
@@ -890,6 +989,9 @@ struct factoryImpl:factory<BTHREADED>
 			if (p->m_d == 0)
 				return _p1;
 		return theExpressionEngine::expression<BTHREADED>::template create<theExpressionEngine::multiplication<BTHREADED> >(*this, _p0, _p1);
+	}
+	virtual exprPtr less(const exprPtr&_p0, const exprPtr&_p1) const override
+	{	return theExpressionEngine::expression<BTHREADED>::template create<theExpressionEngine::less<BTHREADED> >(*this, _p0, _p1);
 	}
 	virtual exprPtr division(const exprPtr&_p0, const exprPtr&_p1) const override
 	{	if (const auto p = _p0->getPtr(dummy<theExpressionEngine::realConstant<BTHREADED> >()); p && p->m_d == 0)

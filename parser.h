@@ -18,6 +18,7 @@ bp::rule<class factor, expression<__BTHREADED__>::ptr> const factor("factor");
 bp::rule<class term, expression<__BTHREADED__>::ptr> const term("term");
 bp::rule<class expr, expression<__BTHREADED__>::ptr> const expr("expr");
 bp::rule<class addition, expression<__BTHREADED__>::ptr> const addition("addition");
+bp::rule<class less, expression<__BTHREADED__>::ptr> const less("less");
 bp::rule<class negation_, expression<__BTHREADED__>::ptr> const negation_("negation_");
 bp::rule<class plus, expression<__BTHREADED__>::ptr> const plus("plus");
 bp::rule<class x, expression<__BTHREADED__>::ptr> const x("x");
@@ -131,13 +132,28 @@ auto const factor_def =
     | primary_def;
 BOOST_PARSER_DEFINE_RULES(factor);
 
-auto const expr_def = addition;
+auto const expr_def = less;
 BOOST_PARSER_DEFINE_RULES(expr);
 
 //bp::rule<class plus_minus_pair, char> const plus_minus_pair = "plus_minus_pair";
 //auto const plus_minus_pair_def = bp::char_("+-");
 //BOOST_PARSER_DEFINE_RULES(plus_minus_pair);
 
+auto const less_def = (addition >> -(bp::char_("<") >> addition))
+	[(	[](auto& ctx)
+		{	auto const& attr = bp::_attr(ctx);
+			expression<__BTHREADED__>::ptr result = std::get<0>(attr);
+			auto const& maybe_rhs = std::get<1>(attr);
+			const std::tuple<const factory<__BTHREADED__>::name2int&, const factory<__BTHREADED__>&> &r = bp::_globals(ctx);
+			if (maybe_rhs)
+			{
+				expression<__BTHREADED__>::ptr rhs = std::get<1>(*maybe_rhs);
+				result = std::get<1>(r).less(result, rhs);
+			}
+			bp::_val(ctx) = result;
+		}
+	)];
+BOOST_PARSER_DEFINE_RULES(less);
 auto const addition_def = (term >> *(bp::char_("+-") >> term))
 	[(	[](auto& ctx)
 		{	auto const& attr = bp::_attr(ctx);
