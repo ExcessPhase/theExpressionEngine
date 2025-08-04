@@ -174,3 +174,14 @@ BOOST_AUTO_TEST_CASE(zero_007)
 #define __MAKE_ENTRY__(pow) BOOST_CHECK(pow(pX, pY) == pFactory->pow(pX, pY));
 #include "binary.h"
 }
+BOOST_AUTO_TEST_CASE(zero_008)
+{	const auto pFactory = theExpressionEngine::factory<true>::getFactory();
+	const auto p1 = pFactory->realConstant(1.0);
+	const auto p0 = pFactory->realConstant(0.0);
+	//using namespace theExpressionEngine;
+	using namespace theExpressionEngine::operators;
+	BOOST_CHECK(pFactory->greater(p1, p0) == pFactory->intConstant(1));
+	BOOST_CHECK(pFactory->less(p0, p1) == pFactory->intConstant(1));
+	BOOST_CHECK(pFactory->less(p1, p0) == pFactory->intConstant(0));
+	BOOST_CHECK(pFactory->greater(p0, p1) == pFactory->intConstant(0));
+}

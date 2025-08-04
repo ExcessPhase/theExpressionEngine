@@ -14,6 +14,7 @@ template<bool BTHREADED>
 struct factory:std::enable_shared_from_this<const factory<BTHREADED> >
 {	typedef boost::intrusive_ptr<const expression<BTHREADED> > exprPtr;
 	virtual exprPtr realConstant(const double) const = 0;
+	virtual exprPtr intConstant(const int) const = 0;
 	//virtual exprPtr sqrt(const exprPtr&) const = 0;
 #define __COMMA2__
 #define __MAKE_ENTRY2__(a)\
@@ -36,6 +37,7 @@ struct factory:std::enable_shared_from_this<const factory<BTHREADED> >
 	virtual exprPtr division(const exprPtr&, const exprPtr&) const = 0;
 	virtual exprPtr negation(const exprPtr&) const = 0;
 	virtual exprPtr less(const exprPtr&, const exprPtr&) const = 0;
+	virtual exprPtr greater(const exprPtr&, const exprPtr&) const = 0;
 	virtual boost::intrusive_ptr<const expressionSet<BTHREADED> > createExpressionSet(const std::vector<exprPtr>&) const = 0;
 	typedef std::map<std::string, exprPtr> name2int;
 	virtual exprPtr parse(const char *const, const name2int&) const = 0;

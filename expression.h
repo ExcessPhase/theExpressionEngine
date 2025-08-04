@@ -25,6 +25,8 @@ namespace theExpressionEngine
 template<bool BTHREADED>
 struct realConstant;
 template<bool BTHREADED>
+struct intConstant;
+template<bool BTHREADED>
 struct factory;
 //struct type;
 //struct environment;
@@ -37,8 +39,10 @@ struct expression;
 /// immutable
 /// no two with the same content are guaranteed to exist
 template<bool BTHREADED>
-struct expression:dynamic_cast_interface<realConstant<BTHREADED> >, unique<expression<BTHREADED>, BTHREADED>//, hasId<expression>
+struct expression:dynamic_cast_interface<realConstant<BTHREADED> >, dynamic_cast_interface<intConstant<BTHREADED> >, unique<expression<BTHREADED>, BTHREADED>//, hasId<expression>
 {	using typename unique<expression<BTHREADED>, BTHREADED>::MUTEX;
+	using dynamic_cast_interface<realConstant<BTHREADED> >::getPtr;
+	using dynamic_cast_interface<intConstant<BTHREADED> >::getPtr;
 	//using unique<expression<BTHREADED>, BTHREADED>::getMutex;
 	typedef boost::intrusive_ptr<const expression<BTHREADED> > ptr;
 	typedef factory<BTHREADED> FACTORY;
@@ -73,7 +77,7 @@ struct expression:dynamic_cast_interface<realConstant<BTHREADED> >, unique<expre
 		/// the type of the LHS and RHS is guaranteed to be identical
 	virtual bool isSmaller(const expression<BTHREADED> &) const;
 	virtual int evaluateInt(const double *const, const int*const, const double*const, const int*const) const;
-	virtual double evaluate(const double *const, const int*const, const double*const, const int*const) const = 0;
+	virtual double evaluate(const double *const, const int*const, const double*const, const int*const) const;
 	double evaluateLLVM(const double *const, const int*const, const double *const, const int*const) const;
 	int evaluateIntLLVM(const double *const, const int*const, const double *const, const int*const) const;
 	llvm::Value *generateCodeW(

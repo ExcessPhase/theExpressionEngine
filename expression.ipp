@@ -164,6 +164,10 @@ void expression<BTHREADED>::initializeLLVM(void) const
 	}
 }
 template<bool BTHREADED>
+double expression<BTHREADED>::evaluate(const double *const, const int*const, const double*const, const int*const) const
+{	throw std::logic_error("not an floating point expression!");
+}
+template<bool BTHREADED>
 int expression<BTHREADED>::evaluateInt(const double *const, const int*const, const double*const, const int*const) const
 {	throw std::logic_error("not an integer expression!");
 }
