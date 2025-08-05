@@ -141,16 +141,36 @@ BOOST_PARSER_DEFINE_RULES(expr);
 
 auto const relational_def = less_greater;
 BOOST_PARSER_DEFINE_RULES(relational);
-auto const less_greater_def = (add_or_sub >> -(bp::char_("<>") >> add_or_sub))
+bp::rule<class relational_ops, std::string> const relational_ops = "relational_ops";
+auto const relational_ops_def = bp::lexeme[
+	bp::string("<=")
+	| bp::string(">=")
+	| bp::string("<")
+	| bp::string(">")
+];
+BOOST_PARSER_DEFINE_RULES(relational_ops);
+#if 0
+bp::rule<class op_token, std::string> const op_token = "op_token";
+
+auto const op_token_def =
+    bp::lexeme[
+        bp::string("<=") |
+        bp::string(">=") |
+        bp::string("<")  |
+        bp::string(">")
+    ];
+BOOST_PARSER_DEFINE_RULES(op_token);
+#endif
+auto const less_greater_def = (add_or_sub >> -(relational_ops >> add_or_sub))
 	[(	[](auto& ctx)
 		{	auto const& attr = bp::_attr(ctx);
 			expression<__BTHREADED__>::ptr result = std::get<0>(attr);
 			auto const& maybe_rhs = std::get<1>(attr);
 			const std::tuple<const factory<__BTHREADED__>::name2int&, const factory<__BTHREADED__>&> &r = bp::_globals(ctx);
 			if (maybe_rhs)
-			{	auto const op = std::get<0>(*maybe_rhs); // string_view
+			{	auto const &op = std::get<0>(*maybe_rhs); // string_view
 				expression<__BTHREADED__>::ptr rhs = std::get<1>(*maybe_rhs);
-				if (op == '<')
+				if (op == "<")
 					result = std::get<1>(r).less(result, rhs);
 				else
 					result = std::get<1>(r).greater(result, rhs);
