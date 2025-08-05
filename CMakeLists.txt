@@ -14,7 +14,7 @@ endif()
 
 
 # Set C++ standard
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 
 # Find Boost (headers only or specific components)
 find_package(Boost REQUIRED)
