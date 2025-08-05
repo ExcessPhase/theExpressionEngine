@@ -149,18 +149,6 @@ auto const relational_ops_def = bp::lexeme[
 	| bp::string(">")
 ];
 BOOST_PARSER_DEFINE_RULES(relational_ops);
-#if 0
-bp::rule<class op_token, std::string> const op_token = "op_token";
-
-auto const op_token_def =
-    bp::lexeme[
-        bp::string("<=") |
-        bp::string(">=") |
-        bp::string("<")  |
-        bp::string(">")
-    ];
-BOOST_PARSER_DEFINE_RULES(op_token);
-#endif
 auto const less_greater_def = (add_or_sub >> -(relational_ops >> add_or_sub))
 	[(	[](auto& ctx)
 		{	auto const& attr = bp::_attr(ctx);
