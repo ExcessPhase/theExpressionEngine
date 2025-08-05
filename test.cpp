@@ -184,4 +184,16 @@ BOOST_AUTO_TEST_CASE(zero_008)
 	BOOST_CHECK(pFactory->less(p0, p1) == pFactory->intConstant(1));
 	BOOST_CHECK(pFactory->less(p1, p0) == pFactory->intConstant(0));
 	BOOST_CHECK(pFactory->greater(p0, p1) == pFactory->intConstant(0));
+	const auto pX = pFactory->parameter(0);
+	const auto pY = pFactory->parameter(1);
+	const double aXY[2] = {1.0, 1.1};
+	BOOST_CHECK(pFactory->greater(pX, pY)->evaluateInt(aXY, nullptr, nullptr, nullptr) == 0);
+	BOOST_CHECK(pFactory->less(pX, pY)->evaluateInt(aXY, nullptr, nullptr, nullptr) == 1);
+	BOOST_CHECK(pFactory->greater(pX, pY)->evaluateIntLLVM(aXY, nullptr, nullptr, nullptr) == 0);
+	BOOST_CHECK(pFactory->less(pX, pY)->evaluateIntLLVM(aXY, nullptr, nullptr, nullptr) == 1);
+	const double aXY1[2] = {1.2, 1.1};
+	BOOST_CHECK(pFactory->greater(pX, pY)->evaluateInt(aXY1, nullptr, nullptr, nullptr) == 1);
+	BOOST_CHECK(pFactory->less(pX, pY)->evaluateInt(aXY1, nullptr, nullptr, nullptr) == 0);
+	BOOST_CHECK(pFactory->greater(pX, pY)->evaluateIntLLVM(aXY1, nullptr, nullptr, nullptr) == 1);
+	BOOST_CHECK(pFactory->less(pX, pY)->evaluateIntLLVM(aXY1, nullptr, nullptr, nullptr) == 0);
 }

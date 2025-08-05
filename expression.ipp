@@ -150,6 +150,76 @@ struct llvmData
 	}
 };
 template<bool BTHREADED>
+struct llvmDataInt
+{
+	LLVMContext Context;
+	std::unique_ptr<Module> M;// = std::make_unique<Module>("top", Context);
+	std::unique_ptr<ExecutionEngine> EE;// = std::unique_ptr<ExecutionEngine>(EngineBuilder(std::move(M)).setErrorStr(&ErrStr).setEngineKind(EngineKind::JIT).create());
+	using JITFunctionType = int(*)(const double*, const int*, const double*, const int*);
+	JITFunctionType jitFunction;// = reinterpret_cast<JITFunctionType>(funcAddress);
+	explicit llvmDataInt(const expression<BTHREADED> *const _p)
+		:Context(),
+		M(std::make_unique<Module>("top", Context))
+		//EE(std::unique_ptr<ExecutionEngine>(EngineBuilder(std::move(M)).setErrorStr(&ErrStr).setEngineKind(EngineKind::JIT).create()))
+	{
+		IRBuilder<> Builder(Context);
+		FunctionType* FT = FunctionType::get(
+			Type::getInt32Ty(Context),
+			{	PointerType::get(Type::getDoubleTy(Context), 0),
+				PointerType::get(Type::getInt32Ty(Context), 0),
+				PointerType::get(Type::getDoubleTy(Context), 0),
+				PointerType::get(Type::getInt32Ty(Context), 0)
+			},
+			false
+		);
+		Function* GetValueFunc = Function::Create(FT, Function::ExternalLinkage, "getValue", M.get());
+		BasicBlock* BB = BasicBlock::Create(Context, "EntryBlock", GetValueFunc);
+		Builder.SetInsertPoint(BB);
+
+		Function::arg_iterator args = GetValueFunc->arg_begin();
+		Value* const doublePtrArg0 = &(*args++);
+		Value* const intPtrArg1 = &(*args++);
+		Value* const doublePtrArg2 = &(*args++);
+		Value* const intPtrArg3 = &(*args);
+		// Create a constant double value
+		Value* const ConstantVal = _p->generateCodeW(_p, Context, Builder, M.get(), doublePtrArg0, intPtrArg1, doublePtrArg2, intPtrArg3);//ConstantFP::get(Context, APFloat(3.14));
+
+		// Return the constant value
+		Builder.CreateRet(ConstantVal);
+
+		if (verifyModule(*M, &errs()))
+		{	throw std::runtime_error("module verification failed");
+			//std::cerr << "Error: module verification failed" << std::endl;
+			//M->print(errs(), nullptr);
+			//return 1;
+		}
+
+		// Create the execution engine
+		std::string ErrStr;
+		EE = std::unique_ptr<ExecutionEngine>(EngineBuilder(std::move(M)).setErrorStr(&ErrStr).setEngineKind(EngineKind::JIT).create());
+		if (!EE)
+		{	//errs() << "Failed to create ExecutionEngine: " << ErrStr << "\n";
+			//return 1;
+			throw std::runtime_error("Failed to create ExecutionEngine");
+		}
+
+		// Add the module and compile the function
+		EE->finalizeObject();
+
+		auto funcAddress = EE->getFunctionAddress("getValue");
+		if (!funcAddress) {
+		    //std::cerr << "Error: Failed to get function address for 'getValue'" << std::endl;
+		    //return 1;
+			throw std::runtime_error("Failed to get function address for 'getValue'");
+		}
+
+
+		// Cast the function address to a function pointer with the correct signature
+		//using JITFunctionType = double(*)(const double*, const double*);
+		jitFunction = reinterpret_cast<JITFunctionType>(funcAddress);
+	}
+};
+template<bool BTHREADED>
 void expression<BTHREADED>::initializeLLVM(void) const
 {	std::unique_lock<MUTEX> sLock(m_sMutex);
 	const auto sInsert = m_sAttachedData.emplace(this, ARRAY());
@@ -160,7 +230,10 @@ void expression<BTHREADED>::initializeLLVM(void) const
 				m_sAttachedData.erase(this);
 			}
 		);
-		sInsert.first->second[eLLVMdata] = std::make_shared<const llvmData<BTHREADED> >(this);
+		if (m_eType == eFloatingPoint)
+			sInsert.first->second[eLLVMdata] = std::make_shared<const llvmData<BTHREADED> >(this);
+		else
+			sInsert.first->second[eLLVMdata] = std::make_shared<const llvmDataInt<BTHREADED> >(this);
 	}
 }
 template<bool BTHREADED>
@@ -176,6 +249,14 @@ double expression<BTHREADED>::evaluateLLVM(const double *const _p, const int*con
 {	std::unique_lock<MUTEX> sLock(m_sMutex);
 	initializeLLVM();
 	auto &p = std::any_cast<const std::shared_ptr<const llvmData<BTHREADED> >&>(m_sAttachedData.at(this).at(eLLVMdata));
+	sLock.unlock();
+	return p->jitFunction(_p, _pI, _pT, _pTI);
+}
+template<bool BTHREADED>
+int expression<BTHREADED>::evaluateIntLLVM(const double *const _p, const int*const _pI, const double *const _pT, const int*const _pTI) const
+{	std::unique_lock<MUTEX> sLock(m_sMutex);
+	initializeLLVM();
+	auto &p = std::any_cast<const std::shared_ptr<const llvmDataInt<BTHREADED> >&>(m_sAttachedData.at(this).at(eLLVMdata));
 	sLock.unlock();
 	return p->jitFunction(_p, _pI, _pT, _pTI);
 }

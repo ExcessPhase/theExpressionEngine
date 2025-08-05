@@ -724,39 +724,51 @@ struct less:expression<BTHREADED>
 		{	case expression<BTHREADED>::eFloatingPoint:
 				switch (this->m_sChildren[0]->m_eType)
 				{	case expression<BTHREADED>::eFloatingPoint:
-						return builder.CreateFCmpOLT(
-							this->m_sChildren[0]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
-							this->m_sChildren[1]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
-							"isLess"
+						return builder.CreateZExt(
+							builder.CreateFCmpOLT(
+								this->m_sChildren[0]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+								this->m_sChildren[1]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+								"isLess"
+							),
+							builder.getInt32Ty()
 						);
 					case expression<BTHREADED>::eInteger:
-						return builder.CreateFCmpOLT(
-							this->m_sChildren[0]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
-							builder.CreateSIToFP(
-								this->m_sChildren[1]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
-								builder.getDoubleTy(),
-								"intToDouble"
+						return builder.CreateZExt(
+							builder.CreateFCmpOLT(
+								this->m_sChildren[0]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+								builder.CreateSIToFP(
+									this->m_sChildren[1]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+									builder.getDoubleTy(),
+									"intToDouble"
+								),
+								"isLess"
 							),
-							"isLess"
+							builder.getInt32Ty()
 						);
 				}
 			case expression<BTHREADED>::eInteger:
 				switch (this->m_sChildren[0]->m_eType)
 				{	case expression<BTHREADED>::eFloatingPoint:
-						return builder.CreateFCmpOLT(
-							builder.CreateSIToFP(
-								this->m_sChildren[0]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
-								builder.getDoubleTy(),
-								"intToDouble"
+						return builder.CreateZExt(
+							builder.CreateFCmpOLT(
+								builder.CreateSIToFP(
+									this->m_sChildren[0]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+									builder.getDoubleTy(),
+									"intToDouble"
+								),
+								this->m_sChildren[1]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+								"isLess"
 							),
-							this->m_sChildren[1]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
-							"isLess"
+							builder.getInt32Ty()
 						);
 					case expression<BTHREADED>::eInteger:
-						return builder.CreateICmpSLT(
-							this->m_sChildren[0]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
-							this->m_sChildren[1]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
-							"isLess"
+						return builder.CreateZExt(
+							builder.CreateICmpSLT(
+								this->m_sChildren[0]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+								this->m_sChildren[1]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+								"isLess"
+							),
+							builder.getInt32Ty()
 						);
 				}
 		}
@@ -823,39 +835,51 @@ struct greater:expression<BTHREADED>
 		{	case expression<BTHREADED>::eFloatingPoint:
 				switch (this->m_sChildren[0]->m_eType)
 				{	case expression<BTHREADED>::eFloatingPoint:
-						return builder.CreateFCmpOGT(
-							this->m_sChildren[0]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
-							this->m_sChildren[1]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
-							"isLess"
+						return builder.CreateZExt(
+							builder.CreateFCmpOGT(
+								this->m_sChildren[0]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+								this->m_sChildren[1]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+								"isGreater"
+							),
+							builder.getInt32Ty()
 						);
 					case expression<BTHREADED>::eInteger:
-						return builder.CreateFCmpOGT(
-							this->m_sChildren[0]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
-							builder.CreateSIToFP(
-								this->m_sChildren[1]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
-								builder.getDoubleTy(),
-								"intToDouble"
+						return builder.CreateZExt(
+							builder.CreateFCmpOGT(
+								this->m_sChildren[0]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+								builder.CreateSIToFP(
+									this->m_sChildren[1]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+									builder.getDoubleTy(),
+									"intToDouble"
+								),
+								"isGreater"
 							),
-							"isLess"
+							builder.getInt32Ty()
 						);
 				}
 			case expression<BTHREADED>::eInteger:
 				switch (this->m_sChildren[0]->m_eType)
 				{	case expression<BTHREADED>::eFloatingPoint:
-						return builder.CreateFCmpOGT(
-							builder.CreateSIToFP(
-								this->m_sChildren[0]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
-								builder.getDoubleTy(),
-								"intToDouble"
+						return builder.CreateZExt(
+							builder.CreateFCmpOGT(
+								builder.CreateSIToFP(
+									this->m_sChildren[0]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+									builder.getDoubleTy(),
+									"intToDouble"
+								),
+								this->m_sChildren[1]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+								"isGreater"
 							),
-							this->m_sChildren[1]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
-							"isLess"
+							builder.getInt32Ty()
 						);
 					case expression<BTHREADED>::eInteger:
-						return builder.CreateICmpSGT(
-							this->m_sChildren[0]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
-							this->m_sChildren[1]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
-							"isLess"
+						return builder.CreateZExt(
+							builder.CreateICmpSGT(
+								this->m_sChildren[0]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+								this->m_sChildren[1]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+								"isGreater"
+							),
+							builder.getInt32Ty()
 						);
 				}
 		}
