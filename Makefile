@@ -4,8 +4,8 @@ endif
 
 all: theExpressionEngine.exe test.exe
 CXXFLAGS=-march=native -ffast-math -I $(BOOST_ROOT)/include $(shell llvm-config-20 --cxxflags) -fexceptions -MMD -MP -std=c++20 -Wno-dangling-else -Wno-nan-infinity-disabled
-CXXFLAGS+=-O3 -DNDEBUG
-#CXXFLAGS+=-g -DDEBUG -O0 -fno-inline -fno-omit-frame-pointer
+#CXXFLAGS+=-O3 -DNDEBUG
+CXXFLAGS+=-g -DDEBUG -O0 -fno-inline -fno-omit-frame-pointer
 #CXXFLAGS+=-fsanitize=thread
 CXX=clang++-20
 #CXX=g++-13

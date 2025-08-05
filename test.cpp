@@ -196,4 +196,9 @@ BOOST_AUTO_TEST_CASE(zero_008)
 	BOOST_CHECK(pFactory->less(pX, pY)->evaluateInt(aXY1, nullptr, nullptr, nullptr) == 0);
 	BOOST_CHECK(pFactory->greater(pX, pY)->evaluateIntLLVM(aXY1, nullptr, nullptr, nullptr) == 1);
 	BOOST_CHECK(pFactory->less(pX, pY)->evaluateIntLLVM(aXY1, nullptr, nullptr, nullptr) == 0);
+	const theExpressionEngine::factory<true>::name2int s = {{"x", pFactory->parameter(0)}, {"y", pFactory->parameter(1)}};
+	BOOST_CHECK(pFactory->parse("x<y", s)->evaluateInt(aXY, nullptr, nullptr, nullptr) == 1);
+	BOOST_CHECK(pFactory->parse("x<y", s)->evaluateIntLLVM(aXY, nullptr, nullptr, nullptr) == 1);
+	BOOST_CHECK(pFactory->parse("x>y", s)->evaluateInt(aXY, nullptr, nullptr, nullptr) == 0);
+	BOOST_CHECK(pFactory->parse("x>y", s)->evaluateIntLLVM(aXY, nullptr, nullptr, nullptr) == 0);
 }

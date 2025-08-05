@@ -2,7 +2,7 @@
 #include <string>
 #include <memory>
 #include <boost/parser/parser.hpp>
-#include <boost/fusion/include/at_c.hpp>  // for tuple element access
+#include <boost/fusion/include/at_c.hpp> // for tuple element access
 #include "expression.h"
 #include "factory.h"
 namespace theExpressionEngine
@@ -11,15 +11,13 @@ namespace theExpressionEngine
 namespace __PARSER__
 {
 namespace bp = boost::parser;
-
 struct lookup_table_tag;
 bp::rule<class NUMBER, expression<__BTHREADED__>::ptr> const NUMBER("number");
 bp::rule<class factor, expression<__BTHREADED__>::ptr> const factor("factor");
 bp::rule<class term, expression<__BTHREADED__>::ptr> const term("term");
 bp::rule<class expr, expression<__BTHREADED__>::ptr> const expr("expr");
 bp::rule<class add_or_sub, expression<__BTHREADED__>::ptr> const add_or_sub("add_or_sub");
-bp::rule<class less, expression<__BTHREADED__>::ptr> const less("less");
-bp::rule<class greater, expression<__BTHREADED__>::ptr> const greater("greater");
+bp::rule<class less_greater, expression<__BTHREADED__>::ptr> const less_greater("less_greater");
 bp::rule<class relational, expression<__BTHREADED__>::ptr> const relational("relational");
 bp::rule<class negation_, expression<__BTHREADED__>::ptr> const negation_("negation_");
 bp::rule<class plus, expression<__BTHREADED__>::ptr> const plus("plus");
@@ -141,36 +139,26 @@ BOOST_PARSER_DEFINE_RULES(expr);
 //auto const plus_minus_pair_def = bp::char_("+-");
 //BOOST_PARSER_DEFINE_RULES(plus_minus_pair);
 
-auto const relational_def = less | greater;
+auto const relational_def = less_greater;
 BOOST_PARSER_DEFINE_RULES(relational);
-auto const less_def = (add_or_sub >> -(bp::char_("<") >> add_or_sub))
+auto const less_greater_def = (add_or_sub >> -(bp::char_("<>") >> add_or_sub))
 	[(	[](auto& ctx)
 		{	auto const& attr = bp::_attr(ctx);
 			expression<__BTHREADED__>::ptr result = std::get<0>(attr);
 			auto const& maybe_rhs = std::get<1>(attr);
 			const std::tuple<const factory<__BTHREADED__>::name2int&, const factory<__BTHREADED__>&> &r = bp::_globals(ctx);
 			if (maybe_rhs)
-			{	expression<__BTHREADED__>::ptr rhs = std::get<1>(*maybe_rhs);
-				result = std::get<1>(r).less(result, rhs);
+			{	auto const op = std::get<0>(*maybe_rhs); // string_view
+				expression<__BTHREADED__>::ptr rhs = std::get<1>(*maybe_rhs);
+				if (op == '<')
+					result = std::get<1>(r).less(result, rhs);
+				else
+					result = std::get<1>(r).greater(result, rhs);
 			}
 			bp::_val(ctx) = result;
 		}
 	)];
-BOOST_PARSER_DEFINE_RULES(less);
-auto const greater_def = (add_or_sub >> -(bp::char_(">") >> add_or_sub))
-	[(	[](auto& ctx)
-		{	auto const& attr = bp::_attr(ctx);
-			expression<__BTHREADED__>::ptr result = std::get<0>(attr);
-			auto const& maybe_rhs = std::get<1>(attr);
-			const std::tuple<const factory<__BTHREADED__>::name2int&, const factory<__BTHREADED__>&> &r = bp::_globals(ctx);
-			if (maybe_rhs)
-			{	expression<__BTHREADED__>::ptr rhs = std::get<1>(*maybe_rhs);
-				result = std::get<1>(r).greater(result, rhs);
-			}
-			bp::_val(ctx) = result;
-		}
-	)];
-BOOST_PARSER_DEFINE_RULES(greater);
+BOOST_PARSER_DEFINE_RULES(less_greater);
 auto const add_or_sub_def = (term >> *(bp::char_("+-") >> term))
 	[(	[](auto& ctx)
 		{	auto const& attr = bp::_attr(ctx);
