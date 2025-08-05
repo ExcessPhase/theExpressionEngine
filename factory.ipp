@@ -671,6 +671,129 @@ struct parameter:expression<BTHREADED>
 	{	return 1;
 	}
 };
+template<
+	bool BTHREADED,
+	const char ACOP[],
+	const char ACNAME[],
+	llvm::Value* (*CreateFCmpOLT)(llvm::IRBuilder<>&, llvm::Value*, llvm::Value*, const llvm::Twine&),
+	llvm::Value* (llvm::IRBuilderBase::*CreateICmpSLT)(llvm::Value*, llvm::Value*, const llvm::Twine&),
+	typename factory<BTHREADED>::exprPtr (factory<BTHREADED>::*less)(const typename factory<BTHREADED>::exprPtr&_p0, const typename factory<BTHREADED>::exprPtr&_p1) const,
+	typename FUNCTOR
+>
+struct relational:expression<BTHREADED>
+{
+	typedef typename expression<BTHREADED>::ptr ptr;
+	relational(const ptr&_p0, const ptr&_p1)
+		:expression<BTHREADED>({_p0, _p1}, expression<BTHREADED>::eInteger)
+	{
+	}
+	virtual std::ostream &print(std::ostream&_r) const override
+	{	_r << "(";
+		this->m_sChildren[0]->print(_r);
+		_r << ACOP;
+		this->m_sChildren[1]->print(_r);
+		return _r << ")";
+	}
+	virtual double evaluate(const double *const _p, const int *const _pI, const double*const _pT, const int*const _pIT) const override
+	{	throw std::logic_error("not a floating point operation!");
+		return 0.0;
+	}
+	virtual int evaluateInt(const double *const _p, const int *const _pI, const double*const _pT, const int*const _pIT) const override
+	{	switch (this->m_sChildren[0]->m_eType)
+		{	case expression<BTHREADED>::eFloatingPoint:
+				switch (this->m_sChildren[0]->m_eType)
+				{	case expression<BTHREADED>::eFloatingPoint:
+						return FUNCTOR()(this->m_sChildren[0]->evaluate(_p, _pI, _pT, _pIT), this->m_sChildren[1]->evaluate(_p, _pI, _pT, _pIT));
+					case expression<BTHREADED>::eInteger:
+						return FUNCTOR()(this->m_sChildren[0]->evaluate(_p, _pI, _pT, _pIT), this->m_sChildren[1]->evaluateInt(_p, _pI, _pT, _pIT));
+				}
+			case expression<BTHREADED>::eInteger:
+				switch (this->m_sChildren[0]->m_eType)
+				{	case expression<BTHREADED>::eFloatingPoint:
+						return FUNCTOR()(this->m_sChildren[0]->evaluateInt(_p, _pI, _pT, _pIT), this->m_sChildren[1]->evaluate(_p, _pI, _pT, _pIT));
+					case expression<BTHREADED>::eInteger:
+						return FUNCTOR()(this->m_sChildren[0]->evaluateInt(_p, _pI, _pT, _pIT), this->m_sChildren[1]->evaluateInt(_p, _pI, _pT, _pIT));
+				}
+		}
+		std::abort();
+		return 0;
+	}
+	virtual llvm::Value* generateCode(
+		const expression<BTHREADED>*const _pRoot,
+		llvm::LLVMContext& context,
+		llvm::IRBuilder<>& builder,
+		llvm::Module *const M,
+		llvm::Value*const _pP,
+		llvm::Value*const _pIP,
+		llvm::Value*const _pT,
+		llvm::Value*const _pIT
+	) const override
+	{	switch (this->m_sChildren[0]->m_eType)
+		{	case expression<BTHREADED>::eFloatingPoint:
+				switch (this->m_sChildren[0]->m_eType)
+				{	case expression<BTHREADED>::eFloatingPoint:
+						return builder.CreateZExt(
+							(*CreateFCmpOLT)(
+								builder,
+								this->m_sChildren[0]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+								this->m_sChildren[1]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+								ACNAME
+							),
+							builder.getInt32Ty()
+						);
+					case expression<BTHREADED>::eInteger:
+						return builder.CreateZExt(
+							(*CreateFCmpOLT)(
+								builder,
+								this->m_sChildren[0]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+								builder.CreateSIToFP(
+									this->m_sChildren[1]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+									builder.getDoubleTy(),
+									"intToDouble"
+								),
+								ACNAME
+							),
+							builder.getInt32Ty()
+						);
+				}
+			case expression<BTHREADED>::eInteger:
+				switch (this->m_sChildren[0]->m_eType)
+				{	case expression<BTHREADED>::eFloatingPoint:
+						return builder.CreateZExt(
+							(*CreateFCmpOLT)(
+								builder,
+								builder.CreateSIToFP(
+									this->m_sChildren[0]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+									builder.getDoubleTy(),
+									"intToDouble"
+								),
+								this->m_sChildren[1]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+								ACNAME
+							),
+							builder.getInt32Ty()
+						);
+					case expression<BTHREADED>::eInteger:
+						return builder.CreateZExt(
+							(builder.*CreateICmpSLT)(
+								this->m_sChildren[0]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+								this->m_sChildren[1]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+								ACNAME
+							),
+							builder.getInt32Ty()
+						);
+				}
+		}
+		std::abort();
+		return nullptr;
+	}
+	virtual typename expression<BTHREADED>::ptr recreateFromChildren(typename expression<BTHREADED>::children _s, const factory<BTHREADED>&_rF) const override
+	{	return (_rF.*less)(_s[0], _s[1]);
+	}
+	virtual std::size_t getWeight(void) const override
+	{	return 1;
+	}
+};
+#if 0
 template<bool BTHREADED>
 struct less:expression<BTHREADED>
 {
@@ -893,6 +1016,7 @@ struct greater:expression<BTHREADED>
 	{	return 1;
 	}
 };
+#endif
 template<bool BTHREADED>
 struct expressionSetImpl:expressionSet<BTHREADED>
 {
@@ -1159,10 +1283,38 @@ struct factoryImpl:factory<BTHREADED>
 		return theExpressionEngine::expression<BTHREADED>::template create<theExpressionEngine::multiplication<BTHREADED> >(*this, _p0, _p1);
 	}
 	virtual exprPtr less(const exprPtr&_p0, const exprPtr&_p1) const override
-	{	return theExpressionEngine::expression<BTHREADED>::template create<theExpressionEngine::less<BTHREADED> >(*this, _p0, _p1);
+	{	static constexpr char acOP[] = "<";
+		static constexpr char acName[] = "isLess";
+		return theExpressionEngine::expression<BTHREADED>::template create<
+			theExpressionEngine::relational<
+				BTHREADED, 
+				acOP, 
+				acName, 
+				[](llvm::IRBuilder<>&_r0, llvm::Value*_p1, llvm::Value*_p2, const llvm::Twine&_r3) -> llvm::Value* 
+				{	return _r0.CreateFCmpOLT(_p1, _p2, _r3);
+				},
+				&llvm::IRBuilder<>::CreateICmpSLT,
+				&factory<BTHREADED>::less,
+				std::less<void>
+			>
+		>(*this, _p0, _p1);
 	}
 	virtual exprPtr greater(const exprPtr&_p0, const exprPtr&_p1) const override
-	{	return theExpressionEngine::expression<BTHREADED>::template create<theExpressionEngine::greater<BTHREADED> >(*this, _p0, _p1);
+	{	static constexpr char acOP[] = ">";
+		static constexpr char acName[] = "isGreater";
+		return theExpressionEngine::expression<BTHREADED>::template create<
+			theExpressionEngine::relational<
+				BTHREADED, 
+				acOP, 
+				acName, 
+				[](llvm::IRBuilder<>&_r0, llvm::Value*_p1, llvm::Value*_p2, const llvm::Twine&_r3) -> llvm::Value* 
+				{	return _r0.CreateFCmpOGT(_p1, _p2, _r3);
+				},
+				&llvm::IRBuilder<>::CreateICmpSGT,
+				&factory<BTHREADED>::greater,
+				std::greater<void>
+			>
+		>(*this, _p0, _p1);
 	}
 	virtual exprPtr division(const exprPtr&_p0, const exprPtr&_p1) const override
 	{	if (const auto p = _p0->getPtr(dummy<theExpressionEngine::realConstant<BTHREADED> >()); p && p->m_d == 0)
