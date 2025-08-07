@@ -36,6 +36,8 @@ struct factory:std::enable_shared_from_this<const factory<BTHREADED> >
 	virtual exprPtr multiplication(const exprPtr&, const exprPtr&) const = 0;
 	virtual exprPtr division(const exprPtr&, const exprPtr&) const = 0;
 	virtual exprPtr negation(const exprPtr&) const = 0;
+	virtual exprPtr less_equal(const exprPtr&, const exprPtr&) const = 0;
+	virtual exprPtr greater_equal(const exprPtr&, const exprPtr&) const = 0;
 	virtual exprPtr less(const exprPtr&, const exprPtr&) const = 0;
 	virtual exprPtr greater(const exprPtr&, const exprPtr&) const = 0;
 	virtual boost::intrusive_ptr<const expressionSet<BTHREADED> > createExpressionSet(const std::vector<exprPtr>&) const = 0;

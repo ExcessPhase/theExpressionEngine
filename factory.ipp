@@ -1063,10 +1063,10 @@ struct factoryImpl:factory<BTHREADED>
 		static constexpr char acName[] = "isLess";
 		return theExpressionEngine::expression<BTHREADED>::template create<
 			theExpressionEngine::relational<
-				BTHREADED, 
-				acOP, 
-				acName, 
-				[](llvm::IRBuilder<>&_r0, llvm::Value*_p1, llvm::Value*_p2, const llvm::Twine&_r3) -> llvm::Value* 
+				BTHREADED,
+				acOP,
+				acName,
+				[](llvm::IRBuilder<>&_r0, llvm::Value*_p1, llvm::Value*_p2, const llvm::Twine&_r3) -> llvm::Value*
 				{	return _r0.CreateFCmpOLT(_p1, _p2, _r3);
 				},
 				&llvm::IRBuilder<>::CreateICmpSLT,
@@ -1075,15 +1075,49 @@ struct factoryImpl:factory<BTHREADED>
 			>
 		>(*this, _p0, _p1);
 	}
+	virtual exprPtr less_equal(const exprPtr&_p0, const exprPtr&_p1) const override
+	{	static constexpr char acOP[] = "<=";
+		static constexpr char acName[] = "isLessEqual";
+		return theExpressionEngine::expression<BTHREADED>::template create<
+			theExpressionEngine::relational<
+				BTHREADED,
+				acOP,
+				acName,
+				[](llvm::IRBuilder<>&_r0, llvm::Value*_p1, llvm::Value*_p2, const llvm::Twine&_r3) -> llvm::Value*
+				{	return _r0.CreateFCmpOLE(_p1, _p2, _r3);
+				},
+				&llvm::IRBuilder<>::CreateICmpSLE,
+				&factory<BTHREADED>::less_equal,
+				std::less_equal<void>
+			>
+		>(*this, _p0, _p1);
+	}
+	virtual exprPtr greater_equal(const exprPtr&_p0, const exprPtr&_p1) const override
+	{	static constexpr char acOP[] = ">=";
+		static constexpr char acName[] = "isGreaterEqual";
+		return theExpressionEngine::expression<BTHREADED>::template create<
+			theExpressionEngine::relational<
+				BTHREADED,
+				acOP,
+				acName,
+				[](llvm::IRBuilder<>&_r0, llvm::Value*_p1, llvm::Value*_p2, const llvm::Twine&_r3) -> llvm::Value*
+				{	return _r0.CreateFCmpOGE(_p1, _p2, _r3);
+				},
+				&llvm::IRBuilder<>::CreateICmpSGE,
+				&factory<BTHREADED>::greater_equal,
+				std::greater_equal<void>
+			>
+		>(*this, _p0, _p1);
+	}
 	virtual exprPtr greater(const exprPtr&_p0, const exprPtr&_p1) const override
 	{	static constexpr char acOP[] = ">";
 		static constexpr char acName[] = "isGreater";
 		return theExpressionEngine::expression<BTHREADED>::template create<
 			theExpressionEngine::relational<
-				BTHREADED, 
-				acOP, 
-				acName, 
-				[](llvm::IRBuilder<>&_r0, llvm::Value*_p1, llvm::Value*_p2, const llvm::Twine&_r3) -> llvm::Value* 
+				BTHREADED,
+				acOP,
+				acName,
+				[](llvm::IRBuilder<>&_r0, llvm::Value*_p1, llvm::Value*_p2, const llvm::Twine&_r3) -> llvm::Value*
 				{	return _r0.CreateFCmpOGT(_p1, _p2, _r3);
 				},
 				&llvm::IRBuilder<>::CreateICmpSGT,

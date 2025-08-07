@@ -161,7 +161,13 @@ auto const less_greater_def = (add_or_sub >> -(relational_ops >> add_or_sub))
 				if (op == "<")
 					result = std::get<1>(r).less(result, rhs);
 				else
+				if (op == ">")
 					result = std::get<1>(r).greater(result, rhs);
+				else
+				if (op == ">=")
+					result = std::get<1>(r).greater_equal(result, rhs);
+				else
+					result = std::get<1>(r).less_equal(result, rhs);
 			}
 			bp::_val(ctx) = result;
 		}
