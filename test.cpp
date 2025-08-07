@@ -219,3 +219,26 @@ BOOST_AUTO_TEST_CASE(zero_008)
 	BOOST_CHECK(pFactory->parse("x>y", s)->evaluateIntLLVM(aXY, nullptr, nullptr, nullptr) == 0);
 	BOOST_CHECK(pFactory->parse("x>=y", s)->evaluateIntLLVM(aXY, nullptr, nullptr, nullptr) == 0);
 }
+BOOST_AUTO_TEST_CASE(zero_009)
+{	const auto pFactory = theExpressionEngine::factory<true>::getFactory();
+	const auto p1 = pFactory->realConstant(1.0);
+	const auto p0 = pFactory->realConstant(0.0);
+	//using namespace theExpressionEngine;
+	using namespace theExpressionEngine::operators;
+	BOOST_CHECK(pFactory->equal_to(p1, p1) == pFactory->intConstant(1));
+	BOOST_CHECK(pFactory->not_equal_to(p1, p1) == pFactory->intConstant(0));
+	BOOST_CHECK(pFactory->equal_to(p1, p0) == pFactory->intConstant(0));
+	BOOST_CHECK(pFactory->not_equal_to(p1, p0) == pFactory->intConstant(1));
+	const auto pX = pFactory->parameter(0);
+	const auto pY = pFactory->parameter(1);
+	const double aXY[2] = {1.0, 1.1};
+	BOOST_CHECK(pFactory->equal_to(pX, pY)->evaluateInt(aXY, nullptr, nullptr, nullptr) == 0);
+	BOOST_CHECK(pFactory->not_equal_to(pX, pY)->evaluateInt(aXY, nullptr, nullptr, nullptr) == 1);
+	BOOST_CHECK(pFactory->equal_to(pX, pY)->evaluateIntLLVM(aXY, nullptr, nullptr, nullptr) == 0);
+	BOOST_CHECK(pFactory->not_equal_to(pX, pY)->evaluateIntLLVM(aXY, nullptr, nullptr, nullptr) == 1);
+	const theExpressionEngine::factory<true>::name2int s = {{"x", pFactory->parameter(0)}, {"y", pFactory->parameter(1)}};
+	BOOST_CHECK(pFactory->parse("x==y", s)->evaluateInt(aXY, nullptr, nullptr, nullptr) == 0);
+	BOOST_CHECK(pFactory->parse("x!=y", s)->evaluateInt(aXY, nullptr, nullptr, nullptr) == 1);
+	BOOST_CHECK(pFactory->parse("x==y", s)->evaluateIntLLVM(aXY, nullptr, nullptr, nullptr) == 0);
+	BOOST_CHECK(pFactory->parse("x!=y", s)->evaluateIntLLVM(aXY, nullptr, nullptr, nullptr) == 1);
+}

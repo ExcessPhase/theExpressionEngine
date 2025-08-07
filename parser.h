@@ -18,7 +18,7 @@ bp::rule<class term, expression<__BTHREADED__>::ptr> const term("term");
 bp::rule<class expr, expression<__BTHREADED__>::ptr> const expr("expr");
 bp::rule<class add_or_sub, expression<__BTHREADED__>::ptr> const add_or_sub("add_or_sub");
 bp::rule<class less_greater, expression<__BTHREADED__>::ptr> const less_greater("less_greater");
-bp::rule<class relational, expression<__BTHREADED__>::ptr> const relational("relational");
+bp::rule<class equality, expression<__BTHREADED__>::ptr> const equality("equality");
 bp::rule<class negation_, expression<__BTHREADED__>::ptr> const negation_("negation_");
 bp::rule<class plus, expression<__BTHREADED__>::ptr> const plus("plus");
 bp::rule<class x, expression<__BTHREADED__>::ptr> const x("x");
@@ -132,15 +132,37 @@ auto const factor_def =
     | primary_def;
 BOOST_PARSER_DEFINE_RULES(factor);
 
-auto const expr_def = relational;
+auto const expr_def = equality;
 BOOST_PARSER_DEFINE_RULES(expr);
 
 //bp::rule<class plus_minus_pair, char> const plus_minus_pair = "plus_minus_pair";
 //auto const plus_minus_pair_def = bp::char_("+-");
 //BOOST_PARSER_DEFINE_RULES(plus_minus_pair);
 
-auto const relational_def = less_greater;
-BOOST_PARSER_DEFINE_RULES(relational);
+bp::rule<class equality_ops, std::string> const equality_ops = "equality_ops";
+auto const equality_ops_def = bp::lexeme[
+	bp::string("==")
+	| bp::string("!=")
+];
+BOOST_PARSER_DEFINE_RULES(equality_ops);
+auto const equality_def = (less_greater >> -(equality_ops >> less_greater))
+	[(	[](auto& ctx)
+		{	auto const& attr = bp::_attr(ctx);
+			expression<__BTHREADED__>::ptr result = std::get<0>(attr);
+			auto const& maybe_rhs = std::get<1>(attr);
+			const std::tuple<const factory<__BTHREADED__>::name2int&, const factory<__BTHREADED__>&> &r = bp::_globals(ctx);
+			if (maybe_rhs)
+			{	auto const &op = std::get<0>(*maybe_rhs); // string_view
+				expression<__BTHREADED__>::ptr rhs = std::get<1>(*maybe_rhs);
+				if (op == "==")
+					result = std::get<1>(r).equal_to(result, rhs);
+				else
+					result = std::get<1>(r).not_equal_to(result, rhs);
+			}
+			bp::_val(ctx) = result;
+		}
+	)];
+BOOST_PARSER_DEFINE_RULES(equality);
 bp::rule<class relational_ops, std::string> const relational_ops = "relational_ops";
 auto const relational_ops_def = bp::lexeme[
 	bp::string("<=")

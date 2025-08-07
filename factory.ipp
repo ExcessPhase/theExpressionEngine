@@ -1126,6 +1126,40 @@ struct factoryImpl:factory<BTHREADED>
 			>
 		>(*this, _p0, _p1);
 	}
+	virtual exprPtr equal_to(const exprPtr&_p0, const exprPtr&_p1) const override
+	{	static constexpr char acOP[] = "==";
+		static constexpr char acName[] = "isEqual";
+		return theExpressionEngine::expression<BTHREADED>::template create<
+			theExpressionEngine::relational<
+				BTHREADED,
+				acOP,
+				acName,
+				[](llvm::IRBuilder<>&_r0, llvm::Value*_p1, llvm::Value*_p2, const llvm::Twine&_r3) -> llvm::Value*
+				{	return _r0.CreateFCmpOEQ(_p1, _p2, _r3);
+				},
+				&llvm::IRBuilder<>::CreateICmpEQ,
+				&factory<BTHREADED>::equal_to,
+				std::equal_to<void>
+			>
+		>(*this, _p0, _p1);
+	}
+	virtual exprPtr not_equal_to(const exprPtr&_p0, const exprPtr&_p1) const override
+	{	static constexpr char acOP[] = "!=";
+		static constexpr char acName[] = "isNotEqual";
+		return theExpressionEngine::expression<BTHREADED>::template create<
+			theExpressionEngine::relational<
+				BTHREADED,
+				acOP,
+				acName,
+				[](llvm::IRBuilder<>&_r0, llvm::Value*_p1, llvm::Value*_p2, const llvm::Twine&_r3) -> llvm::Value*
+				{	return _r0.CreateFCmpONE(_p1, _p2, _r3);
+				},
+				&llvm::IRBuilder<>::CreateICmpNE,
+				&factory<BTHREADED>::not_equal_to,
+				std::not_equal_to<void>
+			>
+		>(*this, _p0, _p1);
+	}
 	virtual exprPtr division(const exprPtr&_p0, const exprPtr&_p1) const override
 	{	if (const auto p = _p0->getPtr(dummy<theExpressionEngine::realConstant<BTHREADED> >()); p && p->m_d == 0)
 			return _p0;
