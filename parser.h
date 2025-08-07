@@ -22,6 +22,7 @@ bp::rule<class equality, expression<__BTHREADED__>::ptr> const equality("equalit
 bp::rule<class negation_, expression<__BTHREADED__>::ptr> const negation_("negation_");
 bp::rule<class plus, expression<__BTHREADED__>::ptr> const plus("plus");
 bp::rule<class x, expression<__BTHREADED__>::ptr> const x("x");
+bp::rule<class ternary, expression<__BTHREADED__>::ptr> const ternary("ternary");
 #define __unary__(a) bp::rule<class a, expression<__BTHREADED__>::ptr> const a(#a);\
 auto const a##_def = (bp::lit(#a) >> "(" >> expr >> ")")\
 	[(	[](auto& ctx)\
@@ -132,7 +133,22 @@ auto const factor_def =
     | primary_def;
 BOOST_PARSER_DEFINE_RULES(factor);
 
-auto const expr_def = equality;
+auto const ternary_def = (equality >> -('?' >> expr >> ':' >> expr))
+[(	[](auto& ctx)
+	{	auto const& attr = bp::_attr(ctx);
+		const std::tuple<const factory<__BTHREADED__>::name2int&, const factory<__BTHREADED__>&> &r = bp::_globals(ctx);
+		expression<__BTHREADED__>::ptr result = std::get<0>(attr);
+		auto const& maybe_branch = std::get<1>(attr);
+		if (maybe_branch)
+		{	expression<__BTHREADED__>::ptr true_branch = std::get<0>(*maybe_branch);
+			expression<__BTHREADED__>::ptr false_branch = std::get<1>(*maybe_branch);
+			result = std::get<1>(r).conditional(result, true_branch, false_branch);
+		}
+		bp::_val(ctx) = result;
+	}
+)];
+BOOST_PARSER_DEFINE_RULES(ternary);
+auto const expr_def = ternary;
 BOOST_PARSER_DEFINE_RULES(expr);
 
 //bp::rule<class plus_minus_pair, char> const plus_minus_pair = "plus_minus_pair";

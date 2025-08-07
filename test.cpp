@@ -242,3 +242,14 @@ BOOST_AUTO_TEST_CASE(zero_009)
 	BOOST_CHECK(pFactory->parse("x==y", s)->evaluateIntLLVM(aXY, nullptr, nullptr, nullptr) == 0);
 	BOOST_CHECK(pFactory->parse("x!=y", s)->evaluateIntLLVM(aXY, nullptr, nullptr, nullptr) == 1);
 }
+BOOST_AUTO_TEST_CASE(zero_010)
+{	const auto pFactory = theExpressionEngine::factory<true>::getFactory();
+	//using namespace theExpressionEngine;
+	using namespace theExpressionEngine::operators;
+	const auto pX = pFactory->parameter(0);
+	const auto pY = pFactory->parameter(1);
+	const double aXY[2] = {1.0, 1.1};
+	const theExpressionEngine::factory<true>::name2int s = {{"x", pFactory->parameter(0)}, {"y", pFactory->parameter(1)}};
+	BOOST_CHECK_CLOSE(pFactory->parse("x>y ? x : y", s)->evaluate(aXY, nullptr, nullptr, nullptr), 1.1, 1e-6);
+	BOOST_CHECK_CLOSE(pFactory->parse("x<y ? x : y", s)->evaluate(aXY, nullptr, nullptr, nullptr), 1.0, 1e-6);
+}
