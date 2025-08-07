@@ -794,6 +794,65 @@ struct relational:expression<BTHREADED>
 	}
 };
 template<bool BTHREADED>
+struct conditional:expression<BTHREADED>
+{
+	typedef typename expression<BTHREADED>::ptr ptr;
+	conditional(const ptr&_p0, const ptr&_p1, const ptr&_p2)
+		:expression<BTHREADED>({_p0, _p1, _p2}, _p1->m_eType)
+	{	if (_p0->m_eType != expression<BTHREADED>::eInteger)
+			throw std::logic_error("conditional needs int argument for test expression!");
+		if (_p1->m_eType != _p2->m_eType)
+			throw std::logic_error("conditional identical types for true and false expression!");
+	}
+	virtual std::ostream &print(std::ostream&_r) const override
+	{	_r << "(";
+		this->m_sChildren[0]->print(_r);
+		_r << "?";
+		this->m_sChildren[1]->print(_r);
+		_r << ":";
+		this->m_sChildren[2]->print(_r);
+		return _r << ")";
+	}
+	virtual double evaluate(const double *const _p, const int *const _pI, const double*const _pT, const int*const _pIT) const override
+	{	return this->m_sChildren[0]->evaluateInt(_p, _pI, _pT, _pIT)
+			? this->m_sChildren[1]->evaluate(_p, _pI, _pT, _pIT)
+			: this->m_sChildren[2]->evaluate(_p, _pI, _pT, _pIT);
+	}
+	virtual int evaluateInt(const double *const _p, const int *const _pI, const double*const _pT, const int*const _pIT) const override
+	{	return this->m_sChildren[0]->evaluateInt(_p, _pI, _pT, _pIT)
+			? this->m_sChildren[1]->evaluateInt(_p, _pI, _pT, _pIT)
+			: this->m_sChildren[2]->evaluateInt(_p, _pI, _pT, _pIT);
+	}
+	virtual llvm::Value* generateCode(
+		const expression<BTHREADED>*const _pRoot,
+		llvm::LLVMContext& context,
+		llvm::IRBuilder<>& builder,
+		llvm::Module *const M,
+		llvm::Value*const _pP,
+		llvm::Value*const _pIP,
+		llvm::Value*const _pT,
+		llvm::Value*const _pIT
+	) const override
+	{	return builder.CreateCall(
+			M->getFunction(
+				this->m_eType == expression<BTHREADED>::eFloatingPoint
+					? "ternaryDouble"
+					: "ternaryInt"
+			),
+			{	this->m_sChildren[0]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+				this->m_sChildren[1]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+				this->m_sChildren[2]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT)
+			}
+		);
+	}
+	virtual typename expression<BTHREADED>::ptr recreateFromChildren(typename expression<BTHREADED>::children _s, const factory<BTHREADED>&_rF) const override
+	{	return _rF.conditional(_s[0], _s[1], _s[2]);
+	}
+	virtual std::size_t getWeight(void) const override
+	{	return 1;
+	}
+};
+template<bool BTHREADED>
 struct expressionSetImpl:expressionSet<BTHREADED>
 {
 	typedef typename expression<BTHREADED>::children children;
@@ -1159,6 +1218,9 @@ struct factoryImpl:factory<BTHREADED>
 				std::not_equal_to<void>
 			>
 		>(*this, _p0, _p1);
+	}
+	virtual exprPtr conditional(const exprPtr&_p0, const exprPtr&_p1, const exprPtr&_p2) const override
+	{	return theExpressionEngine::expression<BTHREADED>::template create<theExpressionEngine::conditional<BTHREADED> >(*this, _p0, _p1, _p2);
 	}
 	virtual exprPtr division(const exprPtr&_p0, const exprPtr&_p1) const override
 	{	if (const auto p = _p0->getPtr(dummy<theExpressionEngine::realConstant<BTHREADED> >()); p && p->m_d == 0)

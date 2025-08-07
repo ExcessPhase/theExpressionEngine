@@ -78,6 +78,82 @@ void expression<BTHREADED>::addOnDestroy(onDestroyFunctor _s) const
 {	std::unique_lock<MUTEX> sLock(m_sMutex);
 	m_sOnDestroyList.emplace_back(std::move(_s));
 }
+static void createTernaryFunctions(llvm::Module& module, llvm::LLVMContext& context)
+{
+	llvm::IRBuilder<> builder(context);
+	llvm::Type* int32Ty = llvm::Type::getInt32Ty(context);
+	llvm::Type* doubleTy = llvm::Type::getDoubleTy(context);
+
+	// --- ternaryInt: i32(i32)
+	llvm::FunctionType* intFuncTy = llvm::FunctionType::get(int32Ty, {int32Ty}, false);
+	llvm::Function* ternaryInt = llvm::Function::Create(
+		intFuncTy,
+		llvm::Function::InternalLinkage,
+		"ternaryInt",
+		module
+	);
+
+	llvm::BasicBlock* intEntry = llvm::BasicBlock::Create(context, "entry", ternaryInt);
+	llvm::BasicBlock* intThen  = llvm::BasicBlock::Create(context, "then", ternaryInt);
+	llvm::BasicBlock* intElse  = llvm::BasicBlock::Create(context, "else", ternaryInt);
+	llvm::BasicBlock* intEnd   = llvm::BasicBlock::Create(context, "end", ternaryInt);
+
+	builder.SetInsertPoint(intEntry);
+	llvm::Argument* testExprInt = ternaryInt->getArg(0);
+	testExprInt->setName("testExpr");
+
+	llvm::Value* condInt = builder.CreateICmpNE(testExprInt, llvm::ConstantInt::get(int32Ty, 0));
+	builder.CreateCondBr(condInt, intThen, intElse);
+
+	builder.SetInsertPoint(intThen);
+	llvm::Value* thenValInt = llvm::ConstantInt::get(int32Ty, 100);
+	builder.CreateBr(intEnd);
+
+	builder.SetInsertPoint(intElse);
+	llvm::Value* elseValInt = llvm::ConstantInt::get(int32Ty, -100);
+	builder.CreateBr(intEnd);
+
+	builder.SetInsertPoint(intEnd);
+	llvm::PHINode* phiInt = builder.CreatePHI(int32Ty, 2, "result");
+	phiInt->addIncoming(thenValInt, intThen);
+	phiInt->addIncoming(elseValInt, intElse);
+	builder.CreateRet(phiInt);
+
+	// --- ternaryDouble: double(i32)
+	llvm::FunctionType* doubleFuncTy = llvm::FunctionType::get(doubleTy, {int32Ty}, false);
+	llvm::Function* ternaryDouble = llvm::Function::Create(
+		doubleFuncTy,
+		llvm::Function::InternalLinkage,
+		"ternaryDouble",
+		module
+	);
+
+	llvm::BasicBlock* dblEntry = llvm::BasicBlock::Create(context, "entry", ternaryDouble);
+	llvm::BasicBlock* dblThen  = llvm::BasicBlock::Create(context, "then", ternaryDouble);
+	llvm::BasicBlock* dblElse  = llvm::BasicBlock::Create(context, "else", ternaryDouble);
+	llvm::BasicBlock* dblEnd   = llvm::BasicBlock::Create(context, "end", ternaryDouble);
+
+	builder.SetInsertPoint(dblEntry);
+	llvm::Argument* testExprDbl = ternaryDouble->getArg(0);
+	testExprDbl->setName("testExpr");
+
+	llvm::Value* condDbl = builder.CreateICmpNE(testExprDbl, llvm::ConstantInt::get(int32Ty, 0));
+	builder.CreateCondBr(condDbl, dblThen, dblElse);
+
+	builder.SetInsertPoint(dblThen);
+	llvm::Value* thenValDbl = llvm::ConstantFP::get(doubleTy, 3.14);
+	builder.CreateBr(dblEnd);
+
+	builder.SetInsertPoint(dblElse);
+	llvm::Value* elseValDbl = llvm::ConstantFP::get(doubleTy, -2.71);
+	builder.CreateBr(dblEnd);
+
+	builder.SetInsertPoint(dblEnd);
+	llvm::PHINode* phiDbl = builder.CreatePHI(doubleTy, 2, "result");
+	phiDbl->addIncoming(thenValDbl, dblThen);
+	phiDbl->addIncoming(elseValDbl, dblElse);
+	builder.CreateRet(phiDbl);
+}
 using namespace llvm;
 template<bool BTHREADED>
 struct llvmData
@@ -93,6 +169,7 @@ struct llvmData
 		//EE(std::unique_ptr<ExecutionEngine>(EngineBuilder(std::move(M)).setErrorStr(&ErrStr).setEngineKind(EngineKind::JIT).create()))
 	{
 		IRBuilder<> Builder(Context);
+		createTernaryFunctions(*M, Context);
 		FunctionType* FT = FunctionType::get(
 			Type::getDoubleTy(Context),
 			{	PointerType::get(Type::getDoubleTy(Context), 0),
@@ -163,6 +240,7 @@ struct llvmDataInt
 		//EE(std::unique_ptr<ExecutionEngine>(EngineBuilder(std::move(M)).setErrorStr(&ErrStr).setEngineKind(EngineKind::JIT).create()))
 	{
 		IRBuilder<> Builder(Context);
+		createTernaryFunctions(*M, Context);
 		FunctionType* FT = FunctionType::get(
 			Type::getInt32Ty(Context),
 			{	PointerType::get(Type::getDoubleTy(Context), 0),

@@ -42,6 +42,7 @@ struct factory:std::enable_shared_from_this<const factory<BTHREADED> >
 	virtual exprPtr greater(const exprPtr&, const exprPtr&) const = 0;
 	virtual exprPtr equal_to(const exprPtr&, const exprPtr&) const = 0;
 	virtual exprPtr not_equal_to(const exprPtr&, const exprPtr&) const = 0;
+	virtual exprPtr conditional(const exprPtr&, const exprPtr&, const exprPtr&) const = 0;
 	virtual boost::intrusive_ptr<const expressionSet<BTHREADED> > createExpressionSet(const std::vector<exprPtr>&) const = 0;
 	typedef std::map<std::string, exprPtr> name2int;
 	virtual exprPtr parse(const char *const, const name2int&) const = 0;
