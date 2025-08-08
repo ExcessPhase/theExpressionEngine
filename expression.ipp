@@ -400,6 +400,26 @@ std::size_t expression<BTHREADED>::getWeightW(void) const
 	return i;
 }
 template<bool BTHREADED>
+llvm::Value *expression<BTHREADED>::generateCodeWF(
+	const expression<BTHREADED> *const _pRoot,
+	llvm::LLVMContext& context,
+	llvm::IRBuilder<>& builder,
+	llvm::Module *const M,
+	llvm::Value*const _pP,
+	llvm::Value*const _pIP,
+	llvm::Value*const _pT,
+	llvm::Value*const _pIT
+) const
+{	if (m_eType == eInteger)
+		return builder.CreateSIToFP(
+			generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+			builder.getDoubleTy(),
+			"intToDouble"
+		);
+	else
+		return generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT);
+}
+template<bool BTHREADED>
 llvm::Value *expression<BTHREADED>::generateCodeW(
 	const expression<BTHREADED> *const _pRoot,
 	llvm::LLVMContext& context,

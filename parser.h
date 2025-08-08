@@ -13,6 +13,8 @@ namespace __PARSER__
 namespace bp = boost::parser;
 struct lookup_table_tag;
 bp::rule<class NUMBER, expression<__BTHREADED__>::ptr> const NUMBER("number");
+bp::rule<class DOUBLE, expression<__BTHREADED__>::ptr> const DOUBLE("double");
+bp::rule<class INT, expression<__BTHREADED__>::ptr> const INT("int");
 bp::rule<class factor, expression<__BTHREADED__>::ptr> const factor("factor");
 bp::rule<class term, expression<__BTHREADED__>::ptr> const term("term");
 bp::rule<class expr, expression<__BTHREADED__>::ptr> const expr("expr");
@@ -79,15 +81,24 @@ struct unsigned_double_policies : bp::real_policies<double>
 // Define a parser that uses the custom policies.
 bp::real_parser<double, unsigned_double_policies> const unsigned_double = {};
 #endif
-
-// Now update your NUMBER rule to use unsigned_double instead of bp::double_
-auto const NUMBER_def = !bp::char_('-') >> bp::double_//unsigned_double
-	[([](auto& ctx)
-	{
-		const std::tuple<const factory<__BTHREADED__>::name2int&, const factory<__BTHREADED__>&> &r = bp::_globals(ctx);
-		bp::_val(ctx) = std::get<1>(r).realConstant(bp::_attr(ctx));
+auto const DOUBLE_def = bp::lexeme[+bp::digit >> bp::char_('.') >> *bp::digit]
+[(	[](auto& ctx)
+	{	const std::tuple<const factory<__BTHREADED__>::name2int&, const factory<__BTHREADED__>&> &r = bp::_globals(ctx);
+		const auto &[sDigits0, sDigits1] = bp::_attr(ctx);
+		bp::_val(ctx) = std::get<1>(r).realConstant(std::stod(std::string(sDigits0.begin(), sDigits0.end()) + std::string(sDigits1.begin(), sDigits1.end())));
 	}
-	)];
+)];
+BOOST_PARSER_DEFINE_RULES(DOUBLE);
+auto const INT_def = bp::lexeme[+bp::digit]
+[(	[](auto& ctx)
+	{	const std::tuple<const factory<__BTHREADED__>::name2int&, const factory<__BTHREADED__>&> &r = bp::_globals(ctx);
+		const auto &sDigits = bp::_attr(ctx);
+		bp::_val(ctx) = std::get<1>(r).intConstant(std::stoi(std::string(sDigits.begin(), sDigits.end())));
+	}
+)];
+BOOST_PARSER_DEFINE_RULES(INT);
+// Now update your NUMBER rule to use unsigned_double instead of bp::double_
+auto const NUMBER_def = (DOUBLE | INT);//unsigned_double
 BOOST_PARSER_DEFINE_RULES(NUMBER);
 bp::rule<class identifier, std::string> const identifier = "identifier";
 auto const identifier_def =

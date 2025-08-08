@@ -62,8 +62,8 @@ struct expression:dynamic_cast_interface<realConstant<BTHREADED> >, dynamic_cast
 	typedef std::unordered_map<const expression<BTHREADED> *, ARRAY> MAP;
 	const children m_sChildren;
 	expression(
-		children&&_rChildren = {},
-		const enumType _eType = eFloatingPoint
+		children&&_rChildren,
+		const enumType _eType
 	);
 	virtual ~expression(void) = default;
 	expression(const expression&) = delete;
@@ -76,10 +76,26 @@ struct expression:dynamic_cast_interface<realConstant<BTHREADED> >, dynamic_cast
 		/// this is to be implemented for all derived classes containing data
 		/// the type of the LHS and RHS is guaranteed to be identical
 	virtual bool isSmaller(const expression<BTHREADED> &) const;
+	double evaluateW(const double *const _p0, const int*const _p1, const double*const _p2, const int*const _p3) const
+	{	if (m_eType == eInteger)
+			return evaluateInt(_p0, _p1, _p2, _p3);
+		else
+			return evaluate(_p0, _p1, _p2, _p3);
+	}
 	virtual int evaluateInt(const double *const, const int*const, const double*const, const int*const) const;
 	virtual double evaluate(const double *const, const int*const, const double*const, const int*const) const;
 	double evaluateLLVM(const double *const, const int*const, const double *const, const int*const) const;
 	int evaluateIntLLVM(const double *const, const int*const, const double *const, const int*const) const;
+	llvm::Value *generateCodeWF(
+		const expression<BTHREADED>  *const _pRoot,
+		llvm::LLVMContext& context,
+		llvm::IRBuilder<>& builder,
+		llvm::Module *const M,
+		llvm::Value*const _pP,
+		llvm::Value*const _pIP,
+		llvm::Value*const _pT,
+		llvm::Value*const _pIT
+	) const;
 	llvm::Value *generateCodeW(
 		const expression<BTHREADED>  *const _pRoot,
 		llvm::LLVMContext& context,
@@ -109,6 +125,15 @@ struct expression:dynamic_cast_interface<realConstant<BTHREADED> >, dynamic_cast
 	}
 	virtual std::ostream &print(std::ostream&) const = 0;
 	void initializeLLVM(void) const;
+	virtual bool isZero(void) const
+	{	return false;
+	}
+	virtual bool isOne(void) const
+	{	return false;
+	}
+	virtual bool isNonZero(void) const
+	{	return false;
+	}
 	private:
 	mutable MUTEX m_sMutex;
 	mutable MAP m_sAttachedData;
