@@ -56,6 +56,11 @@ Creation of the latter involves optimization by replacing multiple occurences of
 The first argument to expressionSet::evaluate*() is the vector for temporaries first and outputs second.
 The outputs start with index expressionSet::getTempSize().
 ## News
+I introduced the notion of integer expression -- until now all expressions were floating-point (double).
+This is not done fully yet -- e.g. variables and parameters are only done as floating point.
+Introduced ternary operator and compare operators.
+No logical or bitwise operations yet.
+
 I changed writing into the result vector. Writing is now done in order starting from index 0. This improves cache behavior.
 Reading results needs now be done using an offset table.
 
