@@ -14,6 +14,9 @@ namespace bp = boost::parser;
 struct lookup_table_tag;
 bp::rule<class NUMBER, expression<__BTHREADED__>::ptr> const NUMBER("number");
 bp::rule<class DOUBLE, expression<__BTHREADED__>::ptr> const DOUBLE("double");
+bp::rule<class DOUBLE_0, expression<__BTHREADED__>::ptr> const DOUBLE_0("double_0");
+bp::rule<class DOUBLE_1, expression<__BTHREADED__>::ptr> const DOUBLE_1("double_1");
+bp::rule<class DOUBLE_2, expression<__BTHREADED__>::ptr> const DOUBLE_2("double_2");
 bp::rule<class INT, expression<__BTHREADED__>::ptr> const INT("int");
 bp::rule<class factor, expression<__BTHREADED__>::ptr> const factor("factor");
 bp::rule<class term, expression<__BTHREADED__>::ptr> const term("term");
@@ -81,19 +84,50 @@ struct unsigned_double_policies : bp::real_policies<double>
 // Define a parser that uses the custom policies.
 bp::real_parser<double, unsigned_double_policies> const unsigned_double = {};
 #endif
-auto const DOUBLE_def = bp::lexeme[+bp::digit >> bp::char_('.') >> *bp::digit]
+auto const DOUBLE_0_def = bp::lexeme[+bp::digit >> bp::char_("Ee") >> -bp::char_("+-") >> +bp::digit]
 [(	[](auto& ctx)
 	{	const std::tuple<const factory<__BTHREADED__>::name2int&, const factory<__BTHREADED__>&> &r = bp::_globals(ctx);
-		const auto &[sDigits0, sDigits1] = bp::_attr(ctx);
-		bp::_val(ctx) = std::get<1>(r).realConstant(std::stod(std::string(sDigits0.begin(), sDigits0.end()) + std::string(sDigits1.begin(), sDigits1.end())));
+		const auto &[s0, s1] = bp::_attr(ctx);
+		bp::_val(ctx) = std::get<1>(r).realConstant(
+			std::stod(s0 + s1)
+		);
 	}
 )];
+BOOST_PARSER_DEFINE_RULES(DOUBLE_0);
+auto const DOUBLE_1_def = bp::lexeme[+bp::digit >> bp::char_('.') >> *bp::digit >> -(bp::char_("Ee") >> -bp::char_("+-") >> +bp::digit)]
+[(	[](auto& ctx)
+	{	const std::tuple<const factory<__BTHREADED__>::name2int&, const factory<__BTHREADED__>&> &r = bp::_globals(ctx);
+		const auto &[s0, s1, s2] = bp::_attr(ctx);
+		bp::_val(ctx) = std::get<1>(r).realConstant(
+			std::stod(
+				s0 + s1 + (s2
+					? std::get<0>(*s2) + std::get<1>(*s2)
+					: std::string()
+				)
+			)
+		);
+	}
+)];
+BOOST_PARSER_DEFINE_RULES(DOUBLE_1);
+auto const DOUBLE_2_def = bp::lexeme[*bp::digit >> bp::char_('.') >> +bp::digit >> -(bp::char_("Ee") >> -bp::char_("+-") >> +bp::digit)]
+[(	[](auto& ctx)
+	{	const std::tuple<const factory<__BTHREADED__>::name2int&, const factory<__BTHREADED__>&> &r = bp::_globals(ctx);
+		const auto &[s0, s1, s2] = bp::_attr(ctx);
+		bp::_val(ctx) = std::get<1>(r).realConstant(
+			std::stod(
+				s0 + s1 + (s2 ? std::get<0>(*s2) + std::get<1>(*s2) : std::string())
+			)
+		);
+	}
+)];
+BOOST_PARSER_DEFINE_RULES(DOUBLE_2);
+auto const DOUBLE_def = DOUBLE_0 | DOUBLE_1 | DOUBLE_2;
 BOOST_PARSER_DEFINE_RULES(DOUBLE);
 auto const INT_def = bp::lexeme[+bp::digit]
 [(	[](auto& ctx)
 	{	const std::tuple<const factory<__BTHREADED__>::name2int&, const factory<__BTHREADED__>&> &r = bp::_globals(ctx);
 		const auto &sDigits = bp::_attr(ctx);
-		bp::_val(ctx) = std::get<1>(r).intConstant(std::stoi(std::string(sDigits.begin(), sDigits.end())));
+		bp::_val(ctx) = std::get<1>(r).intConstant(std::stoi(sDigits));
 	}
 )];
 BOOST_PARSER_DEFINE_RULES(INT);
