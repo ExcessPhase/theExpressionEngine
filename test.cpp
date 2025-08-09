@@ -265,3 +265,15 @@ BOOST_AUTO_TEST_CASE(zero_010)
 	BOOST_CHECK(pFactory->parse("1<2 ? 3 : 4", s) == pFactory->intConstant(3));
 	BOOST_CHECK(pFactory->parse("1<2 ? 3.0 : 4.0", s) == pFactory->realConstant(3.0));
 }
+BOOST_AUTO_TEST_CASE(zero_011)
+{	const auto pFactory = theExpressionEngine::factory<true>::getFactory();
+	//using namespace theExpressionEngine;
+	using namespace theExpressionEngine::operators;
+	const auto pX = pFactory->parameter(0, false);
+	const auto pY = pFactory->parameter(1, false);
+	const int aXY[2] = {1, 3};
+	const theExpressionEngine::factory<true>::name2int s = {{"x", pX}, {"y", pY}};
+	BOOST_CHECK(pFactory->bit_and(pX, pY)->evaluateInt(nullptr, aXY, nullptr, nullptr) == (aXY[0] & aXY[1]));
+	BOOST_CHECK(pFactory->bit_or(pX, pY)->evaluateInt(nullptr, aXY, nullptr, nullptr) == (aXY[0] | aXY[1]));
+	BOOST_CHECK(pFactory->bit_xor(pX, pY)->evaluateInt(nullptr, aXY, nullptr, nullptr) == (aXY[0] ^ aXY[1]));
+}
