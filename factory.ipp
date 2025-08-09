@@ -1444,13 +1444,46 @@ struct factoryImpl:factory<BTHREADED>
 	{	return expressionSet<BTHREADED>::template create<expressionSetImpl<BTHREADED> >(*this, _r, *this);
 	}
 	virtual exprPtr bit_and(const exprPtr&_p0, const exprPtr&_p1) const override
-	{	return nullptr;
+	{	static constexpr char acOP[] = "&";
+		static constexpr char acName[] = "bw_and";
+		return theExpressionEngine::expression<BTHREADED>::template create<
+			theExpressionEngine::bw_logical<
+				BTHREADED,
+				acOP,
+				acName,
+				&llvm::IRBuilder<>::CreateAnd,
+				&factory<BTHREADED>::bit_and,
+				std::bit_and<void>
+			>
+		>(*this, _p0, _p1);
 	}
 	virtual exprPtr bit_or(const exprPtr&_p0, const exprPtr&_p1) const override
-	{	return nullptr;
+	{	static constexpr char acOP[] = "|";
+		static constexpr char acName[] = "bit_or";
+		return theExpressionEngine::expression<BTHREADED>::template create<
+			theExpressionEngine::bw_logical<
+				BTHREADED,
+				acOP,
+				acName,
+				&llvm::IRBuilder<>::CreateOr,
+				&factory<BTHREADED>::bit_or,
+				std::bit_or<void>
+			>
+		>(*this, _p0, _p1);
 	}
 	virtual exprPtr bit_xor(const exprPtr&_p0, const exprPtr&_p1) const override
-	{	return nullptr;
+	{	static constexpr char acOP[] = "^";
+		static constexpr char acName[] = "bit_xor";
+		return theExpressionEngine::expression<BTHREADED>::template create<
+			theExpressionEngine::bw_logical<
+				BTHREADED,
+				acOP,
+				acName,
+				&llvm::IRBuilder<>::CreateXor,
+				&factory<BTHREADED>::bit_xor,
+				std::bit_xor<void>
+			>
+		>(*this, _p0, _p1);
 	}
 	virtual exprPtr bit_not(const exprPtr&_p) const override
 	{	return nullptr;
@@ -1470,7 +1503,18 @@ struct factoryImpl:factory<BTHREADED>
 		>(*this, _p0, _p1);
 	}
 	virtual exprPtr logical_or(const exprPtr&_p0, const exprPtr&_p1) const override
-	{	return nullptr;
+	{	static constexpr char acOP[] = "||";
+		static constexpr char acName[] = "logical_or";
+		return theExpressionEngine::expression<BTHREADED>::template create<
+			theExpressionEngine::bw_logical<
+				BTHREADED,
+				acOP,
+				acName,
+				&llvm::IRBuilder<>::CreateOr,
+				&factory<BTHREADED>::logical_or,
+				std::logical_or<void>
+			>
+		>(*this, _p0, _p1);
 	}
 	virtual exprPtr logical_not(const exprPtr&_p) const override
 	{	return nullptr;
