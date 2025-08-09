@@ -29,7 +29,7 @@ int main(int argc, char**argv)
 	const auto pFactory = factory<BTHREADED>::getFactory();
 	std::vector<expression<BTHREADED>::ptr> sE;
 	for (auto p = argv + 1; *p; ++p)
-		sE.push_back(pFactory->parse(*p, {{"x", pFactory->parameter(0)}}));
+		sE.push_back(pFactory->parse(*p, {{"x", pFactory->parameter(0, true)}}));
 	const auto sES = pFactory->createExpressionSet(sE);
 	const auto &rOrder = sES->getOrder();
 	std::vector<double> sX(1);

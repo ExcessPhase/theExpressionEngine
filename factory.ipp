@@ -626,23 +626,37 @@ struct negation:expression<BTHREADED>
 template<bool BTHREADED>
 struct variable:expression<BTHREADED>
 {	const std::size_t m_i;
-	variable(const std::size_t _i)
-		:expression<BTHREADED>({}, expression<BTHREADED>::eFloatingPoint),
-		m_i(_i)
+	const bool m_bFP;
+	variable(const std::size_t _i, const bool _b)
+		:expression<BTHREADED>({}, _b ? expression<BTHREADED>::eFloatingPoint : expression<BTHREADED>::eInteger),
+		m_i(_i),
+		m_bFP(_b)
 	{
 	}
 	virtual std::ostream &print(std::ostream&_r) const override
-	{	return _r << "var" << m_i;
+	{	if (m_bFP)
+			return _r << "fpvar" << m_i;
+		else
+			return _r << "var" << m_i;
 	}
 	virtual double evaluate(const double *const _p, const int *const _pI, const double*const _pT, const int*const _pIT) const override
-	{	return _pT[m_i];
+	{	if (!m_bFP)
+			return expression<BTHREADED>::evaluate(_p, _pI, _pT, _pIT);
+		else
+			return _pT[m_i];
+	}
+	virtual int evaluateInt(const double *const _p, const int *const _pI, const double*const _pT, const int*const _pIT) const override
+	{	if (m_bFP)
+			return expression<BTHREADED>::evaluateInt(_p, _pI, _pT, _pIT);
+		else
+			return _pIT[m_i];
+	}
+	auto tie(void) const
+	{	return std::tie(m_i, m_bFP);
 	}
 	virtual bool isSmaller(const expression<BTHREADED>&_r) const override
 	{	const auto &r = dynamic_cast<const variable&>(_r);
-		if (m_i < r.m_i)
-			return true;
-		else
-			return false;
+		return tie() < r.tie();
 	}
 	virtual llvm::Value* generateCode(
 		const expression<BTHREADED>*const _pRoot,
@@ -652,7 +666,7 @@ struct variable:expression<BTHREADED>
 		llvm::Value*const,
 		llvm::Value*const,
 		llvm::Value*const _pP,
-		llvm::Value*const
+		llvm::Value*const _pIP
 	) const override
 	{
 		using namespace llvm;
@@ -664,14 +678,20 @@ struct variable:expression<BTHREADED>
 
 		// Step 3: Use GetElementPtr (GEP) to calculate the address at the given index
 		llvm::Value* indexedPointer = builder.CreateGEP(
-			llvm::Type::getDoubleTy(context), // The type of elements (double)
-			_pP,	// The pointer to be indexed
+			m_bFP
+				? llvm::Type::getDoubleTy(context) // The type of elements (double)
+				: llvm::Type::getInt32Ty(context), // The type of elements (double)
+			m_bFP
+				? _pP
+				: _pIP,	// The pointer to be indexed
 			indexVal	// The index (as a Value*)
 		);
 
 		// Step 4: Return the indexed pointer
 		return builder.CreateLoad(
-			Type::getDoubleTy(context), // The type to load
+			m_bFP
+				? Type::getDoubleTy(context) // The type to load
+				: Type::getInt32Ty(context), // The type to load
 			indexedPointer	// The pointer to load from
 		);
 	}
@@ -685,23 +705,37 @@ struct variable:expression<BTHREADED>
 template<bool BTHREADED>
 struct parameter:expression<BTHREADED>
 {	const std::size_t m_i;
-	parameter(const std::size_t _i)
-		:expression<BTHREADED>({}, expression<BTHREADED>::eFloatingPoint),
-		m_i(_i)
+	const bool m_bFP;
+	parameter(const std::size_t _i, const bool _b)
+		:expression<BTHREADED>({}, _b ? expression<BTHREADED>::eFloatingPoint : expression<BTHREADED>::eInteger),
+		m_i(_i),
+		m_bFP(_b)
 	{
 	}
 	virtual std::ostream &print(std::ostream&_r) const override
-	{	return _r << "x" << m_i;
+	{	if (m_bFP)
+			return _r << "fpx" << m_i;
+		else
+			return _r << "x" << m_i;
 	}
 	virtual double evaluate(const double *const _p, const int *const _pI, const double*const _pT, const int*const _pIT) const override
-	{	return _p[m_i];
+	{	if (!m_bFP)
+			return expression<BTHREADED>::evaluate(_p, _pI, _pT, _pIT);
+		else
+			return _p[m_i];
+	}
+	virtual int evaluateInt(const double *const _p, const int *const _pI, const double*const _pT, const int*const _pIT) const override
+	{	if (m_bFP)
+			return expression<BTHREADED>::evaluateInt(_p, _pI, _pT, _pIT);
+		else
+			return _pI[m_i];
+	}
+	auto tie(void) const
+	{	return std::tie(m_i, m_bFP);
 	}
 	virtual bool isSmaller(const expression<BTHREADED>&_r) const override
 	{	const auto &r = dynamic_cast<const parameter&>(_r);
-		if (m_i < r.m_i)
-			return true;
-		else
-			return false;
+		return tie() < r.tie();
 	}
 	virtual llvm::Value* generateCode(
 		const expression<BTHREADED>*const _pRoot,
@@ -709,7 +743,7 @@ struct parameter:expression<BTHREADED>
 		llvm::IRBuilder<>& builder,
 		llvm::Module *const M,
 		llvm::Value*const _pP,
-		llvm::Value*const,
+		llvm::Value*const _pIP,
 		llvm::Value*const,
 		llvm::Value*const
 	) const override
@@ -723,14 +757,20 @@ struct parameter:expression<BTHREADED>
 
 		// Step 3: Use GetElementPtr (GEP) to calculate the address at the given index
 		llvm::Value* indexedPointer = builder.CreateGEP(
-			llvm::Type::getDoubleTy(context), // The type of elements (double)
-			_pP,	// The pointer to be indexed
+			m_bFP
+				? llvm::Type::getDoubleTy(context) // The type of elements (double)
+				: llvm::Type::getInt32Ty(context), // The type of elements (double)
+			m_bFP
+				? _pP
+				: _pIP,	// The pointer to be indexed
 			indexVal	// The index (as a Value*)
 		);
 
 		// Step 4: Return the indexed pointer
 		return builder.CreateLoad(
-			Type::getDoubleTy(context), // The type to load
+			m_bFP
+				? Type::getDoubleTy(context) // The type to load
+				: Type::getInt32Ty(context), // The type to load
 			indexedPointer	// The pointer to load from
 		);
 	}
@@ -928,8 +968,10 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 	typedef typename expression<BTHREADED>::children children;
 	typedef std::tuple<
 		children,
-		std::vector<std::vector<std::size_t> >,
-		std::vector<std::size_t>
+		std::vector<std::vector<std::pair<std::size_t, std::size_t> > >,
+		std::vector<std::size_t>,
+		std::size_t,
+		std::size_t
 	> TUPLE;
 	const TUPLE m_sChildren;
 	virtual bool operator<(const expressionSet<BTHREADED> &_r) const override
@@ -1011,9 +1053,10 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 			return sG2Set;
 		}();
 		std::map<const expression<BTHREADED>*, std::size_t> sExpr2Id;
+		std::size_t iNextIntId = 0, iNextFpId = 0;
 		children sChildren;
 		ESET sSet;
-		std::vector<std::vector<std::size_t> > sGroups;
+		std::vector<std::vector<std::pair<std::size_t, std::size_t> > > sGroups;
 		auto sLeft = sSetRepeated;
 		for (const auto &p : _rChildren)
 			sLeft.insert(p.get());
@@ -1022,10 +1065,15 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 			sGroups.emplace_back();
 			sGroups.back().reserve(r.size());
 			for (const auto p : r)
-			{	const auto sInsert = sExpr2Id.emplace(p, sExpr2Id.size());
+			{	const auto sInsert = sExpr2Id.emplace(
+					p,
+					p->m_eType == expression<BTHREADED>::eFloatingPoint
+						? iNextFpId++
+						: iNextIntId++
+				);
 				sLeft.erase(p);
 				sSet.insert(p);
-				sGroups.back().push_back(sInsert.first->second);
+				sGroups.back().emplace_back(sExpr2Id.size() - 1, sInsert.first->second);
 				sChildren.push_back(p);
 			}
 		}
@@ -1036,7 +1084,10 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 			sOrder[i] = sExpr2Id.at(_rChildren[i].get());
 		typename expression<BTHREADED>::ptr2ptr sMap;
 		for (const auto p : sSetRepeated)
-			sMap[p] = _rF.variable(sExpr2Id.at(p));
+			sMap[p] = _rF.variable(
+				sExpr2Id.at(p),
+				p->m_eType == expression<BTHREADED>::eFloatingPoint
+			);
 		for (auto &p : sChildren)
 			if (sSetRepeated.count(p.get()))
 			{	auto pF = sMap.find(p);
@@ -1047,7 +1098,7 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 			}
 			else
 				p = p->replace(sMap, _rF);
-		return TUPLE(std::move(sChildren), std::move(sGroups), std::move(sOrder));
+		return TUPLE(std::move(sChildren), std::move(sGroups), std::move(sOrder), iNextFpId, iNextIntId);
 	}
 	expressionSetImpl(
 		const children& _rChildren,
@@ -1056,7 +1107,10 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 		:m_sChildren(get(_rChildren, _rF))
 	{
 	}
-	template<double(expression<BTHREADED>::*EVALUATE)(const double *const, const int*const, const double*const, const int*const) const>
+	template<
+		double(expression<BTHREADED>::*EVALUATE)(const double *const, const int*const, const double*const, const int*const) const,
+		int(expression<BTHREADED>::*EVALUATE_INT)(const double *const, const int*const, const double*const, const int*const) const
+	>
 	void run_evaluate(
 		std::vector<double>&_rChildren,
 		std::vector<int>&_rIChildren,
@@ -1065,25 +1119,29 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 		//typename expressionSet<BTHREADED>::atomicVec &_rC,
 		//boost::asio::thread_pool &_rPool
 	) const
-	{	const auto &[rChildren, rG2Set, rOrder] = m_sChildren;
-		_rChildren.resize(rChildren.size());
+	{	const auto &[rChildren, rG2Set, rOrder, iFpSize, iIntSize] = m_sChildren;
+		_rChildren.resize(iFpSize);
+		_rIChildren.resize(iIntSize);
 		if constexpr (!BTHREADED)
-			std::transform(
-				rChildren.begin(),
-				rChildren.end(),
-				_rChildren.begin(),
-				[&](const typename expression<BTHREADED>::ptr&_p)
-				{	return ((*_p).*EVALUATE)(_pParams, _pIParams, _rChildren.data(), _rIChildren.data());
-				}
-			);
+			for (std::size_t i = 0; i < rChildren.size(); ++i)
+			{	const auto pE = rChildren[i].get();
+				if (pE->m_eType == expression<BTHREADED>::eFloatingPoint)
+					_rChildren[rOrder[i]] = (pE->*EVALUATE)(_pParams, _pIParams, _rChildren.data(), _rIChildren.data());
+				else
+					_rIChildren[rOrder[i]] = (pE->*EVALUATE_INT)(_pParams, _pIParams, _rChildren.data(), _rIChildren.data());
+			}
 		else
 			for (const auto &r : rG2Set)
 				std::for_each(
 					std::execution::par,
 					r.begin(),
 					r.end(),
-					[&](const std::size_t _i)
-					{	_rChildren[_i] = ((*rChildren[_i]).*EVALUATE)(_pParams, _pIParams, _rChildren.data(), _rIChildren.data());
+					[&](const std::pair<std::size_t, std::size_t> &_r)
+					{	const auto pE = rChildren[_r.first].get();
+						if (pE->m_eType == expression<BTHREADED>::eFloatingPoint)
+							_rChildren[_r.second] = (pE->*EVALUATE)(_pParams, _pIParams, _rChildren.data(), _rIChildren.data());
+						else
+							_rIChildren[_r.second] = (pE->*EVALUATE_INT)(_pParams, _pIParams, _rChildren.data(), _rIChildren.data());
 					}
 				);
 	}
@@ -1095,7 +1153,10 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 		//typename expressionSet<BTHREADED>::atomicVec &_rC,
 		//boost::asio::thread_pool &_rPool
 	) const override
-	{	run_evaluate<&expression<BTHREADED>::evaluate>(_rChildren, _rIChildren, _pParams, _pIParams);
+	{	run_evaluate<
+			&expression<BTHREADED>::evaluate,
+			&expression<BTHREADED>::evaluateInt
+		>(_rChildren, _rIChildren, _pParams, _pIParams);
 	}
 	virtual void evaluateLLVM(
 		std::vector<double>&_rChildren,
@@ -1105,7 +1166,10 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 		//typename expressionSet<BTHREADED>::atomicVec &_rC,
 		//boost::asio::thread_pool &_rPool
 	) const override
-	{	run_evaluate<&expression<BTHREADED>::evaluateLLVM>(_rChildren, _rIChildren, _pParams, _pIParams);
+	{	run_evaluate<
+			&expression<BTHREADED>::evaluateLLVM,
+			&expression<BTHREADED>::evaluateIntLLVM
+		>(_rChildren, _rIChildren, _pParams, _pIParams);
 	}
 	virtual const typename expression<BTHREADED>::children &getChildren(void) const override
 	{	return std::get<0>(m_sChildren);
@@ -1123,11 +1187,11 @@ struct factoryImpl:factory<BTHREADED>
 	virtual exprPtr intConstant(const int _i) const override
 	{	return theExpressionEngine::expression<BTHREADED>::template create<dynamic_cast_implementation<theExpressionEngine::intConstant<BTHREADED> > >(*this, _i);
 	}
-	virtual exprPtr parameter(const std::size_t _i) const override
-	{	return theExpressionEngine::expression<BTHREADED>::template create<theExpressionEngine::parameter<BTHREADED> >(*this, _i);
+	virtual exprPtr parameter(const std::size_t _i, const bool _b) const override
+	{	return theExpressionEngine::expression<BTHREADED>::template create<theExpressionEngine::parameter<BTHREADED> >(*this, _i, _b);
 	}
-	virtual exprPtr variable(const std::size_t _i) const override
-	{	return theExpressionEngine::expression<BTHREADED>::template create<theExpressionEngine::variable<BTHREADED> >(*this, _i);
+	virtual exprPtr variable(const std::size_t _i, const bool _b) const override
+	{	return theExpressionEngine::expression<BTHREADED>::template create<theExpressionEngine::variable<BTHREADED> >(*this, _i, _b);
 	}
 #define __COMMA__
 #define __COMMA2__

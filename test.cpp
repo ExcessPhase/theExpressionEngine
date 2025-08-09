@@ -23,12 +23,12 @@ BOOST_GLOBAL_FIXTURE(LLVMSetup);
 #define __TEST2__(sin, val0, val1, name)\
 BOOST_AUTO_TEST_CASE(name)\
 {	const auto pFactory = theExpressionEngine::factory<true>::getFactory();\
-	const theExpressionEngine::factory<true>::name2int s = {{"x", pFactory->parameter(0)}, {"y", pFactory->parameter(1)}};\
+	const theExpressionEngine::factory<true>::name2int s = {{"x", pFactory->parameter(0, true)}, {"y", pFactory->parameter(1, true)}};\
 	const auto pExpr = pFactory->parse(#sin "(" #val0 "," #val1 ")", s);\
 	BOOST_CHECK(pExpr == pFactory->realConstant(std::sin(val0, val1)));\
 	BOOST_CHECK_CLOSE(pExpr->evaluate(nullptr, nullptr, nullptr, nullptr), std::sin(val0, val1), 0.001);\
 	BOOST_CHECK_CLOSE(pExpr->evaluateLLVM(nullptr, nullptr, nullptr, nullptr), std::sin(val0, val1), 0.001);\
-	BOOST_CHECK(pFactory->parse(#sin "(" "x" "," "y" ")", s)->replace({{pFactory->parameter(0), pFactory->realConstant(val0)},{pFactory->parameter(1), pFactory->realConstant(val1)}}, *pFactory) == pExpr);\
+	BOOST_CHECK(pFactory->parse(#sin "(" "x" "," "y" ")", s)->replace({{pFactory->parameter(0, true), pFactory->realConstant(val0)},{pFactory->parameter(1, true), pFactory->realConstant(val1)}}, *pFactory) == pExpr);\
 	const double adX[] = {val0, val1};\
 	BOOST_CHECK_CLOSE(pFactory->parse(#sin "(" "x" "," "y" ")", s)->evaluateLLVM(adX, nullptr, nullptr, nullptr), std::sin(val0, val1), 0.001);\
 	BOOST_CHECK_CLOSE(pFactory->parse(#sin "(" "x" "," "y" ")", s)->evaluate(adX, nullptr, nullptr, nullptr), std::sin(val0, val1), 0.001);\
@@ -44,11 +44,11 @@ __TEST2__(min, 1.1, 2.1, expression_2_007)
 #define __TEST__(sin, val, name)\
 BOOST_AUTO_TEST_CASE(name)\
 {	const auto pFactory = theExpressionEngine::factory<true>::getFactory();\
-	const theExpressionEngine::factory<true>::name2int s = {{"x", pFactory->parameter(0)}};\
+	const theExpressionEngine::factory<true>::name2int s = {{"x", pFactory->parameter(0, true)}};\
 	const auto pExpr = pFactory->parse(#sin "(" #val ")", s);\
 	BOOST_CHECK_CLOSE(pExpr->evaluate(nullptr, nullptr, nullptr, nullptr), std::sin(val), 0.001);\
 	BOOST_CHECK_CLOSE(pExpr->evaluateLLVM(nullptr, nullptr, nullptr, nullptr), std::sin(val), 0.001);\
-	BOOST_CHECK(pFactory->parse(#sin "(" "x" ")", s)->replace({{pFactory->parameter(0), pFactory->realConstant(val)}}, *pFactory) == pExpr);\
+	BOOST_CHECK(pFactory->parse(#sin "(" "x" ")", s)->replace({{pFactory->parameter(0, true), pFactory->realConstant(val)}}, *pFactory) == pExpr);\
 	const double dX = val;\
 	BOOST_CHECK_CLOSE(pFactory->parse(#sin "(" "x" ")", s)->evaluateLLVM(&dX, nullptr, nullptr, nullptr), std::sin(val), 0.001);\
 	BOOST_CHECK_CLOSE(pFactory->parse(#sin "(" "x" ")", s)->evaluate(&dX, nullptr, nullptr, nullptr), std::sin(val), 0.001);\
@@ -77,29 +77,29 @@ __TEST__(lgamma, 2.0, expression_020)
 __TEST__(cbrt, 2.0, expression_021)
 BOOST_AUTO_TEST_CASE(zero_000)
 {	const auto pFactory = theExpressionEngine::factory<true>::getFactory();
-	const theExpressionEngine::factory<true>::name2int s = {{"x", pFactory->parameter(0)}};
+	const theExpressionEngine::factory<true>::name2int s = {{"x", pFactory->parameter(0, true)}};
 	BOOST_CHECK(pFactory->parse("0*x", s) == pFactory->parse("0", s));
 	BOOST_CHECK(pFactory->parse("x*0", s) == pFactory->parse("0", s));
 }
 BOOST_AUTO_TEST_CASE(zero_001)
 {	const auto pFactory = theExpressionEngine::factory<true>::getFactory();
-	const theExpressionEngine::factory<true>::name2int s = {{"x", pFactory->parameter(0)}};
+	const theExpressionEngine::factory<true>::name2int s = {{"x", pFactory->parameter(0, true)}};
 	BOOST_CHECK(pFactory->parse("1*x", s) == pFactory->parse("x", s));
 	BOOST_CHECK(pFactory->parse("x*1", s) == pFactory->parse("x", s));
 }
 BOOST_AUTO_TEST_CASE(zero_002)
 {	const auto pFactory = theExpressionEngine::factory<true>::getFactory();
-	const theExpressionEngine::factory<true>::name2int s = {{"x", pFactory->parameter(0)}};
+	const theExpressionEngine::factory<true>::name2int s = {{"x", pFactory->parameter(0, true)}};
 	BOOST_CHECK(pFactory->parse("0/x", s) == pFactory->parse("0", s));
 }
 BOOST_AUTO_TEST_CASE(zero_003)
 {	const auto pFactory = theExpressionEngine::factory<true>::getFactory();
-	const theExpressionEngine::factory<true>::name2int s = {{"x", pFactory->parameter(0)}};
+	const theExpressionEngine::factory<true>::name2int s = {{"x", pFactory->parameter(0, true)}};
 	BOOST_CHECK(pFactory->parse("x/1", s) == pFactory->parse("x", s));
 }
 BOOST_AUTO_TEST_CASE(zero_004)
 {	const auto pFactory = theExpressionEngine::factory<true>::getFactory();
-	const theExpressionEngine::factory<true>::name2int s = {{"x", pFactory->parameter(0)}};
+	const theExpressionEngine::factory<true>::name2int s = {{"x", pFactory->parameter(0, true)}};
 	BOOST_CHECK(pFactory->parse("0+x", s) == pFactory->parse("x", s));
 	BOOST_CHECK(pFactory->parse("x+0", s) == pFactory->parse("x", s));
 	BOOST_CHECK(pFactory->parse("x-0", s) == pFactory->parse("x", s));
@@ -107,7 +107,7 @@ BOOST_AUTO_TEST_CASE(zero_004)
 }
 BOOST_AUTO_TEST_CASE(zero_005)
 {	const auto pFactory = theExpressionEngine::factory<true>::getFactory();
-	const theExpressionEngine::factory<true>::name2int s = {{"x", pFactory->parameter(0)}};
+	const theExpressionEngine::factory<true>::name2int s = {{"x", pFactory->parameter(0, true)}};
 	const auto s1 = pFactory->parse("1+x", s);
 	using namespace theExpressionEngine::operators;
 	const auto s2 = s1*s1;
@@ -119,7 +119,7 @@ BOOST_AUTO_TEST_CASE(zero_005)
 	std::vector<int> sCI;
 	const auto sES = pFactory->createExpressionSet({s2});
 	BOOST_CHECK(sES->getChildren().size() == 2);
-	BOOST_CHECK(sES->getChildren().at(1) == pFactory->variable(0)*pFactory->variable(0));
+	BOOST_CHECK(sES->getChildren().at(1) == pFactory->variable(0, true)*pFactory->variable(0, true));
 	BOOST_CHECK(sES->getChildren().at(0) == s1);
 	sES->evaluate(sC, sCI, &d, nullptr);
 	BOOST_CHECK_CLOSE(sC.at(sES->getOrder().at(0)), d1, 0.001);
@@ -128,7 +128,7 @@ BOOST_AUTO_TEST_CASE(zero_005)
 }
 BOOST_AUTO_TEST_CASE(zero_006)
 {	const auto pFactory = theExpressionEngine::factory<true>::getFactory();
-	const theExpressionEngine::factory<true>::name2int s = {{"x", pFactory->parameter(0)}};
+	const theExpressionEngine::factory<true>::name2int s = {{"x", pFactory->parameter(0, true)}};
 #define str(x) #x
 #define expand(x) str(x)
 #define expr(x) ((1+x)*(1-x)*(2+x)*(2-x)*(3+x)*(3-x))
@@ -159,8 +159,8 @@ BOOST_AUTO_TEST_CASE(zero_006)
 }
 BOOST_AUTO_TEST_CASE(zero_007)
 {	const auto pFactory = theExpressionEngine::factory<true>::getFactory();
-	const auto pX = pFactory->parameter(0);
-	const auto pY = pFactory->parameter(1);
+	const auto pX = pFactory->parameter(0, true);
+	const auto pY = pFactory->parameter(1, true);
 	//using namespace theExpressionEngine;
 	using namespace theExpressionEngine::operators;
 	BOOST_CHECK(pX + pY == pFactory->addition(pX, pY));
@@ -190,8 +190,8 @@ BOOST_AUTO_TEST_CASE(zero_008)
 	BOOST_CHECK(pFactory->less(p1, p0) == pFactory->intConstant(0));
 	BOOST_CHECK(pFactory->greater(p0, p1) == pFactory->intConstant(0));
 	BOOST_CHECK(pFactory->greater_equal(p0, p1) == pFactory->intConstant(0));
-	const auto pX = pFactory->parameter(0);
-	const auto pY = pFactory->parameter(1);
+	const auto pX = pFactory->parameter(0, true);
+	const auto pY = pFactory->parameter(1, true);
 	const double aXY[2] = {1.0, 1.1};
 	BOOST_CHECK(pFactory->greater(pX, pY)->evaluateInt(aXY, nullptr, nullptr, nullptr) == 0);
 	BOOST_CHECK(pFactory->greater_equal(pX, pY)->evaluateInt(aXY, nullptr, nullptr, nullptr) == 0);
@@ -210,7 +210,7 @@ BOOST_AUTO_TEST_CASE(zero_008)
 	BOOST_CHECK(pFactory->greater_equal(pX, pY)->evaluateIntLLVM(aXY1, nullptr, nullptr, nullptr) == 1);
 	BOOST_CHECK(pFactory->less(pX, pY)->evaluateIntLLVM(aXY1, nullptr, nullptr, nullptr) == 0);
 	BOOST_CHECK(pFactory->less_equal(pX, pY)->evaluateIntLLVM(aXY1, nullptr, nullptr, nullptr) == 0);
-	const theExpressionEngine::factory<true>::name2int s = {{"x", pFactory->parameter(0)}, {"y", pFactory->parameter(1)}};
+	const theExpressionEngine::factory<true>::name2int s = {{"x", pFactory->parameter(0, true)}, {"y", pFactory->parameter(1, true)}};
 	BOOST_CHECK(pFactory->parse("x<y", s)->evaluateInt(aXY, nullptr, nullptr, nullptr) == 1);
 	BOOST_CHECK(pFactory->parse("x<=y", s)->evaluateInt(aXY, nullptr, nullptr, nullptr) == 1);
 	BOOST_CHECK(pFactory->parse("x<y", s)->evaluateIntLLVM(aXY, nullptr, nullptr, nullptr) == 1);
@@ -230,14 +230,14 @@ BOOST_AUTO_TEST_CASE(zero_009)
 	BOOST_CHECK(pFactory->not_equal_to(p1, p1) == pFactory->intConstant(0));
 	BOOST_CHECK(pFactory->equal_to(p1, p0) == pFactory->intConstant(0));
 	BOOST_CHECK(pFactory->not_equal_to(p1, p0) == pFactory->intConstant(1));
-	const auto pX = pFactory->parameter(0);
-	const auto pY = pFactory->parameter(1);
+	const auto pX = pFactory->parameter(0, true);
+	const auto pY = pFactory->parameter(1, true);
 	const double aXY[2] = {1.0, 1.1};
 	BOOST_CHECK(pFactory->equal_to(pX, pY)->evaluateInt(aXY, nullptr, nullptr, nullptr) == 0);
 	BOOST_CHECK(pFactory->not_equal_to(pX, pY)->evaluateInt(aXY, nullptr, nullptr, nullptr) == 1);
 	BOOST_CHECK(pFactory->equal_to(pX, pY)->evaluateIntLLVM(aXY, nullptr, nullptr, nullptr) == 0);
 	BOOST_CHECK(pFactory->not_equal_to(pX, pY)->evaluateIntLLVM(aXY, nullptr, nullptr, nullptr) == 1);
-	const theExpressionEngine::factory<true>::name2int s = {{"x", pFactory->parameter(0)}, {"y", pFactory->parameter(1)}};
+	const theExpressionEngine::factory<true>::name2int s = {{"x", pFactory->parameter(0, true)}, {"y", pFactory->parameter(1, true)}};
 	BOOST_CHECK(pFactory->parse("x==y", s)->evaluateInt(aXY, nullptr, nullptr, nullptr) == 0);
 	BOOST_CHECK(pFactory->parse("x!=y", s)->evaluateInt(aXY, nullptr, nullptr, nullptr) == 1);
 	BOOST_CHECK(pFactory->parse("x==y", s)->evaluateIntLLVM(aXY, nullptr, nullptr, nullptr) == 0);
@@ -247,10 +247,10 @@ BOOST_AUTO_TEST_CASE(zero_010)
 {	const auto pFactory = theExpressionEngine::factory<true>::getFactory();
 	//using namespace theExpressionEngine;
 	using namespace theExpressionEngine::operators;
-	const auto pX = pFactory->parameter(0);
-	const auto pY = pFactory->parameter(1);
+	const auto pX = pFactory->parameter(0, true);
+	const auto pY = pFactory->parameter(1, true);
 	const double aXY[2] = {1.0, 1.1};
-	const theExpressionEngine::factory<true>::name2int s = {{"x", pFactory->parameter(0)}, {"y", pFactory->parameter(1)}};
+	const theExpressionEngine::factory<true>::name2int s = {{"x", pFactory->parameter(0, true)}, {"y", pFactory->parameter(1, true)}};
 	BOOST_CHECK_CLOSE(pFactory->parse("x>y ? x : y", s)->evaluate(aXY, nullptr, nullptr, nullptr), 1.1, 1e-6);
 	BOOST_CHECK_CLOSE(pFactory->parse("x<y ? x : y", s)->evaluate(aXY, nullptr, nullptr, nullptr), 1.0, 1e-6);
 	BOOST_CHECK(pFactory->less(pFactory->intConstant(1), pFactory->intConstant(2)) == pFactory->intConstant(1));
