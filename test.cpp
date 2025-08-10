@@ -299,41 +299,41 @@ BOOST_AUTO_TEST_CASE(zero_011)
 		{"x7", pX7},
 		{"x8", pX8},
 	};
-	BOOST_CHECK(pFactory->bit_and(pX0, pX1)->evaluateInt(nullptr, aXY, nullptr, nullptr) == (x0 & x1));
-	BOOST_CHECK(pFactory->parse("x0 & x1", s)->evaluateIntLLVM(nullptr, aXY, nullptr, nullptr) == (x0 & x1));
-
-	BOOST_CHECK(pFactory->bit_or(pX0, pX1)->evaluateInt(nullptr, aXY, nullptr, nullptr) == (x0 | x1));
-	BOOST_CHECK(pFactory->parse("x0 | x1", s)->evaluateIntLLVM(nullptr, aXY, nullptr, nullptr) == (x0 | x1));
-
-	BOOST_CHECK(pFactory->bit_xor(pX0, pX1)->evaluateInt(nullptr, aXY, nullptr, nullptr) == (x0 ^ x1));
-	BOOST_CHECK(pFactory->parse("x0 ^ x1", s)->evaluateInt(nullptr, aXY, nullptr, nullptr) == (x0 ^ x1));
-	BOOST_CHECK(pFactory->parse("x0 ^ x1", s)->evaluateIntLLVM(nullptr, aXY, nullptr, nullptr) == (x0 ^ x1));
-
-	BOOST_CHECK(pFactory->parse("x0 & x1 | x0^x1", s)->evaluateInt(nullptr, aXY, nullptr, nullptr) == (x0 & x1 | x0^x1));
-	BOOST_CHECK(pFactory->parse("x0 & x1 | x0^x1", s)->evaluateIntLLVM(nullptr, aXY, nullptr, nullptr) == (x0 & x1 | x0^x1));
-
-	BOOST_CHECK(pFactory->parse("x0 + x1", s)->evaluateInt(nullptr, aXY, nullptr, nullptr) == (x0 + x1));
-	BOOST_CHECK(pFactory->parse("x0 + x1", s)->evaluateIntLLVM(nullptr, aXY, nullptr, nullptr) == (x0 + x1));
-
-	BOOST_CHECK(pFactory->parse("x0 - x1", s)->evaluateInt(nullptr, aXY, nullptr, nullptr) == (x0 - x1));
-	BOOST_CHECK(pFactory->parse("x0 - x1", s)->evaluateIntLLVM(nullptr, aXY, nullptr, nullptr) == (x0 - x1));
-
-	BOOST_CHECK(pFactory->parse("x0 * x1", s)->evaluateInt(nullptr, aXY, nullptr, nullptr) == (x0 * x1));
-	BOOST_CHECK(pFactory->parse("x0 * x1", s)->evaluateIntLLVM(nullptr, aXY, nullptr, nullptr) == (x0 * x1));
-
-	BOOST_CHECK(pFactory->parse("x0 / x1", s)->evaluateInt(nullptr, aXY, nullptr, nullptr) == (x0 / x1));
-	BOOST_CHECK(pFactory->parse("x0 / x1", s)->evaluateIntLLVM(nullptr, aXY, nullptr, nullptr) == (x0 / x1));
-
+#define RUN \
+	BOOST_CHECK(pFactory->parse(xexpr, s)->evaluateInt(nullptr, aXY, nullptr, nullptr) == (expr));\
+	BOOST_CHECK(pFactory->parse(xexpr, s)->evaluateIntLLVM(nullptr, aXY, nullptr, nullptr) == (expr));
 #define stringify(x) #x
 #define xstringify(x) stringify(x)
-#define expr x(0) | x(1) ^ x(2) & x(3) + x(5) * x(6)
 #define xexpr xstringify(expr)
 #define x(n) x##n
-	BOOST_CHECK(pFactory->parse(xexpr, s)->evaluateInt(nullptr, aXY, nullptr, nullptr) == (expr));
-	BOOST_CHECK(pFactory->parse(xexpr, s)->evaluateIntLLVM(nullptr, aXY, nullptr, nullptr) == (expr));
+#define expr x0 & x1
+	RUN
+#undef expr
+#define expr x0 | x1
+	RUN
+#undef expr
+#define expr x0 ^ x1
+	RUN
+#undef expr
+#define expr x0 & x1 | x0^x1
+	RUN
+#undef expr
+#define expr x0 + x1
+	RUN
+#undef expr
+#define expr x0 - x1
+	RUN
+#undef expr
+#define expr x0 * x1
+	RUN
+#undef expr
+#define expr x0 / x1
+	RUN
 #undef expr
 #define expr x(0) * x(1) + x(2) & x(3) ^ x(5) | x(6)
-	BOOST_CHECK(pFactory->parse(xexpr, s)->evaluateInt(nullptr, aXY, nullptr, nullptr) == (expr));
-	BOOST_CHECK(pFactory->parse(xexpr, s)->evaluateIntLLVM(nullptr, aXY, nullptr, nullptr) == (expr));
+	RUN
+#undef expr
+#define expr x(0) | x(1) ^ x(2) & x(3) + x(5) * x(6)
+	RUN
 #undef expr
 }
