@@ -24,7 +24,9 @@ bp::rule<class expr, expression<__BTHREADED__>::ptr> const expr("expr");
 bp::rule<class add_or_sub, expression<__BTHREADED__>::ptr> const add_or_sub("add_or_sub");
 bp::rule<class less_greater, expression<__BTHREADED__>::ptr> const less_greater("less_greater");
 bp::rule<class equality, expression<__BTHREADED__>::ptr> const equality("equality");
-bp::rule<class bitwise, expression<__BTHREADED__>::ptr> const bitwise("bitwise");
+bp::rule<class bit_and, expression<__BTHREADED__>::ptr> const bit_and("bit_and");
+bp::rule<class bit_or, expression<__BTHREADED__>::ptr> const bit_or("bit_or");
+bp::rule<class bit_xor, expression<__BTHREADED__>::ptr> const bit_xor("bit_xor");
 bp::rule<class logical, expression<__BTHREADED__>::ptr> const logical("logical");
 bp::rule<class shift, expression<__BTHREADED__>::ptr> const shift("shift");
 bp::rule<class negation_, expression<__BTHREADED__>::ptr> const negation_("negation_");
@@ -181,7 +183,49 @@ auto const factor_def =
     | primary_def;
 BOOST_PARSER_DEFINE_RULES(factor);
 
-auto const ternary_def = (equality >> -('?' >> expr >> ':' >> expr))
+auto const bit_and_def = (equality >> *(bp::char_('&') >> equality))
+[(	[](auto& ctx)
+	{	auto const& attr = bp::_attr(ctx);
+		expression<__BTHREADED__>::ptr result = std::get<0>(attr);
+		auto const& ops = std::get<1>(attr);
+		const std::tuple<const factory<__BTHREADED__>::name2int&, const factory<__BTHREADED__>&> &r = bp::_globals(ctx);
+		for (auto const& op_pair : ops)
+		{	expression<__BTHREADED__>::ptr rhs = std::get<1>(op_pair);
+			result = std::get<1>(r).bit_and(result, rhs);
+		}
+		bp::_val(ctx) = result;
+	}
+)];
+BOOST_PARSER_DEFINE_RULES(bit_and);
+auto const bit_xor_def = (bit_and >> *(bp::char_('^') >> bit_and))
+[(	[](auto& ctx)
+	{	auto const& attr = bp::_attr(ctx);
+		expression<__BTHREADED__>::ptr result = std::get<0>(attr);
+		auto const& ops = std::get<1>(attr);
+		const std::tuple<const factory<__BTHREADED__>::name2int&, const factory<__BTHREADED__>&> &r = bp::_globals(ctx);
+		for (auto const& op_pair : ops)
+		{	expression<__BTHREADED__>::ptr rhs = std::get<1>(op_pair);
+			result = std::get<1>(r).bit_xor(result, rhs);
+		}
+		bp::_val(ctx) = result;
+	}
+)];
+BOOST_PARSER_DEFINE_RULES(bit_xor);
+auto const bit_or_def = (bit_xor >> *(bp::char_('|') >> bit_xor))
+[(	[](auto& ctx)
+	{	auto const& attr = bp::_attr(ctx);
+		expression<__BTHREADED__>::ptr result = std::get<0>(attr);
+		auto const& ops = std::get<1>(attr);
+		const std::tuple<const factory<__BTHREADED__>::name2int&, const factory<__BTHREADED__>&> &r = bp::_globals(ctx);
+		for (auto const& op_pair : ops)
+		{	expression<__BTHREADED__>::ptr rhs = std::get<1>(op_pair);
+			result = std::get<1>(r).bit_or(result, rhs);
+		}
+		bp::_val(ctx) = result;
+	}
+)];
+BOOST_PARSER_DEFINE_RULES(bit_or);
+auto const ternary_def = (bit_or >> -('?' >> expr >> ':' >> expr))
 [(	[](auto& ctx)
 	{	auto const& attr = bp::_attr(ctx);
 		const std::tuple<const factory<__BTHREADED__>::name2int&, const factory<__BTHREADED__>&> &r = bp::_globals(ctx);

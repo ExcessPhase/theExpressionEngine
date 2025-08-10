@@ -274,6 +274,27 @@ BOOST_AUTO_TEST_CASE(zero_011)
 	const int aXY[2] = {1, 3};
 	const theExpressionEngine::factory<true>::name2int s = {{"x", pX}, {"y", pY}};
 	BOOST_CHECK(pFactory->bit_and(pX, pY)->evaluateInt(nullptr, aXY, nullptr, nullptr) == (aXY[0] & aXY[1]));
+	BOOST_CHECK(pFactory->parse("x & y", s)->evaluateIntLLVM(nullptr, aXY, nullptr, nullptr) == (aXY[0] & aXY[1]));
+
 	BOOST_CHECK(pFactory->bit_or(pX, pY)->evaluateInt(nullptr, aXY, nullptr, nullptr) == (aXY[0] | aXY[1]));
+	BOOST_CHECK(pFactory->parse("x | y", s)->evaluateIntLLVM(nullptr, aXY, nullptr, nullptr) == (aXY[0] | aXY[1]));
+
 	BOOST_CHECK(pFactory->bit_xor(pX, pY)->evaluateInt(nullptr, aXY, nullptr, nullptr) == (aXY[0] ^ aXY[1]));
+	BOOST_CHECK(pFactory->parse("x ^ y", s)->evaluateInt(nullptr, aXY, nullptr, nullptr) == (aXY[0] ^ aXY[1]));
+	BOOST_CHECK(pFactory->parse("x ^ y", s)->evaluateIntLLVM(nullptr, aXY, nullptr, nullptr) == (aXY[0] ^ aXY[1]));
+
+	BOOST_CHECK(pFactory->parse("x & y | x^y", s)->evaluateInt(nullptr, aXY, nullptr, nullptr) == (aXY[0] & aXY[1] | aXY[0]^aXY[1]));
+	BOOST_CHECK(pFactory->parse("x & y | x^y", s)->evaluateIntLLVM(nullptr, aXY, nullptr, nullptr) == (aXY[0] & aXY[1] | aXY[0]^aXY[1]));
+
+	BOOST_CHECK(pFactory->parse("x + y", s)->evaluateInt(nullptr, aXY, nullptr, nullptr) == (aXY[0] + aXY[1]));
+	BOOST_CHECK(pFactory->parse("x + y", s)->evaluateIntLLVM(nullptr, aXY, nullptr, nullptr) == (aXY[0] + aXY[1]));
+
+	BOOST_CHECK(pFactory->parse("x - y", s)->evaluateInt(nullptr, aXY, nullptr, nullptr) == (aXY[0] - aXY[1]));
+	BOOST_CHECK(pFactory->parse("x - y", s)->evaluateIntLLVM(nullptr, aXY, nullptr, nullptr) == (aXY[0] - aXY[1]));
+
+	BOOST_CHECK(pFactory->parse("x * y", s)->evaluateInt(nullptr, aXY, nullptr, nullptr) == (aXY[0] * aXY[1]));
+	BOOST_CHECK(pFactory->parse("x * y", s)->evaluateIntLLVM(nullptr, aXY, nullptr, nullptr) == (aXY[0] * aXY[1]));
+
+	BOOST_CHECK(pFactory->parse("x / y", s)->evaluateInt(nullptr, aXY, nullptr, nullptr) == (aXY[0] / aXY[1]));
+	BOOST_CHECK(pFactory->parse("x / y", s)->evaluateIntLLVM(nullptr, aXY, nullptr, nullptr) == (aXY[0] / aXY[1]));
 }

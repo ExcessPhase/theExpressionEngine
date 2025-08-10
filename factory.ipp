@@ -336,11 +336,18 @@ struct multiplication:expression<BTHREADED>
 		llvm::Value*const _pT,
 		llvm::Value*const _pIT
 	) const override
-	{	return builder.CreateFMul(
-			this->m_sChildren[0]->generateCodeWF(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
-			this->m_sChildren[1]->generateCodeWF(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
-			"plus"
-		);
+	{	if (this->m_eType == expression<BTHREADED>::eFloatingPoint)
+			return builder.CreateFMul(
+				this->m_sChildren[0]->generateCodeWF(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+				this->m_sChildren[1]->generateCodeWF(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+				"mult"
+			);
+		else
+			return builder.CreateMul(
+				this->m_sChildren[0]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+				this->m_sChildren[1]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+				"mult"
+			);
 	}
 	virtual typename expression<BTHREADED>::ptr recreateFromChildren(typename expression<BTHREADED>::children _s, const factory<BTHREADED>&_rF) const override
 	{	return _rF.multiplication(_s[0], _s[1]);
@@ -382,11 +389,18 @@ struct division:expression<BTHREADED>
 		llvm::Value*const _pT,
 		llvm::Value*const _pIT
 	) const override
-	{	return builder.CreateFDiv(
-			this->m_sChildren[0]->generateCodeWF(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
-			this->m_sChildren[1]->generateCodeWF(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
-			"plus"
-		);
+	{	if (this->m_eType == expression<BTHREADED>::eFloatingPoint)
+			return builder.CreateFDiv(
+				this->m_sChildren[0]->generateCodeWF(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+				this->m_sChildren[1]->generateCodeWF(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+				"div"
+			);
+		else
+			return builder.CreateSDiv(
+				this->m_sChildren[0]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+				this->m_sChildren[1]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+				"div"
+			);
 	}
 	virtual typename expression<BTHREADED>::ptr recreateFromChildren(typename expression<BTHREADED>::children _s, const factory<BTHREADED>&_rF) const override
 	{	return _rF.division(_s[0], _s[1]);
@@ -428,11 +442,18 @@ struct addition:expression<BTHREADED>
 		llvm::Value*const _pT,
 		llvm::Value*const _pIT
 	) const override
-	{	return builder.CreateFAdd(
-			this->m_sChildren[0]->generateCodeWF(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
-			this->m_sChildren[1]->generateCodeWF(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
-			"plus"
-		);
+	{	if (this->m_eType == expression<BTHREADED>::eFloatingPoint)
+			return builder.CreateFAdd(
+				this->m_sChildren[0]->generateCodeWF(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+				this->m_sChildren[1]->generateCodeWF(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+				"addition"
+			);
+		else
+			return builder.CreateAdd(
+				this->m_sChildren[0]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+				this->m_sChildren[1]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+				"addition"
+			);
 	}
 	virtual typename expression<BTHREADED>::ptr recreateFromChildren(typename expression<BTHREADED>::children _s, const factory<BTHREADED>&_rF) const override
 	{	return _rF.addition(_s[0], _s[1]);
@@ -474,11 +495,18 @@ struct subtraction:expression<BTHREADED>
 		llvm::Value*const _pT,
 		llvm::Value*const _pIT
 	) const override
-	{	return builder.CreateFSub(
-			this->m_sChildren[0]->generateCodeWF(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
-			this->m_sChildren[1]->generateCodeWF(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
-			"plus"
-		);
+	{	if (this->m_eType == expression<BTHREADED>::eFloatingPoint)
+			return builder.CreateFSub(
+				this->m_sChildren[0]->generateCodeWF(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+				this->m_sChildren[1]->generateCodeWF(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+				"subtraction"
+			);
+		else
+			return builder.CreateSub(
+				this->m_sChildren[0]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+				this->m_sChildren[1]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+				"subtraction"
+			);
 	}
 	virtual typename expression<BTHREADED>::ptr recreateFromChildren(typename expression<BTHREADED>::children _s, const factory<BTHREADED>&_rF) const override
 	{	return _rF.subtraction(_s[0], _s[1]);
