@@ -27,7 +27,8 @@ bp::rule<class equality, expression<__BTHREADED__>::ptr> const equality("equalit
 bp::rule<class bit_and, expression<__BTHREADED__>::ptr> const bit_and("bit_and");
 bp::rule<class bit_or, expression<__BTHREADED__>::ptr> const bit_or("bit_or");
 bp::rule<class bit_xor, expression<__BTHREADED__>::ptr> const bit_xor("bit_xor");
-bp::rule<class logical, expression<__BTHREADED__>::ptr> const logical("logical");
+bp::rule<class logical_and, expression<__BTHREADED__>::ptr> const logical_and("logical_and");
+bp::rule<class logical_or, expression<__BTHREADED__>::ptr> const logical_or("logical_or");
 bp::rule<class shift, expression<__BTHREADED__>::ptr> const shift("shift");
 bp::rule<class negation_, expression<__BTHREADED__>::ptr> const negation_("negation_");
 bp::rule<class plus, expression<__BTHREADED__>::ptr> const plus("plus");
@@ -225,7 +226,35 @@ auto const bit_or_def = (bit_xor >> *(bp::char_('|') >> bit_xor))
 	}
 )];
 BOOST_PARSER_DEFINE_RULES(bit_or);
-auto const ternary_def = (bit_or >> -('?' >> expr >> ':' >> expr))
+auto const logical_and_def = (bit_or >> *(bp::string("&&") >> bit_or))
+[(	[](auto& ctx)
+	{	auto const& attr = bp::_attr(ctx);
+		expression<__BTHREADED__>::ptr result = std::get<0>(attr);
+		auto const& ops = std::get<1>(attr);
+		const std::tuple<const factory<__BTHREADED__>::name2int&, const factory<__BTHREADED__>&> &r = bp::_globals(ctx);
+		for (auto const& op_pair : ops)
+		{	expression<__BTHREADED__>::ptr rhs = std::get<1>(op_pair);
+			result = std::get<1>(r).logical_and(result, rhs);
+		}
+		bp::_val(ctx) = result;
+	}
+)];
+BOOST_PARSER_DEFINE_RULES(logical_and);
+auto const logical_or_def = (logical_and >> *(bp::string("||") >> logical_and))
+[(	[](auto& ctx)
+	{	auto const& attr = bp::_attr(ctx);
+		expression<__BTHREADED__>::ptr result = std::get<0>(attr);
+		auto const& ops = std::get<1>(attr);
+		const std::tuple<const factory<__BTHREADED__>::name2int&, const factory<__BTHREADED__>&> &r = bp::_globals(ctx);
+		for (auto const& op_pair : ops)
+		{	expression<__BTHREADED__>::ptr rhs = std::get<1>(op_pair);
+			result = std::get<1>(r).logical_or(result, rhs);
+		}
+		bp::_val(ctx) = result;
+	}
+)];
+BOOST_PARSER_DEFINE_RULES(logical_or);
+auto const ternary_def = (logical_or >> -('?' >> expr >> ':' >> expr))
 [(	[](auto& ctx)
 	{	auto const& attr = bp::_attr(ctx);
 		const std::tuple<const factory<__BTHREADED__>::name2int&, const factory<__BTHREADED__>&> &r = bp::_globals(ctx);
