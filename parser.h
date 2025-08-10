@@ -209,15 +209,15 @@ auto const equality_ops_def = bp::lexeme[
 	| bp::string("!=")
 ];
 BOOST_PARSER_DEFINE_RULES(equality_ops);
-auto const equality_def = (less_greater >> -(equality_ops >> less_greater))
+auto const equality_def = (less_greater >> *(equality_ops >> less_greater))
 	[(	[](auto& ctx)
 		{	auto const& attr = bp::_attr(ctx);
 			expression<__BTHREADED__>::ptr result = std::get<0>(attr);
-			auto const& maybe_rhs = std::get<1>(attr);
+			auto const& ops = std::get<1>(attr);
 			const std::tuple<const factory<__BTHREADED__>::name2int&, const factory<__BTHREADED__>&> &r = bp::_globals(ctx);
-			if (maybe_rhs)
-			{	auto const &op = std::get<0>(*maybe_rhs); // string_view
-				expression<__BTHREADED__>::ptr rhs = std::get<1>(*maybe_rhs);
+			for (auto const& op_pair : ops)
+			{	auto& op = std::get<0>(op_pair); // '+' or '-'
+				expression<__BTHREADED__>::ptr rhs = std::get<1>(op_pair);
 				if (op == "==")
 					result = std::get<1>(r).equal_to(result, rhs);
 				else
@@ -242,8 +242,7 @@ auto const less_greater_def = (add_or_sub >> *(relational_ops >> add_or_sub))
 			auto const& ops = std::get<1>(attr);
 			const std::tuple<const factory<__BTHREADED__>::name2int&, const factory<__BTHREADED__>&> &r = bp::_globals(ctx);
 			for (auto const& op_pair : ops)
-			{
-				auto& op = std::get<0>(op_pair); // '+' or '-'
+			{	auto& op = std::get<0>(op_pair); // '+' or '-'
 				expression<__BTHREADED__>::ptr rhs = std::get<1>(op_pair);
 				if (op == "<=")
 					result = std::get<1>(r).less_equal(result, rhs);
