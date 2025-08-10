@@ -336,4 +336,10 @@ BOOST_AUTO_TEST_CASE(zero_011)
 #define expr x(0) | x(1) ^ x(2) & x(3) + x(5) * x(6)
 	RUN
 #undef expr
+#define expr x(0) || x(1) && x(2) | x(3) ^ x(4) & x(5) == x(6) < x(7) + x(8)
+	RUN
+#undef expr
+#define expr x(0) + x(1) < x(2) == x(3) & x(4) ^ x(5) | x(6) && x(7) || x(8)
+	RUN
+#undef expr
 }
