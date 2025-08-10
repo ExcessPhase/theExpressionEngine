@@ -303,6 +303,69 @@ struct min:expression<BTHREADED>
 	{	return std::min(this->m_sChildren[0]->evaluateInt(_p, _pI, _pT, _pIT), this->m_sChildren[1]->evaluateInt(_p, _pI, _pT, _pIT));
 	}
 };
+template<
+	bool BTHREADED,
+	const char ACOP[],
+	const char ACNAME[],
+	llvm::Value* (*CreateFCmpOLT)(llvm::IRBuilder<>&, llvm::Value*, llvm::Value*, const llvm::Twine&),
+	llvm::Value* (*CreateICmpSLT)(llvm::IRBuilder<>&, llvm::Value*, llvm::Value*, const llvm::Twine&),
+	typename factory<BTHREADED>::exprPtr (factory<BTHREADED>::*less)(const typename factory<BTHREADED>::exprPtr&_p0, const typename factory<BTHREADED>::exprPtr&_p1) const,
+	typename FUNCTOR
+>
+struct arithmetic:expression<BTHREADED>
+{	arithmetic(const typename expression<BTHREADED>::ptr&_p0, const typename expression<BTHREADED>::ptr&_p1)
+		:expression<BTHREADED>(
+			typename expression<BTHREADED>::children({_p0, _p1}),
+			_p0->m_eType == expression<BTHREADED>::eFloatingPoint
+				|| _p1->m_eType == expression<BTHREADED>::eFloatingPoint
+				? expression<BTHREADED>::eFloatingPoint
+				: expression<BTHREADED>::eInteger
+		)
+	{
+	}
+	virtual std::ostream &print(std::ostream&_r) const override
+	{	_r << "(";
+		this->m_sChildren[0]->print(_r) << ACOP;
+		return this->m_sChildren[1]->print(_r) << ")";
+	}
+	virtual double evaluate(const double *const _p, const int *const _pI, const double*const _pT, const int*const _pIT) const override
+	{	return FUNCTOR()(this->m_sChildren[0]->evaluateW(_p, _pI, _pT, _pIT), this->m_sChildren[1]->evaluateW(_p, _pI, _pT, _pIT));
+	}
+	virtual int evaluateInt(const double *const _p, const int *const _pI, const double*const _pT, const int*const _pIT) const override
+	{	return FUNCTOR()(this->m_sChildren[0]->evaluateInt(_p, _pI, _pT, _pIT), this->m_sChildren[1]->evaluateInt(_p, _pI, _pT, _pIT));
+	}
+	virtual llvm::Value* generateCode(
+		const expression<BTHREADED>*const _pRoot,
+		llvm::LLVMContext& context,
+		llvm::IRBuilder<>& builder,
+		llvm::Module *const M,
+		llvm::Value*const _pP,
+		llvm::Value*const _pIP,
+		llvm::Value*const _pT,
+		llvm::Value*const _pIT
+	) const override
+	{	if (this->m_eType == expression<BTHREADED>::eFloatingPoint)
+			return (*CreateFCmpOLT)(
+				builder,
+				this->m_sChildren[0]->generateCodeWF(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+				this->m_sChildren[1]->generateCodeWF(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+				"mult"
+			);
+		else
+			return (*CreateICmpSLT)(
+				builder,
+				this->m_sChildren[0]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+				this->m_sChildren[1]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+				"mult"
+			);
+	}
+	virtual typename expression<BTHREADED>::ptr recreateFromChildren(typename expression<BTHREADED>::children _s, const factory<BTHREADED>&_rF) const override
+	{	return (_rF.*less)(_s[0], _s[1]);
+	}
+	virtual std::size_t getWeight(void) const override
+	{	return 4;
+	}
+};
 template<bool BTHREADED>
 struct multiplication:expression<BTHREADED>
 {	multiplication(const typename expression<BTHREADED>::ptr&_p0, const typename expression<BTHREADED>::ptr&_p1)
@@ -1309,13 +1372,51 @@ struct factoryImpl:factory<BTHREADED>
 	{	return theExpressionEngine::expression<BTHREADED>::template create<theExpressionEngine::min<BTHREADED> >(*this, _p0, _p1);
 	}
 	virtual exprPtr addition(const exprPtr&_p0, const exprPtr&_p1) const override
-	{	if (_p0->isZero())
+	{	static constexpr char acOP[] = "+";
+		static constexpr char acName[] = "add";
+		typedef arithmetic<
+			BTHREADED,
+			acOP,
+			acName,
+			[](llvm::IRBuilder<>&_rB, llvm::Value*_pL, llvm::Value*_pR, const llvm::Twine&_rN) -> llvm::Value*
+			{	return _rB.CreateFAdd(_pL, _pR, _rN);
+			},
+			[](llvm::IRBuilder<>&_rB, llvm::Value*_pL, llvm::Value*_pR, const llvm::Twine&_rN) -> llvm::Value*
+			{	return _rB.CreateAdd(_pL, _pR, _rN);
+			},
+			&factory<BTHREADED>::addition,
+			std::plus<void>
+		> type;
+/*		if (this->m_eType == expression<BTHREADED>::eFloatingPoint)
+			return builder.CreateFAdd(
+				this->m_sChildren[0]->generateCodeWF(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+				this->m_sChildren[1]->generateCodeWF(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+				"addition"
+			);
+		else
+			return builder.CreateAdd(
+				this->m_sChildren[0]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+				this->m_sChildren[1]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+				"addition"
+			);
+	}*
+template<
+	bool BTHREADED,
+	const char ACOP[],
+	const char ACNAME[],
+	llvm::Value* (*CreateFCmpOLT)(llvm::IRBuilder<>&, llvm::Value*, llvm::Value*, const llvm::Twine&),
+	llvm::Value* (llvm::IRBuilderBase::*CreateICmpSLT)(llvm::Value*, llvm::Value*, const llvm::Twine&),
+	typename factory<BTHREADED>::exprPtr (factory<BTHREADED>::*less)(const typename factory<BTHREADED>::exprPtr&_p0, const typename factory<BTHREADED>::exprPtr&_p1) const,
+	typename FUNCTOR
+>
+*/
+		if (_p0->isZero())
 			return _p1;
 		else
 		if (_p1->isZero())
 			return _p0;
 		else
-			return theExpressionEngine::expression<BTHREADED>::template create<theExpressionEngine::addition<BTHREADED> >(*this, _p0, _p1);
+			return theExpressionEngine::expression<BTHREADED>::template create<type>(*this, _p0, _p1);
 	}
 	virtual exprPtr subtraction(const exprPtr&_p0, const exprPtr&_p1) const override
 	{	if (_p0->isZero())
@@ -1545,6 +1646,15 @@ struct factoryImpl:factory<BTHREADED>
 		>(*this, _p0, _p1);
 	}
 	virtual exprPtr logical_not(const exprPtr&_p) const override
+	{	return nullptr;
+	}
+	virtual exprPtr shift_left(const exprPtr&, const exprPtr&) const override
+	{	return nullptr;
+	}
+	virtual exprPtr shift_right(const exprPtr&, const exprPtr&) const override
+	{	return nullptr;
+	}
+	virtual exprPtr modulus(const exprPtr&, const exprPtr&) const override
 	{	return nullptr;
 	}
 };

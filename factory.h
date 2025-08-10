@@ -48,6 +48,9 @@ struct factory:std::enable_shared_from_this<const factory<BTHREADED> >
 	virtual exprPtr bit_not(const exprPtr&) const = 0;
 	virtual exprPtr logical_and(const exprPtr&, const exprPtr&) const = 0;
 	virtual exprPtr logical_or(const exprPtr&, const exprPtr&) const = 0;
+	virtual exprPtr shift_left(const exprPtr&, const exprPtr&) const = 0;
+	virtual exprPtr shift_right(const exprPtr&, const exprPtr&) const = 0;
+	virtual exprPtr modulus(const exprPtr&, const exprPtr&) const = 0;
 	virtual exprPtr logical_not(const exprPtr&) const = 0;
 	virtual exprPtr conditional(const exprPtr&, const exprPtr&, const exprPtr&) const = 0;
 	virtual boost::intrusive_ptr<const expressionSet<BTHREADED> > createExpressionSet(const std::vector<exprPtr>&) const = 0;
