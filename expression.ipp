@@ -85,7 +85,7 @@ static void createTernaryFunctions(llvm::Module& module, llvm::LLVMContext& cont
 	llvm::Type* doubleTy = llvm::Type::getDoubleTy(context);
 
 	// --- ternaryInt: i32(i32)
-	llvm::FunctionType* intFuncTy = llvm::FunctionType::get(int32Ty, {int32Ty}, false);
+	llvm::FunctionType* intFuncTy = llvm::FunctionType::get(int32Ty, {int32Ty, int32Ty, int32Ty}, false);
 	llvm::Function* ternaryInt = llvm::Function::Create(
 		intFuncTy,
 		llvm::Function::InternalLinkage,
@@ -106,11 +106,11 @@ static void createTernaryFunctions(llvm::Module& module, llvm::LLVMContext& cont
 	builder.CreateCondBr(condInt, intThen, intElse);
 
 	builder.SetInsertPoint(intThen);
-	llvm::Value* thenValInt = llvm::ConstantInt::get(int32Ty, 100);
+	llvm::Value* thenValInt = ternaryInt->getArg(1);
 	builder.CreateBr(intEnd);
 
 	builder.SetInsertPoint(intElse);
-	llvm::Value* elseValInt = llvm::ConstantInt::get(int32Ty, -100);
+	llvm::Value* elseValInt = ternaryInt->getArg(2);
 	builder.CreateBr(intEnd);
 
 	builder.SetInsertPoint(intEnd);
@@ -120,7 +120,7 @@ static void createTernaryFunctions(llvm::Module& module, llvm::LLVMContext& cont
 	builder.CreateRet(phiInt);
 
 	// --- ternaryDouble: double(i32)
-	llvm::FunctionType* doubleFuncTy = llvm::FunctionType::get(doubleTy, {int32Ty}, false);
+	llvm::FunctionType* doubleFuncTy = llvm::FunctionType::get(doubleTy, {int32Ty, doubleTy, doubleTy}, false);
 	llvm::Function* ternaryDouble = llvm::Function::Create(
 		doubleFuncTy,
 		llvm::Function::InternalLinkage,
@@ -141,11 +141,11 @@ static void createTernaryFunctions(llvm::Module& module, llvm::LLVMContext& cont
 	builder.CreateCondBr(condDbl, dblThen, dblElse);
 
 	builder.SetInsertPoint(dblThen);
-	llvm::Value* thenValDbl = llvm::ConstantFP::get(doubleTy, 3.14);
+	llvm::Value* thenValDbl = ternaryDouble->getArg(1);
 	builder.CreateBr(dblEnd);
 
 	builder.SetInsertPoint(dblElse);
-	llvm::Value* elseValDbl = llvm::ConstantFP::get(doubleTy, -2.71);
+	llvm::Value* elseValDbl = ternaryDouble->getArg(2);
 	builder.CreateBr(dblEnd);
 
 	builder.SetInsertPoint(dblEnd);

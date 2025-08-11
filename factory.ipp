@@ -701,14 +701,14 @@ struct relational:expression<BTHREADED>
 	virtual int evaluateInt(const double *const _p, const int *const _pI, const double*const _pT, const int*const _pIT) const override
 	{	switch (this->m_sChildren[0]->m_eType)
 		{	case expression<BTHREADED>::eFloatingPoint:
-				switch (this->m_sChildren[0]->m_eType)
+				switch (this->m_sChildren[1]->m_eType)
 				{	case expression<BTHREADED>::eFloatingPoint:
 						return FUNCTOR()(this->m_sChildren[0]->evaluate(_p, _pI, _pT, _pIT), this->m_sChildren[1]->evaluate(_p, _pI, _pT, _pIT));
 					case expression<BTHREADED>::eInteger:
 						return FUNCTOR()(this->m_sChildren[0]->evaluate(_p, _pI, _pT, _pIT), this->m_sChildren[1]->evaluateInt(_p, _pI, _pT, _pIT));
 				}
 			case expression<BTHREADED>::eInteger:
-				switch (this->m_sChildren[0]->m_eType)
+				switch (this->m_sChildren[1]->m_eType)
 				{	case expression<BTHREADED>::eFloatingPoint:
 						return FUNCTOR()(this->m_sChildren[0]->evaluateInt(_p, _pI, _pT, _pIT), this->m_sChildren[1]->evaluate(_p, _pI, _pT, _pIT));
 					case expression<BTHREADED>::eInteger:
@@ -730,13 +730,13 @@ struct relational:expression<BTHREADED>
 	) const override
 	{	switch (this->m_sChildren[0]->m_eType)
 		{	case expression<BTHREADED>::eFloatingPoint:
-				switch (this->m_sChildren[0]->m_eType)
+				switch (this->m_sChildren[1]->m_eType)
 				{	case expression<BTHREADED>::eFloatingPoint:
 						return builder.CreateZExt(
 							(*CreateFCmpOLT)(
 								builder,
-								this->m_sChildren[0]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
-								this->m_sChildren[1]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+								this->m_sChildren[0]->generateCodeWF(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+								this->m_sChildren[1]->generateCodeWF(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
 								ACNAME
 							),
 							builder.getInt32Ty()
@@ -745,29 +745,21 @@ struct relational:expression<BTHREADED>
 						return builder.CreateZExt(
 							(*CreateFCmpOLT)(
 								builder,
-								this->m_sChildren[0]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
-								builder.CreateSIToFP(
-									this->m_sChildren[1]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
-									builder.getDoubleTy(),
-									"intToDouble"
-								),
+								this->m_sChildren[0]->generateCodeWF(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+								this->m_sChildren[1]->generateCodeWF(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
 								ACNAME
 							),
 							builder.getInt32Ty()
 						);
 				}
 			case expression<BTHREADED>::eInteger:
-				switch (this->m_sChildren[0]->m_eType)
+				switch (this->m_sChildren[1]->m_eType)
 				{	case expression<BTHREADED>::eFloatingPoint:
 						return builder.CreateZExt(
 							(*CreateFCmpOLT)(
 								builder,
-								builder.CreateSIToFP(
-									this->m_sChildren[0]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
-									builder.getDoubleTy(),
-									"intToDouble"
-								),
-								this->m_sChildren[1]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+								this->m_sChildren[0]->generateCodeWF(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+								this->m_sChildren[1]->generateCodeWF(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
 								ACNAME
 							),
 							builder.getInt32Ty()
@@ -815,8 +807,8 @@ struct conditional:expression<BTHREADED>
 	}
 	virtual double evaluate(const double *const _p, const int *const _pI, const double*const _pT, const int*const _pIT) const override
 	{	return this->m_sChildren[0]->evaluateInt(_p, _pI, _pT, _pIT)
-			? this->m_sChildren[1]->evaluate(_p, _pI, _pT, _pIT)
-			: this->m_sChildren[2]->evaluate(_p, _pI, _pT, _pIT);
+			? this->m_sChildren[1]->evaluateW(_p, _pI, _pT, _pIT)
+			: this->m_sChildren[2]->evaluateW(_p, _pI, _pT, _pIT);
 	}
 	virtual int evaluateInt(const double *const _p, const int *const _pI, const double*const _pT, const int*const _pIT) const override
 	{	return this->m_sChildren[0]->evaluateInt(_p, _pI, _pT, _pIT)

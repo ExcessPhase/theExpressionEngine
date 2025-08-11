@@ -306,28 +306,28 @@ BOOST_AUTO_TEST_CASE(zero_011)
 #define xstringify(x) stringify(x)
 #define xexpr xstringify(expr)
 #define x(n) x##n
-#define expr x0 & x1
+#define expr x(0) & x(1)
 	RUN
 #undef expr
-#define expr x0 | x1
+#define expr x(0) | x(1)
 	RUN
 #undef expr
-#define expr x0 ^ x1
+#define expr x(0) ^ x(1)
 	RUN
 #undef expr
-#define expr x0 & x1 | x0^x1
+#define expr x(0) & x(1) | x(0)^x(1)
 	RUN
 #undef expr
-#define expr x0 + x1
+#define expr x(0) + x(1)
 	RUN
 #undef expr
-#define expr x0 - x1
+#define expr x(0) - x(1)
 	RUN
 #undef expr
-#define expr x0 * x1
+#define expr x(0) * x(1)
 	RUN
 #undef expr
-#define expr x0 / x1
+#define expr x(0) / x(1)
 	RUN
 #undef expr
 #define expr x(0) * x(1) + x(2) & x(3) ^ x(5) | x(6)
@@ -342,4 +342,23 @@ BOOST_AUTO_TEST_CASE(zero_011)
 #define expr x(0) + x(1) < x(2) == x(3) & x(4) ^ x(5) | x(6) && x(7) || x(8)
 	RUN
 #undef expr
+}
+BOOST_AUTO_TEST_CASE(zero_012)
+{	const auto pFactory = theExpressionEngine::factory<true>::getFactory();
+	//using namespace theExpressionEngine;
+	using namespace theExpressionEngine::operators;
+	const auto pX = pFactory->parameter(0, true);
+#undef x0
+#define x0 1.3
+	const double aXY[] = {x0};
+	const theExpressionEngine::factory<true>::name2int s = {
+		{"x0", pX},
+	};
+#undef RUN
+#define RUN \
+	BOOST_CHECK_CLOSE(pFactory->parse(xexpr, s)->evaluate(aXY, nullptr, nullptr, nullptr), expr, 1e-6);\
+	BOOST_CHECK_CLOSE(pFactory->parse(xexpr, s)->evaluateLLVM(aXY, nullptr, nullptr, nullptr), expr, 1e-6);
+#undef expr
+#define expr exp((x(0) > 0 ? -x(0)*x(0) : x(0)*x(0))*1.1)*sin(x(0)*2.0)
+	RUN
 }
