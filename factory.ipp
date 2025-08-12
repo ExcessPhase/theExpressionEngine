@@ -33,7 +33,9 @@ template<
 	bool BTHREADED,
 	const char ACOP[],
 	const char ACNAME[],
-	llvm::Value* (llvm::IRBuilderBase::*CreateICmpSLT)(llvm::Value*, const llvm::Twine&),
+	//llvm::Value* (llvm::IRBuilderBase::*CreateICmpSLT)(llvm::Value*, const llvm::Twine&),
+	//llvm::Value* (llvm::IRBuilderBase::*CreateICmpSLT)(llvm::Value*, const llvm::Twine&),
+	llvm::Value* (*CreateICmpSLT)(llvm::IRBuilder<>&, llvm::Value*, const llvm::Twine&),
 	typename factory<BTHREADED>::exprPtr (factory<BTHREADED>::*less)(const typename factory<BTHREADED>::exprPtr&) const,
 	typename FUNCTOR
 >
@@ -70,7 +72,9 @@ struct int_unary:expression<BTHREADED>
 		llvm::Value*const _pIT
 	) const override
 	{	return builder.CreateZExt(
-			(builder.*CreateICmpSLT)(
+			//(builder.*CreateICmpSLT)(
+			(*CreateICmpSLT)(
+				builder,
 				this->m_sChildren[0]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
 				ACNAME
 			),
@@ -1463,7 +1467,20 @@ struct factoryImpl:factory<BTHREADED>
 		>(*this, _p0, _p1);
 	}
 	virtual exprPtr bit_not(const exprPtr&_p) const override
-	{	return nullptr;
+	{	static constexpr char acOP[] = "~";
+		static constexpr char acName[] = "bit_not";
+		return theExpressionEngine::expression<BTHREADED>::template create<
+			theExpressionEngine::int_unary<
+				BTHREADED,
+				acOP,
+				acName,
+				[](llvm::IRBuilder<>&_rB, llvm::Value*_p, const llvm::Twine&_rN)
+				{	return _rB.CreateNot(_p, _rN);
+				},
+				&factory<BTHREADED>::bit_not,
+				std::bit_not<void>
+			>
+		>(*this, _p);
 	}
 	virtual exprPtr logical_and(const exprPtr&_p0, const exprPtr&_p1) const override
 	{	static constexpr char acOP[] = "&&";
@@ -1501,22 +1518,17 @@ struct factoryImpl:factory<BTHREADED>
 				BTHREADED,
 				acOP,
 				acName,
-				&llvm::IRBuilder<>::CreateNot,
+				[](llvm::IRBuilder<>&_rB, llvm::Value*_p, const llvm::Twine&)
+				{	return _rB.CreateICmpEQ(
+						_p, 
+						llvm::ConstantInt::get(_p->getType(), 0),
+						"is_zero"
+					);
+				},
 				&factory<BTHREADED>::logical_not,
 				std::logical_not<void>
 			>
 		>(*this, _p);
-#if 0
-template<
-	bool BTHREADED,
-	const char ACOP[],
-	const char ACNAME[],
-	llvm::Value* (llvm::IRBuilderBase::*CreateICmpSLT)(llvm::Value*, llvm::Value*, const llvm::Twine&),
-	typename factory<BTHREADED>::exprPtr (factory<BTHREADED>::*less)(const typename factory<BTHREADED>::exprPtr&_p0, const typename factory<BTHREADED>::exprPtr&_p1) const,
-	typename FUNCTOR
->
-struct int_unary:expression<BTHREADED>
-#endif
 	}
 	virtual exprPtr shift_left(const exprPtr&, const exprPtr&) const override
 	{	return nullptr;
