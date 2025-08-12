@@ -357,7 +357,7 @@ BOOST_PARSER_DEFINE_RULES(add_or_sub);
 //auto const mult_div_pair_def = bp::attr('*') | bp::attr('/');
 //BOOST_PARSER_DEFINE_RULES(mult_div_pair);
 
-auto const term_def = (factor >> *(bp::char_("*/") >> factor))
+auto const term_def = (factor >> *(bp::char_("*/%") >> factor))
 	[(	[](auto& ctx)
 		{	auto const& attr = bp::_attr(ctx);
 			expression<__BTHREADED__>::ptr result = std::get<0>(attr);
@@ -370,7 +370,10 @@ auto const term_def = (factor >> *(bp::char_("*/") >> factor))
 				if (op == '*')
 					result = std::get<1>(r).multiplication(result, rhs);
 				else
+				if (op == '/')
 					result = std::get<1>(r).division(result, rhs);
+				else
+					result = std::get<1>(r).modulus(result, rhs);
 			}
 			bp::_val(ctx) = result;
 		}

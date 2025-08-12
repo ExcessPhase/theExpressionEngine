@@ -1450,8 +1450,19 @@ struct factoryImpl:factory<BTHREADED>
 	virtual exprPtr shift_right(const exprPtr&, const exprPtr&) const override
 	{	return nullptr;
 	}
-	virtual exprPtr modulus(const exprPtr&, const exprPtr&) const override
-	{	return nullptr;
+	virtual exprPtr modulus(const exprPtr&_p0, const exprPtr&_p1) const override
+	{	static constexpr char acOP[] = "%";
+		static constexpr char acName[] = "modulus";
+		return theExpressionEngine::expression<BTHREADED>::template create<
+			theExpressionEngine::bw_logical<
+				BTHREADED,
+				acOP,
+				acName,
+				&llvm::IRBuilder<>::CreateSRem,
+				&factory<BTHREADED>::modulus,
+				std::modulus<void>
+			>
+		>(*this, _p0, _p1);
 	}
 };
 template<>

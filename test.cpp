@@ -323,6 +323,15 @@ BOOST_AUTO_TEST_CASE(zero_011)
 #define xstringify(x) stringify(x)
 #define xexpr xstringify(expr)
 #define x(n) x##n
+#define expr x(8) % x(0)
+	RUN
+#undef expr
+#define expr x(8) % x(1)
+	RUN
+#undef expr
+#define expr x(7) % x(3)
+	RUN
+#undef expr
 #define expr x(0) & x(1)
 	RUN
 #undef expr
