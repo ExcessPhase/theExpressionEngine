@@ -233,14 +233,23 @@ struct max:expression<BTHREADED>
 	{	// Create the function prototype for std::sqrt
 		using namespace llvm;
 			// Call the tan function
-		Type* const doubleType = Type::getDoubleTy(context);
-		return builder.CreateCall(
-			Intrinsic::getOrInsertDeclaration(M, Intrinsic::maxnum, {doubleType}),
-			{	this->m_sChildren[0]->generateCodeWF(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
-				this->m_sChildren[1]->generateCodeWF(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT)
-			},
-			"maxnum"
-		);
+		if (this->m_eType == expression<BTHREADED>::eFloatingPoint)
+			return builder.CreateCall(
+				Intrinsic::getOrInsertDeclaration(M, Intrinsic::maxnum, {Type::getDoubleTy(context)}),
+				{	this->m_sChildren[0]->generateCodeWF(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+					this->m_sChildren[1]->generateCodeWF(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT)
+				},
+				"maxnum"
+			);
+		else
+		{	const auto pL = this->m_sChildren[0]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT);
+			const auto pR = this->m_sChildren[1]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT);
+			return builder.CreateSelect(
+				builder.CreateICmpSGT(pL, pR),
+				pL,
+				pR
+			);
+		};
 	}
 	virtual typename expression<BTHREADED>::ptr recreateFromChildren(typename expression<BTHREADED>::children _s, const factory<BTHREADED>&_rF) const override
 	{	return _rF.max(_s[0], _s[1]);
@@ -278,16 +287,24 @@ struct min:expression<BTHREADED>
 	) const override
 	{	// Create the function prototype for std::sqrt
 		using namespace llvm;
-		//Value* const Input = ConstantFP::get(llvm::Type::getDoubleTy(context), m_sChildren.at(0)->generateCodeW(context, builder, M));
-		// Call the tan function
-		Type* const doubleType = Type::getDoubleTy(context);
-		return builder.CreateCall(
-			Intrinsic::getOrInsertDeclaration(M, Intrinsic::minnum, {doubleType}),
-			{	this->m_sChildren[0]->generateCodeWF(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
-				this->m_sChildren[1]->generateCodeWF(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
-			},
-			"minnum"
-		);
+			// Call the tan function
+		if (this->m_eType == expression<BTHREADED>::eFloatingPoint)
+			return builder.CreateCall(
+				Intrinsic::getOrInsertDeclaration(M, Intrinsic::minnum, {Type::getDoubleTy(context)}),
+				{	this->m_sChildren[0]->generateCodeWF(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+					this->m_sChildren[1]->generateCodeWF(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT)
+				},
+				"minnum"
+			);
+		else
+		{	const auto pL = this->m_sChildren[0]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT);
+			const auto pR = this->m_sChildren[1]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT);
+			return builder.CreateSelect(
+				builder.CreateICmpSLT(pL, pR),
+				pL,
+				pR
+			);
+		}
 	}
 	virtual typename expression<BTHREADED>::ptr recreateFromChildren(typename expression<BTHREADED>::children _s, const factory<BTHREADED>&_rF) const override
 	{	return _rF.min(_s[0], _s[1]);

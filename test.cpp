@@ -20,6 +20,19 @@ struct LLVMSetup {
 };
 BOOST_GLOBAL_FIXTURE(LLVMSetup);
 
+#define __TEST_INT_2__(sin, val0, val1, name)\
+BOOST_AUTO_TEST_CASE(name)\
+{	const auto pFactory = theExpressionEngine::factory<true>::getFactory();\
+	const theExpressionEngine::factory<true>::name2int s = {{"x", pFactory->parameter(0, false)}, {"y", pFactory->parameter(1, false)}};\
+	const auto pExpr = pFactory->parse(#sin "(" #val0 "," #val1 ")", s);\
+	BOOST_CHECK(pExpr == pFactory->intConstant(std::sin(val0, val1)));\
+	BOOST_CHECK(pExpr->evaluateInt(nullptr, nullptr, nullptr, nullptr) == std::sin(val0, val1));\
+	BOOST_CHECK(pExpr->evaluateIntLLVM(nullptr, nullptr, nullptr, nullptr) == std::sin(val0, val1));\
+	BOOST_CHECK(pFactory->parse(#sin "(" "x" "," "y" ")", s)->replace({{pFactory->parameter(0, false), pFactory->intConstant(val0)},{pFactory->parameter(1, false), pFactory->intConstant(val1)}}, *pFactory) == pExpr);\
+	const int aiX[] = {val0, val1};\
+	BOOST_CHECK(pFactory->parse(#sin "(" "x" "," "y" ")", s)->evaluateIntLLVM(nullptr, aiX, nullptr, nullptr) == std::sin(val0, val1));\
+	BOOST_CHECK(pFactory->parse(#sin "(" "x" "," "y" ")", s)->evaluateInt(nullptr, aiX, nullptr, nullptr) == std::sin(val0, val1));\
+}
 #define __TEST2__(sin, val0, val1, name)\
 BOOST_AUTO_TEST_CASE(name)\
 {	const auto pFactory = theExpressionEngine::factory<true>::getFactory();\
@@ -41,6 +54,10 @@ __TEST2__(max, 2.1, 1.1, expression_2_004)
 __TEST2__(min, 2.1, 1.1, expression_2_005)
 __TEST2__(max, 1.1, 2.1, expression_2_006)
 __TEST2__(min, 1.1, 2.1, expression_2_007)
+__TEST_INT_2__(max, 1, 2, expression_2_008)
+__TEST_INT_2__(min, 1, 2, expression_2_009)
+__TEST_INT_2__(max, 2, 1, expression_2_010)
+__TEST_INT_2__(min, 2, 1, expression_2_011)
 #define __TEST__(sin, val, name)\
 BOOST_AUTO_TEST_CASE(name)\
 {	const auto pFactory = theExpressionEngine::factory<true>::getFactory();\
