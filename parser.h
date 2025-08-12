@@ -168,7 +168,7 @@ BOOST_PARSER_DEFINE_RULES(negation_);
 auto const plus_def = ('+' >> single);
 BOOST_PARSER_DEFINE_RULES(plus);
 
-auto const plus_minus_def = plus | negation_;
+auto const plus_minus_def = plus | negation_ | single;
 BOOST_PARSER_DEFINE_RULES(plus_minus);
 
 auto const trig_def = sin | cos | tan | asin | acos | atan;
@@ -184,7 +184,6 @@ auto const single_def =
     | math1_def
     | math2_def
     | binary_def
-	| plus_minus
     | primary_def;
 BOOST_PARSER_DEFINE_RULES(single);
 
@@ -357,7 +356,7 @@ BOOST_PARSER_DEFINE_RULES(add_or_sub);
 //auto const mult_div_pair_def = bp::attr('*') | bp::attr('/');
 //BOOST_PARSER_DEFINE_RULES(mult_div_pair);
 
-auto const term_def = (single >> *(bp::char_("*/%") >> single))
+auto const term_def = (plus_minus >> *(bp::char_("*/%") >> plus_minus))
 	[(	[](auto& ctx)
 		{	auto const& attr = bp::_attr(ctx);
 			expression<__BTHREADED__>::ptr result = std::get<0>(attr);
