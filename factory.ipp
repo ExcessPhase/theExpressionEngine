@@ -33,8 +33,8 @@ template<
 	bool BTHREADED,
 	const char ACOP[],
 	const char ACNAME[],
-	llvm::Value* (llvm::IRBuilderBase::*CreateICmpSLT)(llvm::Value*, llvm::Value*, const llvm::Twine&),
-	typename factory<BTHREADED>::exprPtr (factory<BTHREADED>::*less)(const typename factory<BTHREADED>::exprPtr&_p0, const typename factory<BTHREADED>::exprPtr&_p1) const,
+	llvm::Value* (llvm::IRBuilderBase::*CreateICmpSLT)(llvm::Value*, const llvm::Twine&),
+	typename factory<BTHREADED>::exprPtr (factory<BTHREADED>::*less)(const typename factory<BTHREADED>::exprPtr&) const,
 	typename FUNCTOR
 >
 struct int_unary:expression<BTHREADED>
