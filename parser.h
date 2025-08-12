@@ -18,7 +18,7 @@ bp::rule<class DOUBLE_0, expression<__BTHREADED__>::ptr> const DOUBLE_0("double_
 bp::rule<class DOUBLE_1, expression<__BTHREADED__>::ptr> const DOUBLE_1("double_1");
 bp::rule<class DOUBLE_2, expression<__BTHREADED__>::ptr> const DOUBLE_2("double_2");
 bp::rule<class INT, expression<__BTHREADED__>::ptr> const INT("int");
-bp::rule<class factor, expression<__BTHREADED__>::ptr> const factor("factor");
+bp::rule<class single, expression<__BTHREADED__>::ptr> const single("single");
 bp::rule<class term, expression<__BTHREADED__>::ptr> const term("term");
 bp::rule<class expr, expression<__BTHREADED__>::ptr> const expr("expr");
 bp::rule<class add_or_sub, expression<__BTHREADED__>::ptr> const add_or_sub("add_or_sub");
@@ -32,6 +32,7 @@ bp::rule<class logical_or, expression<__BTHREADED__>::ptr> const logical_or("log
 bp::rule<class shift, expression<__BTHREADED__>::ptr> const shift("shift");
 bp::rule<class negation_, expression<__BTHREADED__>::ptr> const negation_("negation_");
 bp::rule<class plus, expression<__BTHREADED__>::ptr> const plus("plus");
+bp::rule<class plus_minus, expression<__BTHREADED__>::ptr> const plus_minus("plus_minus");
 bp::rule<class x, expression<__BTHREADED__>::ptr> const x("x");
 bp::rule<class ternary, expression<__BTHREADED__>::ptr> const ternary("ternary");
 #define __unary__(a) bp::rule<class a, expression<__BTHREADED__>::ptr> const a(#a);\
@@ -155,7 +156,7 @@ auto const x_def = identifier
 	)];
 BOOST_PARSER_DEFINE_RULES(x);
 
-auto const negation__def = ('-' >> factor)
+auto const negation__def = ('-' >> single)
 	[(
 		[](auto& ctx)
 		{	const std::tuple<const factory<__BTHREADED__>::name2int&, const factory<__BTHREADED__>&> &r = bp::_globals(ctx);
@@ -164,25 +165,28 @@ auto const negation__def = ('-' >> factor)
 	)];
 BOOST_PARSER_DEFINE_RULES(negation_);
 
-auto const plus_def = '+' >> factor;
+auto const plus_def = ('+' >> single);
 BOOST_PARSER_DEFINE_RULES(plus);
+
+auto const plus_minus_def = plus | negation_;
+BOOST_PARSER_DEFINE_RULES(plus_minus);
 
 auto const trig_def = sin | cos | tan | asin | acos | atan;
 auto const hyperbolic_def = sinh | cosh | tanh | asinh | acosh | atanh;
 auto const math1_def = exp | log | sqrt | fabs | log10;
 auto const math2_def = erf | erfc | tgamma | lgamma | cbrt;
 auto const binary_def = pow | max | min | atan2 | fmod | hypot;
-auto const primary_def = NUMBER | ('(' >> expr >> ')') | negation_ | x;
+auto const primary_def = NUMBER | ('(' >> expr >> ')') | x;
 
-auto const factor_def =
+auto const single_def =
     trig_def
     | hyperbolic_def
     | math1_def
     | math2_def
     | binary_def
-    | plus
+	| plus_minus
     | primary_def;
-BOOST_PARSER_DEFINE_RULES(factor);
+BOOST_PARSER_DEFINE_RULES(single);
 
 auto const bit_and_def = (equality >> *(bp::char_('&') >> equality))
 [(	[](auto& ctx)
@@ -272,10 +276,6 @@ BOOST_PARSER_DEFINE_RULES(ternary);
 auto const expr_def = ternary;
 BOOST_PARSER_DEFINE_RULES(expr);
 
-//bp::rule<class plus_minus_pair, char> const plus_minus_pair = "plus_minus_pair";
-//auto const plus_minus_pair_def = bp::char_("+-");
-//BOOST_PARSER_DEFINE_RULES(plus_minus_pair);
-
 bp::rule<class equality_ops, std::string> const equality_ops = "equality_ops";
 auto const equality_ops_def = bp::lexeme[
 	bp::string("==")
@@ -357,7 +357,7 @@ BOOST_PARSER_DEFINE_RULES(add_or_sub);
 //auto const mult_div_pair_def = bp::attr('*') | bp::attr('/');
 //BOOST_PARSER_DEFINE_RULES(mult_div_pair);
 
-auto const term_def = (factor >> *(bp::char_("*/%") >> factor))
+auto const term_def = (single >> *(bp::char_("*/%") >> single))
 	[(	[](auto& ctx)
 		{	auto const& attr = bp::_attr(ctx);
 			expression<__BTHREADED__>::ptr result = std::get<0>(attr);
