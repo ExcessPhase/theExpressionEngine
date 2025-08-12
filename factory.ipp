@@ -62,9 +62,6 @@ struct realConstant:expression<BTHREADED>
 	virtual typename expression<BTHREADED>::ptr recreateFromChildren(typename expression<BTHREADED>::children, const factory<BTHREADED>&) const override
 	{	return this;
 	}
-	virtual std::size_t getWeight(void) const override
-	{	return 1;
-	}
 	virtual std::ostream &print(std::ostream&_r) const override
 	{	return _r << m_d;
 	}
@@ -111,9 +108,6 @@ struct intConstant:expression<BTHREADED>
 	virtual typename expression<BTHREADED>::ptr recreateFromChildren(typename expression<BTHREADED>::children, const factory<BTHREADED>&) const override
 	{	return this;
 	}
-	virtual std::size_t getWeight(void) const override
-	{	return 1;
-	}
 	virtual std::ostream &print(std::ostream&_r) const override
 	{	return _r << m_i;
 	}
@@ -144,7 +138,15 @@ typename expression<BTHREADED>::ptr expression<BTHREADED>::collapse(const factor
 	else
 		return this;
 }
-template<bool BTHREADED, const char ac[], double(*PFCT)(double, double), typename factory<BTHREADED>::exprPtr (factory<BTHREADED>::*CREATE)(const typename factory<BTHREADED>::exprPtr&, const typename factory<BTHREADED>::exprPtr&) const>
+template<
+	bool BTHREADED,
+	const char ac[],
+	double(*PFCT)(double, double),
+	typename factory<BTHREADED>::exprPtr (factory<BTHREADED>::*CREATE)(
+		const typename factory<BTHREADED>::exprPtr&,
+		const typename factory<BTHREADED>::exprPtr&
+	) const
+>
 struct binary:expression<BTHREADED>
 {	binary(const typename expression<BTHREADED>::ptr&_p0, const typename expression<BTHREADED>::ptr&_p1)
 		:expression<BTHREADED>(
@@ -193,9 +195,6 @@ struct binary:expression<BTHREADED>
 	}
 	virtual typename expression<BTHREADED>::ptr recreateFromChildren(typename expression<BTHREADED>::children _s, const factory<BTHREADED>&_rF) const override
 	{	return (_rF.*CREATE)(_s[0], _s[1]);
-	}
-	virtual std::size_t getWeight(void) const override
-	{	return 10;
 	}
 };
 template<bool BTHREADED>
@@ -246,9 +245,6 @@ struct max:expression<BTHREADED>
 	virtual typename expression<BTHREADED>::ptr recreateFromChildren(typename expression<BTHREADED>::children _s, const factory<BTHREADED>&_rF) const override
 	{	return _rF.max(_s[0], _s[1]);
 	}
-	virtual std::size_t getWeight(void) const override
-	{	return 2;
-	}
 };
 template<bool BTHREADED>
 struct min:expression<BTHREADED>
@@ -295,9 +291,6 @@ struct min:expression<BTHREADED>
 	}
 	virtual typename expression<BTHREADED>::ptr recreateFromChildren(typename expression<BTHREADED>::children _s, const factory<BTHREADED>&_rF) const override
 	{	return _rF.min(_s[0], _s[1]);
-	}
-	virtual std::size_t getWeight(void) const override
-	{	return 2;
 	}
 	virtual int evaluateInt(const double *const _p, const int *const _pI, const double*const _pT, const int *const _pIT) const override
 	{	return std::min(this->m_sChildren[0]->evaluateInt(_p, _pI, _pT, _pIT), this->m_sChildren[1]->evaluateInt(_p, _pI, _pT, _pIT));
@@ -362,9 +355,6 @@ struct arithmetic:expression<BTHREADED>
 	virtual typename expression<BTHREADED>::ptr recreateFromChildren(typename expression<BTHREADED>::children _s, const factory<BTHREADED>&_rF) const override
 	{	return (_rF.*less)(_s[0], _s[1]);
 	}
-	virtual std::size_t getWeight(void) const override
-	{	return 4;
-	}
 };
 template<
 	bool BTHREADED,
@@ -407,9 +397,6 @@ struct unary:expression<BTHREADED>
 	}
 	virtual typename expression<BTHREADED>::ptr recreateFromChildren(typename expression<BTHREADED>::children _s, const factory<BTHREADED>&_rF) const override
 	{	return (_rF.*CREATE)(_s[0]);
-	}
-	virtual std::size_t getWeight(void) const override
-	{	return 10;
 	}
 };
 template<
@@ -465,9 +452,6 @@ struct unaryF:expression<BTHREADED>
 	virtual typename expression<BTHREADED>::ptr recreateFromChildren(typename expression<BTHREADED>::children _s, const factory<BTHREADED>&_rF) const override
 	{	return (_rF.*CREATE)(_s[0]);
 	}
-	virtual std::size_t getWeight(void) const override
-	{	return 10;
-	}
 };
 template<bool BTHREADED>
 struct negation:expression<BTHREADED>
@@ -508,9 +492,6 @@ struct negation:expression<BTHREADED>
 	}
 	virtual typename expression<BTHREADED>::ptr recreateFromChildren(typename expression<BTHREADED>::children _s, const factory<BTHREADED>&_rF) const override
 	{	return _rF.negation(_s[0]);
-	}
-	virtual std::size_t getWeight(void) const override
-	{	return 1;
 	}
 };
 template<bool BTHREADED>
@@ -588,9 +569,6 @@ struct variable:expression<BTHREADED>
 	virtual typename expression<BTHREADED>::ptr recreateFromChildren(typename expression<BTHREADED>::children, const factory<BTHREADED>&) const override
 	{	return this;
 	}
-	virtual std::size_t getWeight(void) const override
-	{	return 1;
-	}
 };
 template<bool BTHREADED>
 struct parameter:expression<BTHREADED>
@@ -666,9 +644,6 @@ struct parameter:expression<BTHREADED>
 	}
 	virtual typename expression<BTHREADED>::ptr recreateFromChildren(typename expression<BTHREADED>::children, const factory<BTHREADED>&) const override
 	{	return this;
-	}
-	virtual std::size_t getWeight(void) const override
-	{	return 1;
 	}
 };
 template<
@@ -781,9 +756,6 @@ struct relational:expression<BTHREADED>
 	virtual typename expression<BTHREADED>::ptr recreateFromChildren(typename expression<BTHREADED>::children _s, const factory<BTHREADED>&_rF) const override
 	{	return (_rF.*less)(_s[0], _s[1]);
 	}
-	virtual std::size_t getWeight(void) const override
-	{	return 1;
-	}
 };
 template<bool BTHREADED>
 struct conditional:expression<BTHREADED>
@@ -839,9 +811,6 @@ struct conditional:expression<BTHREADED>
 	}
 	virtual typename expression<BTHREADED>::ptr recreateFromChildren(typename expression<BTHREADED>::children _s, const factory<BTHREADED>&_rF) const override
 	{	return _rF.conditional(_s[0], _s[1], _s[2]);
-	}
-	virtual std::size_t getWeight(void) const override
-	{	return 1;
 	}
 };
 template<
@@ -901,9 +870,6 @@ struct bw_logical:expression<BTHREADED>
 	}
 	virtual typename expression<BTHREADED>::ptr recreateFromChildren(typename expression<BTHREADED>::children _s, const factory<BTHREADED>&_rF) const override
 	{	return (_rF.*less)(_s[0], _s[1]);
-	}
-	virtual std::size_t getWeight(void) const override
-	{	return 1;
 	}
 };
 template<bool BTHREADED>

@@ -150,9 +150,6 @@ struct expression:dynamic_cast_interface<realConstant<BTHREADED> >, dynamic_cast
 	typedef std::function<void(void)> onDestroyFunctor;
 	mutable std::list<onDestroyFunctor> m_sOnDestroyList;
 	virtual void addOnDestroy(onDestroyFunctor _s) const;
-	virtual std::size_t getWeight(void) const = 0;
-	std::size_t getWeightW(void) const;
-	//mutable llvm::Value *m_pValue = nullptr;
 };
 template<bool BTHREADED>
 struct expressionSet:unique<expressionSet<BTHREADED>, BTHREADED>

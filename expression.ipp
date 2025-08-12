@@ -385,6 +385,7 @@ typename expression<BTHREADED>::ptr expression<BTHREADED>::replace(const ptr2ptr
 	std::abort();
 	return nullptr;
 }
+#if 0
 template<bool BTHREADED>
 std::size_t expression<BTHREADED>::getWeightW(void) const
 {	std::stack<ptr> s;
@@ -399,6 +400,7 @@ std::size_t expression<BTHREADED>::getWeightW(void) const
 	}
 	return i;
 }
+#endif
 template<bool BTHREADED>
 llvm::Value *expression<BTHREADED>::generateCodeWF(
 	const expression<BTHREADED> *const _pRoot,
