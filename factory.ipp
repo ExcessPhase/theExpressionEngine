@@ -1530,11 +1530,43 @@ struct factoryImpl:factory<BTHREADED>
 			>
 		>(*this, _p);
 	}
-	virtual exprPtr shift_left(const exprPtr&, const exprPtr&) const override
-	{	return nullptr;
+	virtual exprPtr shift_left(const exprPtr&_p0, const exprPtr&_p1) const override
+	{	static constexpr char acOP[] = "<<";
+		static constexpr char acName[] = "shift_left";
+		struct shift_left
+		{	int operator()(const int _i0, const int _i1) const
+			{	return _i0 << _i1;
+			}
+		};
+		return theExpressionEngine::expression<BTHREADED>::template create<
+			theExpressionEngine::bw_logical<
+				BTHREADED,
+				acOP,
+				acName,
+				&llvm::IRBuilder<>::CreateSRem,
+				&factory<BTHREADED>::shift_left,
+				shift_left
+			>
+		>(*this, _p0, _p1);
 	}
-	virtual exprPtr shift_right(const exprPtr&, const exprPtr&) const override
-	{	return nullptr;
+	virtual exprPtr shift_right(const exprPtr&_p0, const exprPtr&_p1) const override
+	{	static constexpr char acOP[] = ">>";
+		static constexpr char acName[] = "shift_right";
+		struct shift_right
+		{	int operator()(const int _i0, const int _i1) const
+			{	return _i0 >> _i1;
+			}
+		};
+		return theExpressionEngine::expression<BTHREADED>::template create<
+			theExpressionEngine::bw_logical<
+				BTHREADED,
+				acOP,
+				acName,
+				&llvm::IRBuilder<>::CreateSRem,
+				&factory<BTHREADED>::shift_right,
+				shift_right
+			>
+		>(*this, _p0, _p1);
 	}
 	virtual exprPtr modulus(const exprPtr&_p0, const exprPtr&_p1) const override
 	{	static constexpr char acOP[] = "%";

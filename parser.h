@@ -324,7 +324,7 @@ auto const relational_ops_def = bp::lexeme[
 	| bp::string(">")
 ];
 BOOST_PARSER_DEFINE_RULES(relational_ops);
-auto const less_greater_def = (add_or_sub >> *(relational_ops >> add_or_sub))
+auto const less_greater_def = (shift >> *(relational_ops >> shift))
 	[(	[](auto& ctx)
 		{	auto const& attr = bp::_attr(ctx);
 			expression<__BTHREADED__>::ptr result = std::get<0>(attr);
@@ -369,10 +369,25 @@ auto const add_or_sub_def = (term >> *(bp::char_("+-") >> term))
 BOOST_PARSER_DEFINE_RULES(add_or_sub);
 
 
-//bp::rule<class mult_div_pair, char> const mult_div_pair = "mult_div_pair";
-//auto const mult_div_pair_def = bp::attr('*') | bp::attr('/');
-//BOOST_PARSER_DEFINE_RULES(mult_div_pair);
-
+auto const shift_def = (add_or_sub >> *((bp::string(">>")| bp::string("<<")) >> add_or_sub))
+[(	[](auto& ctx)
+	{	auto const& attr = bp::_attr(ctx);
+		expression<__BTHREADED__>::ptr result = std::get<0>(attr);
+		auto const& ops = std::get<1>(attr);
+		const std::tuple<const factory<__BTHREADED__>::name2int&, const factory<__BTHREADED__>&> &r = bp::_globals(ctx);
+		for (auto const& op_pair : ops)
+		{
+			auto& op = std::get<0>(op_pair); // '+' or '-'
+			expression<__BTHREADED__>::ptr rhs = std::get<1>(op_pair);
+			if (op == ">>")
+				result = std::get<1>(r).shift_right(result, rhs);
+			else
+				result = std::get<1>(r).shift_left(result, rhs);
+		}
+		bp::_val(ctx) = result;
+	}
+)];
+BOOST_PARSER_DEFINE_RULES(shift);
 auto const term_def = (not_ >> *(bp::char_("*/%") >> not_))
 	[(	[](auto& ctx)
 		{	auto const& attr = bp::_attr(ctx);

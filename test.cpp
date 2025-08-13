@@ -296,6 +296,7 @@ BOOST_AUTO_TEST_CASE(zero_011)
 	const auto pX7 = pFactory->parameter(7, false);
 	const auto pX8 = pFactory->parameter(8, false);
 	const auto pX9 = pFactory->parameter(9, false);
+	const auto pX10 = pFactory->parameter(10, false);
 #define x0 1
 #define x1 2
 #define x2 3
@@ -306,7 +307,8 @@ BOOST_AUTO_TEST_CASE(zero_011)
 #define x7 8
 #define x8 9
 #define x9 10
-	const int aXY[] = {x0, x1, x2, x3, x4, x5, x6, x7, x8, x9};
+#define x10 11
+	const int aXY[] = {x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10};
 	const theExpressionEngine::factory<true>::name2int s = {
 		{"x0", pX0},
 		{"x1", pX1},
@@ -318,6 +320,7 @@ BOOST_AUTO_TEST_CASE(zero_011)
 		{"x7", pX7},
 		{"x8", pX8},
 		{"x9", pX9},
+		{"x10", pX10},
 	};
 #define RUN \
 	BOOST_CHECK(pFactory->parse(xexpr, s)->evaluateInt(nullptr, aXY, nullptr, nullptr) == (expr));\
@@ -371,10 +374,10 @@ BOOST_AUTO_TEST_CASE(zero_011)
 #define expr x(0) | x(1) ^ x(2) & x(3) + x(5) * x(6)
 	RUN
 #undef expr
-#define expr x(0) || x(1) && x(2) | x(3) ^ x(4) & x(5) == x(6) < x(7) + x(8)*x(9)
+#define expr x(0) || x(1) && x(2) | x(3) ^ x(4) & x(5) == x(6) < x(7)<<x(10) + x(8)*x(9)
 	RUN
 #undef expr
-#define expr x(0)*x(9) + x(1) < x(2) == x(3) & x(4) ^ x(5) | x(6) && x(7) || x(8)
+#define expr x(0)*x(9) + x(10)<<x(1) < x(2) == x(3) & x(4) ^ x(5) | x(6) && x(7) || x(8)
 	RUN
 #undef expr
 }
