@@ -35,6 +35,7 @@ bp::rule<class plus, expression<__BTHREADED__>::ptr> const plus("plus");
 bp::rule<class plus_minus, expression<__BTHREADED__>::ptr> const plus_minus("plus_minus");
 bp::rule<class x, expression<__BTHREADED__>::ptr> const x("x");
 bp::rule<class ternary, expression<__BTHREADED__>::ptr> const ternary("ternary");
+bp::rule<class not_, expression<__BTHREADED__>::ptr> const not_("not_");
 #define __unary__(a) bp::rule<class a, expression<__BTHREADED__>::ptr> const a(#a);\
 auto const a##_def = (bp::lit(#a) >> "(" >> expr >> ")")\
 	[(	[](auto& ctx)\
@@ -170,6 +171,22 @@ BOOST_PARSER_DEFINE_RULES(plus);
 
 auto const plus_minus_def = plus | negation_ | single;
 BOOST_PARSER_DEFINE_RULES(plus_minus);
+
+auto const not__def = (-bp::char_("!~") >> plus_minus)
+[(	[](auto& ctx)
+	{	auto const& attr = bp::_attr(ctx);
+		const std::tuple<const factory<__BTHREADED__>::name2int&, const factory<__BTHREADED__>&> &r = bp::_globals(ctx);
+		expression<__BTHREADED__>::ptr result = std::get<1>(attr);
+		auto const& c = std::get<0>(attr);
+		if (c)
+			if (*c == '!')
+				result = std::get<1>(r).logical_not(result);
+			else
+				result = std::get<1>(r).bit_not(result);
+		bp::_val(ctx) = result;
+	}
+)];
+BOOST_PARSER_DEFINE_RULES(not_);
 
 auto const trig_def = sin | cos | tan | asin | acos | atan;
 auto const hyperbolic_def = sinh | cosh | tanh | asinh | acosh | atanh;
@@ -356,7 +373,7 @@ BOOST_PARSER_DEFINE_RULES(add_or_sub);
 //auto const mult_div_pair_def = bp::attr('*') | bp::attr('/');
 //BOOST_PARSER_DEFINE_RULES(mult_div_pair);
 
-auto const term_def = (plus_minus >> *(bp::char_("*/%") >> plus_minus))
+auto const term_def = (not_ >> *(bp::char_("*/%") >> not_))
 	[(	[](auto& ctx)
 		{	auto const& attr = bp::_attr(ctx);
 			expression<__BTHREADED__>::ptr result = std::get<0>(attr);
