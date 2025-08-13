@@ -890,6 +890,65 @@ template<
 	bool BTHREADED,
 	const char ACOP[],
 	const char ACNAME[],
+	llvm::Value* (*CreateICmpSLT)(llvm::IRBuilderBase&, llvm::Value*, llvm::Value*),
+	typename factory<BTHREADED>::exprPtr (factory<BTHREADED>::*less)(const typename factory<BTHREADED>::exprPtr&_p0, const typename factory<BTHREADED>::exprPtr&_p1) const,
+	typename FUNCTOR
+>
+struct shift:expression<BTHREADED>
+{
+	typedef typename expression<BTHREADED>::ptr ptr;
+	shift(const ptr&_p0, const ptr&_p1)
+		:expression<BTHREADED>({_p0, _p1}, expression<BTHREADED>::eInteger)
+	{	if (!std::all_of(
+			this->m_sChildren.begin(),
+			this->m_sChildren.end(),
+			[](const typename expression<BTHREADED>::ptr&_p)
+			{	return _p->m_eType == expression<BTHREADED>::eInteger;
+			}
+		))
+			throw std::logic_error("arguments must be all integers!");
+	}
+	virtual std::ostream &print(std::ostream&_r) const override
+	{	_r << "(";
+		this->m_sChildren[0]->print(_r);
+		_r << ACOP;
+		this->m_sChildren[1]->print(_r);
+		return _r << ")";
+	}
+	virtual double evaluate(const double *const _p, const int *const _pI, const double*const _pT, const int*const _pIT) const override
+	{	throw std::logic_error("not a floating point operation!");
+		return 0.0;
+	}
+	virtual int evaluateInt(const double *const _p, const int *const _pI, const double*const _pT, const int*const _pIT) const override
+	{	return FUNCTOR()(this->m_sChildren[0]->evaluateInt(_p, _pI, _pT, _pIT), this->m_sChildren[1]->evaluateInt(_p, _pI, _pT, _pIT));
+	}
+	virtual llvm::Value* generateCode(
+		const expression<BTHREADED>*const _pRoot,
+		llvm::LLVMContext& context,
+		llvm::IRBuilder<>& builder,
+		llvm::Module *const M,
+		llvm::Value*const _pP,
+		llvm::Value*const _pIP,
+		llvm::Value*const _pT,
+		llvm::Value*const _pIT
+	) const override
+	{	return builder.CreateZExt(
+			(*CreateICmpSLT)(
+				builder,
+				this->m_sChildren[0]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT),
+				this->m_sChildren[1]->generateCodeW(_pRoot, context, builder, M, _pP, _pIP, _pT, _pIT)
+			),
+			builder.getInt32Ty()
+		);
+	}
+	virtual typename expression<BTHREADED>::ptr recreateFromChildren(typename expression<BTHREADED>::children _s, const factory<BTHREADED>&_rF) const override
+	{	return (_rF.*less)(_s[0], _s[1]);
+	}
+};
+template<
+	bool BTHREADED,
+	const char ACOP[],
+	const char ACNAME[],
 	llvm::Value* (llvm::IRBuilderBase::*CreateICmpSLT)(llvm::Value*, llvm::Value*, const llvm::Twine&),
 	typename factory<BTHREADED>::exprPtr (factory<BTHREADED>::*less)(const typename factory<BTHREADED>::exprPtr&_p0, const typename factory<BTHREADED>::exprPtr&_p1) const,
 	typename FUNCTOR
@@ -1539,11 +1598,13 @@ struct factoryImpl:factory<BTHREADED>
 			}
 		};
 		return theExpressionEngine::expression<BTHREADED>::template create<
-			theExpressionEngine::bw_logical<
+			theExpressionEngine::shift<
 				BTHREADED,
 				acOP,
 				acName,
-				&llvm::IRBuilder<>::CreateSRem,
+				[](llvm::IRBuilderBase&_r, llvm::Value*_p0, llvm::Value*_p1)
+				{	return _r.CreateShl(_p0, _p1);
+				},
 				&factory<BTHREADED>::shift_left,
 				shift_left
 			>
@@ -1558,11 +1619,13 @@ struct factoryImpl:factory<BTHREADED>
 			}
 		};
 		return theExpressionEngine::expression<BTHREADED>::template create<
-			theExpressionEngine::bw_logical<
+			theExpressionEngine::shift<
 				BTHREADED,
 				acOP,
 				acName,
-				&llvm::IRBuilder<>::CreateSRem,
+				[](llvm::IRBuilderBase&_r, llvm::Value*_p0, llvm::Value*_p1)
+				{	return _r.CreateAShr(_p0, _p1);
+				},
 				&factory<BTHREADED>::shift_right,
 				shift_right
 			>
