@@ -35,14 +35,17 @@ template<bool BTHREADED>
 struct llvmData;
 template<bool BTHREADED>
 struct expression;
+template<bool BTHREADED>
+struct conditional;
 /// the base class of all expression types
 /// immutable
 /// no two with the same content are guaranteed to exist
 template<bool BTHREADED>
-struct expression:dynamic_cast_interface<realConstant<BTHREADED> >, dynamic_cast_interface<intConstant<BTHREADED> >, unique<expression<BTHREADED>, BTHREADED>//, hasId<expression>
+struct expression:dynamic_cast_interface<conditional<BTHREADED> >, dynamic_cast_interface<realConstant<BTHREADED> >, dynamic_cast_interface<intConstant<BTHREADED> >, unique<expression<BTHREADED>, BTHREADED>//, hasId<expression>
 {	using typename unique<expression<BTHREADED>, BTHREADED>::MUTEX;
 	using dynamic_cast_interface<realConstant<BTHREADED> >::getPtr;
 	using dynamic_cast_interface<intConstant<BTHREADED> >::getPtr;
+	using dynamic_cast_interface<conditional<BTHREADED> >::getPtr;
 	//using unique<expression<BTHREADED>, BTHREADED>::getMutex;
 	typedef boost::intrusive_ptr<const expression<BTHREADED> > ptr;
 	typedef factory<BTHREADED> FACTORY;

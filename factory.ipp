@@ -1044,6 +1044,20 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 				);
 			return sSetRepeated;
 		}();
+		const auto sQMOs = [&](void)
+		{	ESET sQMOs;
+			ESET sSetAll;
+			for (const auto &p : _rChildren)
+				p->DFS(
+					[&](const expression<BTHREADED>*const _p)
+					{	if (const auto pQM = _p->getPtr(dummy<conditional<BTHREADED> >()))
+							return sQMOs.insert(pQM).second;
+						else
+							return sSetAll.emplace(_p).second;
+					}
+				);
+			return sQMOs;
+		}();
 		const auto sExpr2Deps = [&](void)
 		{	std::map<
 				const expression<BTHREADED>*,
@@ -1447,7 +1461,7 @@ struct factoryImpl:factory<BTHREADED>
 		if (_p0->isZero())
 			return _p2;
 		else
-			return theExpressionEngine::expression<BTHREADED>::template create<theExpressionEngine::conditional<BTHREADED> >(*this, _p0, _p1, _p2);
+			return theExpressionEngine::expression<BTHREADED>::template create<dynamic_cast_implementation<theExpressionEngine::conditional<BTHREADED> > >(*this, _p0, _p1, _p2);
 	}
 	virtual exprPtr division(const exprPtr&_p0, const exprPtr&_p1) const override
 	{	static constexpr char acOP[] = "/";
