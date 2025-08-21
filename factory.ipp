@@ -1045,15 +1045,14 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 			return sSetRepeated;
 		}();
 		const auto sQMOs = [&](void)
-		{	ESET sQMOs;
+		{	std::set<const conditional<BTHREADED>*>sQMOs;
 			ESET sSetAll;
 			for (const auto &p : _rChildren)
 				p->DFS(
 					[&](const expression<BTHREADED>*const _p)
 					{	if (const auto pQM = _p->getPtr(dummy<conditional<BTHREADED> >()))
 							return sQMOs.insert(pQM).second;
-						else
-							return sSetAll.emplace(_p).second;
+						return sSetAll.emplace(_p).second;
 					}
 				);
 			return sQMOs;

@@ -126,6 +126,28 @@ struct expression:dynamic_cast_interface<conditional<BTHREADED> >, dynamic_cast_
 					s.push(pC.get());
 		}
 	}
+	typedef std::pair<const expression<BTHREADED>*, bool> PAIR;
+	typedef std::vector<PAIR> STACK;
+	typedef std::function<bool(const expression<BTHREADED>*, const STACK&)> BEFORE2;
+	typedef std::function<void(const expression<BTHREADED>*, const STACK&)> AFTER2;
+	void DFS(const BEFORE2&_r, const AFTER2&_rA) const
+	{	STACK s;
+		s.push_back({this, true});
+		while (!s.empty())
+		{	const auto [p, b] = s.back();
+			s.pop_back();
+			if (b)
+				if (_r(p, s))
+				{	s.push_back({p, false});
+					for (const auto &pC : p->m_sChildren)
+						s.push_back({pC.get(), true});
+				}
+				else
+					;
+			else
+				_rA(p, s);
+		}
+	}
 	virtual std::ostream &print(std::ostream&) const = 0;
 	void initializeLLVM(void) const;
 	virtual bool isZero(void) const
