@@ -1052,7 +1052,8 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 					[&](const expression<BTHREADED>*const _p)
 					{	if (const auto pQM = _p->getPtr(dummy<conditional<BTHREADED> >()))
 							return sQMOs.insert(pQM).second;
-						return sSetAll.emplace(_p).second;
+						else
+							return sSetAll.emplace(_p).second;
 					}
 				);
 			return sQMOs;
