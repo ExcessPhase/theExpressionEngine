@@ -143,7 +143,7 @@ struct expression:dynamic_cast_interface<conditional<BTHREADED> >, dynamic_cast_
 						s.push_back({pC.get(), true});
 				}
 				else
-					;
+					_rA(p, s);
 			else
 				_rA(p, s);
 		}
