@@ -203,6 +203,7 @@ struct llvmData
 			//M->print(errs(), nullptr);
 			//return 1;
 		}
+		// === Optimization Pipeline ===
 		llvm::LoopAnalysisManager LAM;
 		llvm::FunctionAnalysisManager FAM;
 		llvm::CGSCCAnalysisManager CGAM;
@@ -210,14 +211,16 @@ struct llvmData
 
 		llvm::PassBuilder PB;
 
-		// Register analyses across layers
+		// Register analysis managers
 		PB.registerModuleAnalyses(MAM);
 		PB.registerFunctionAnalyses(FAM);
 		PB.registerCGSCCAnalyses(CGAM);
 		PB.registerLoopAnalyses(LAM);
-
-		// Cross-register proxies
 		PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
+
+		// Build and run default optimization pipeline at O2
+		llvm::ModulePassManager MPM = PB.buildPerModuleDefaultPipeline(llvm::OptimizationLevel::O3);
+		MPM.run(*M, MAM);
 
 		// Create the execution engine
 		std::string ErrStr;
@@ -289,6 +292,7 @@ struct llvmDataInt
 			//M->print(errs(), nullptr);
 			//return 1;
 		}
+		// === Optimization Pipeline ===
 		llvm::LoopAnalysisManager LAM;
 		llvm::FunctionAnalysisManager FAM;
 		llvm::CGSCCAnalysisManager CGAM;
@@ -296,14 +300,16 @@ struct llvmDataInt
 
 		llvm::PassBuilder PB;
 
-		// Register analyses across layers
+		// Register analysis managers
 		PB.registerModuleAnalyses(MAM);
 		PB.registerFunctionAnalyses(FAM);
 		PB.registerCGSCCAnalyses(CGAM);
 		PB.registerLoopAnalyses(LAM);
-
-		// Cross-register proxies
 		PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
+
+		// Build and run default optimization pipeline at O2
+		llvm::ModulePassManager MPM = PB.buildPerModuleDefaultPipeline(llvm::OptimizationLevel::O3);
+		MPM.run(*M, MAM);
 
 		// Create the execution engine
 		std::string ErrStr;
