@@ -13,7 +13,10 @@
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/ExecutionEngine/GenericValue.h>
 #include <llvm/Support/TargetSelect.h>
-
+#include <llvm/IR/PassManager.h>
+#include <llvm/Transforms/Scalar/GVN.h>
+#include <llvm/Transforms/InstCombine/InstCombine.h>
+#include <llvm/Passes/PassBuilder.h>
 //#include <set>
 //#include "environment.h"
 
@@ -200,6 +203,21 @@ struct llvmData
 			//M->print(errs(), nullptr);
 			//return 1;
 		}
+		llvm::LoopAnalysisManager LAM;
+		llvm::FunctionAnalysisManager FAM;
+		llvm::CGSCCAnalysisManager CGAM;
+		llvm::ModuleAnalysisManager MAM;
+
+		llvm::PassBuilder PB;
+
+		// Register analyses across layers
+		PB.registerModuleAnalyses(MAM);
+		PB.registerFunctionAnalyses(FAM);
+		PB.registerCGSCCAnalyses(CGAM);
+		PB.registerLoopAnalyses(LAM);
+
+		// Cross-register proxies
+		PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
 
 		// Create the execution engine
 		std::string ErrStr;
@@ -271,6 +289,21 @@ struct llvmDataInt
 			//M->print(errs(), nullptr);
 			//return 1;
 		}
+		llvm::LoopAnalysisManager LAM;
+		llvm::FunctionAnalysisManager FAM;
+		llvm::CGSCCAnalysisManager CGAM;
+		llvm::ModuleAnalysisManager MAM;
+
+		llvm::PassBuilder PB;
+
+		// Register analyses across layers
+		PB.registerModuleAnalyses(MAM);
+		PB.registerFunctionAnalyses(FAM);
+		PB.registerCGSCCAnalyses(CGAM);
+		PB.registerLoopAnalyses(LAM);
+
+		// Cross-register proxies
+		PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
 
 		// Create the execution engine
 		std::string ErrStr;
