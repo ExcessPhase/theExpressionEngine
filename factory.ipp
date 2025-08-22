@@ -1044,6 +1044,7 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 				);
 			return sSetRepeated;
 		}();
+#if 0
 		const auto sQMOs = [&](void)
 		{	std::set<const conditional<BTHREADED>*>sQMOs;
 			ESET sSetAll;
@@ -1058,6 +1059,7 @@ struct expressionSetImpl:expressionSet<BTHREADED>
 				);
 			return sQMOs;
 		}();
+#endif
 		const auto sExpr2Deps = [&](void)
 		{	std::map<
 				const expression<BTHREADED>*,
